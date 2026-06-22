@@ -2,7 +2,6 @@ import { supabase } from './supabase'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// Gets the logged-in user's auth token and builds request headers
 async function getHeaders() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not logged in')
@@ -12,7 +11,6 @@ async function getHeaders() {
   }
 }
 
-// Core request function — all API calls go through this
 async function request(method, path, body = null) {
   const headers = await getHeaders()
   const options  = { method, headers }
@@ -46,3 +44,11 @@ export const useTemplate   = (id) => request('POST', `/api/templates/${id}/use`)
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 export const getDashboardStats = () => request('GET', '/api/dashboard/stats')
+
+// ── Chains (NEW — Day 7) ──────────────────────────────────────────────────────
+export const getChains     = ()                  => request('GET',    '/api/chains')
+export const getChain      = (id)                => request('GET',    `/api/chains/${id}`)
+export const createChain   = (data)              => request('POST',   '/api/chains', data)
+export const deleteChain   = (id)                => request('DELETE', `/api/chains/${id}`)
+export const runChain      = (id, message)       => request('POST',   `/api/chains/${id}/run`, { message })
+export const getChainRuns  = (id)                => request('GET',    `/api/chains/${id}/runs`)

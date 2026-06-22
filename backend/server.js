@@ -6,6 +6,7 @@ import agentsRouter from './routes/agents.js';
 import runsRouter from './routes/runs.js';
 import templatesRouter from './routes/templates.js';
 import dashboardRouter from './routes/dashboard.js';
+import chainsRouter from './routes/chains.js';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ app.use('/api/agents', agentsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/dashboard', dashboardRouter);
-
+app.use('/api/chains', chainsRouter);
 // Base Diagnostics
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
