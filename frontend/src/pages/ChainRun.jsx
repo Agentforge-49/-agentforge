@@ -137,29 +137,77 @@ export default function ChainRun() {
               </h2>
 
               <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                {result.steps?.map((step, i) => (
-                  <div key={i}>
-                    <div style={{ background:'#0F1117', border:`1px solid ${step.status === 'failed' ? '#7F1D1D' : '#2A2D3E'}`, borderRadius:12, padding:14 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                        {step.status === 'failed'
-                          ? <XCircle size={15} color="#FCA5A5" />
-                          : <CheckCircle2 size={15} color="#34D399" />}
-                        <span style={{ fontSize:13, fontWeight:600 }}>{i + 1}. {step.agent_name}</span>
-                        {step.duration_ms !== undefined && (
-                          <span style={{ fontSize:11, color:'#6B7280', marginLeft:'auto' }}>{(step.duration_ms/1000).toFixed(1)}s · {step.tokens_used || 0} tok</span>
-                        )}
+                {result.steps?.map((step, i) => {
+                  const isBranchStep = step.is_branch_step === true
+                  const branchMatched = step.branch_matched === true
+
+                  return (
+                    <div key={i}>
+                      {isBranchStep && (
+                        <div style={{ display:'flex', justifyContent:'center', padding:'2px 0 8px 0' }}>
+                          <div
+                            style={{
+                              display:'inline-flex',
+                              alignItems:'center',
+                              gap:8,
+                              padding:'6px 12px',
+                              borderRadius:999,
+                              background: branchMatched ? '#78350F' : '#451A03',
+                              border:'1px solid #D97706',
+                              color:'#FCD34D',
+                              fontSize:12,
+                              fontWeight:600,
+                            }}
+                          >
+                            <span style={{ fontSize:13 }}>⑂</span>
+                            {branchMatched ? 'Branch: condition matched' : 'Branch: condition not matched'}
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ background:'#0F1117', border:`1px solid ${step.status === 'failed' ? '#7F1D1D' : '#2A2D3E'}`, borderRadius:12, padding:14, ...(isBranchStep ? { borderLeft:'4px solid #D97706' } : {}) }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                          {step.status === 'failed'
+                            ? <XCircle size={15} color="#FCA5A5" />
+                            : <CheckCircle2 size={15} color="#34D399" />}
+                          <span style={{ fontSize:13, fontWeight:600 }}>{i + 1}. {step.agent_name}</span>
+                          {step.duration_ms !== undefined && (
+                            <span style={{ fontSize:11, color:'#6B7280', marginLeft:'auto' }}>{(step.duration_ms/1000).toFixed(1)}s · {step.tokens_used || 0} tok</span>
+                          )}
+                        </div>
+                        <p style={{ fontSize:13, lineHeight:1.7, color: step.status === 'failed' ? '#FCA5A5' : 'white', whiteSpace:'pre-wrap' }}>
+                          {step.output || step.error || 'No output'}
+                        </p>
                       </div>
-                      <p style={{ fontSize:13, lineHeight:1.7, color: step.status === 'failed' ? '#FCA5A5' : 'white', whiteSpace:'pre-wrap' }}>
-                        {step.output || step.error || 'No output'}
-                      </p>
+
+                      {i < result.steps.length - 1 && (
+                        <div style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
+                          {result.steps[i + 1]?.is_branch_step ? (
+                            <div
+                              style={{
+                                display:'flex',
+                                alignItems:'center',
+                                justifyContent:'center',
+                                width:26,
+                                height:26,
+                                borderRadius:'50%',
+                                background:'#2A1C0D',
+                                border:'1px solid #D97706',
+                                color:'#FCD34D',
+                                fontSize:14,
+                                fontWeight:700,
+                              }}
+                            >
+                              ⤵
+                            </div>
+                          ) : (
+                            <ArrowDown size={16} color="#4B5563" />
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {i < result.steps.length - 1 && (
-                      <div style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
-                        <ArrowDown size={16} color="#4B5563" />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <div style={{ display:'flex', gap:16, padding:'10px 14px', background:'#0F1117', border:'1px solid #2A2D3E', borderRadius:10, fontSize:12, color:'#9CA3AF', flexWrap:'wrap' }}>
