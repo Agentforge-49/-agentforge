@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Calculator, CalendarClock, Check, FileText, Globe, Search } from 'lucide-react'
+import { Brain, Calculator, CalendarClock, Check, FileText, Globe, Search, FileSearch } from 'lucide-react'
 import { createAgent } from '../lib/api'
 
 // Maps display names to API values
@@ -12,20 +12,25 @@ const MODEL_MAP = {
 }
 
 const TOOL_MAP = {
-  'Web Search': 'web_search',
-  'Calculator': 'calculator',
-  'Memory':     'memory',
-  'Summarizer': 'summarizer',
-  'Date & Time':'datetime'
+  'Web Search':   'web_search',
+  'Calculator':   'calculator',
+  'Memory':       'memory',
+  'Summarizer':   'summarizer',
+  'Date & Time':  'datetime',
+  // NEW — Day 11
+  'Webhook':      'webhook',
+  'Read Webpage': 'read_webpage',
 }
 
 const TOOLS = [
-  { name: 'Web Search', description: 'Search the internet for current info',   icon: Search,      disabled: false },
-  { name: 'Calculator', description: 'Solve math and calculations',             icon: Calculator,  disabled: false },
-  { name: 'Memory',     description: 'Remember info across sessions',           icon: Brain,       disabled: false },
-  { name: 'Summarizer', description: 'Summarize long documents',                icon: FileText,    disabled: false },
-  { name: 'Date & Time',description: 'Get dates, times, and calendars',         icon: CalendarClock, disabled: false },
-  { name: 'Webhook',    description: 'Make HTTP requests to any URL',           icon: Globe,       disabled: true  },
+  { name: 'Web Search',   description: 'Search the internet for current info',          icon: Search,        disabled: false },
+  { name: 'Calculator',   description: 'Solve math and calculations',                    icon: Calculator,    disabled: false },
+  { name: 'Memory',       description: 'Remember info across sessions',                  icon: Brain,         disabled: false },
+  { name: 'Summarizer',   description: 'Summarize long documents',                        icon: FileText,      disabled: false },
+  { name: 'Date & Time',  description: 'Get dates, times, and calendars',                 icon: CalendarClock, disabled: false },
+  // NEW — Day 11 — both now enabled, real tools
+  { name: 'Webhook',      description: 'Call any API or trigger a webhook with a URL',    icon: Globe,         disabled: false },
+  { name: 'Read Webpage', description: 'Fetch and read the content of a specific page',   icon: FileSearch,    disabled: false },
 ]
 
 const PERSONALITIES = ['Professional', 'Friendly', 'Concise', 'Creative']
@@ -90,10 +95,9 @@ export default function CreateAgent() {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', color: 'white', fontFamily: 'system-ui, sans-serif' }}>
 
-      {/* ── Success toast ── */}
       {showToast && (
         <div style={{ position: 'fixed', top: 24, right: 24, zIndex: 999, background: '#7C3AED', color: 'white', padding: '12px 22px', borderRadius: 12, fontWeight: 500, boxShadow: '0 4px 20px rgba(124,58,237,0.4)' }}>
-          ✅ Agent created!
+          Agent created!
         </div>
       )}
 
@@ -102,7 +106,6 @@ export default function CreateAgent() {
         <p style={{ color: '#9CA3AF', fontSize: 14 }}>Configure your AI agent step by step.</p>
       </div>
 
-      {/* ── Progress bar ── */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>
           <span>Step {step} of 5</span>
@@ -113,10 +116,8 @@ export default function CreateAgent() {
         </div>
       </div>
 
-      {/* ── Step card ── */}
       <div style={{ background: '#1A1D27', border: '1px solid #2A2D3E', borderRadius: 16, padding: 24 }}>
 
-        {/* STEP 1 — Basic Info */}
         {step === 1 && (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 20 }}>Basic Info</h2>
@@ -137,7 +138,6 @@ export default function CreateAgent() {
           </div>
         )}
 
-        {/* STEP 2 — Personality */}
         {step === 2 && (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 20 }}>Personality</h2>
@@ -158,10 +158,10 @@ export default function CreateAgent() {
           </div>
         )}
 
-        {/* STEP 3 — Tools */}
         {step === 3 && (
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 20 }}>Tools</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 6 }}>Tools</h2>
+            <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 16 }}>Webhook and Read Webpage are new — give your agent the power to call APIs or read any page.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
               {TOOLS.map(tool => {
                 const Icon     = tool.icon
@@ -185,7 +185,6 @@ export default function CreateAgent() {
           </div>
         )}
 
-        {/* STEP 4 — Model */}
         {step === 4 && (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 20 }}>Model Settings</h2>
@@ -211,7 +210,6 @@ export default function CreateAgent() {
           </div>
         )}
 
-        {/* STEP 5 — Review */}
         {step === 5 && (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 20 }}>Review & Launch</h2>
@@ -235,19 +233,18 @@ export default function CreateAgent() {
 
             {error && (
               <div style={{ background: '#2D1515', border: '1px solid #EF4444', borderRadius: 10, padding: '12px 16px', color: '#FCA5A5', fontSize: 13, marginBottom: 16 }}>
-                ⚠️ {error}
+                {error}
               </div>
             )}
 
             <button onClick={handleLaunch} disabled={loading || !formData.name}
               style={{ width: '100%', background: loading || !formData.name ? '#5B21B6' : '#7C3AED', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: loading || !formData.name ? 'not-allowed' : 'pointer', transition: 'background .15s' }}>
-              {loading ? 'Creating agent...' : '🚀 Launch Agent'}
+              {loading ? 'Creating agent...' : 'Launch Agent'}
             </button>
             {!formData.name && <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginTop: 8 }}>Go back to Step 1 and add a name</p>}
           </div>
         )}
 
-        {/* ── Nav buttons ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
           <button onClick={() => setStep(s => s - 1)} disabled={step === 1}
             style={{ padding: '10px 22px', borderRadius: 10, border: '1px solid #2A2D3E', background: 'transparent', color: step === 1 ? '#4B5563' : 'white', cursor: step === 1 ? 'not-allowed' : 'pointer', fontSize: 14 }}>
@@ -256,7 +253,7 @@ export default function CreateAgent() {
           {step < 5 && (
             <button onClick={() => setStep(s => s + 1)}
               style={{ padding: '10px 22px', borderRadius: 10, background: '#7C3AED', border: 'none', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
-              Next →
+              Next
             </button>
           )}
         </div>

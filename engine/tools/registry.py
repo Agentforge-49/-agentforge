@@ -8,13 +8,18 @@ class ToolRegistry:
         from tools.datetime_tool import DateTimeTool
         from tools.memory_tool import MemoryTool
         from tools.summarizer import SummarizerTool
+        from tools.webhook import WebhookTool
+        from tools.webpage_reader import WebpageReaderTool
 
         self._tools: Dict[str, Any] = {
-            "web_search": WebSearchTool(),
-            "calculator": CalculatorTool(),
-            "datetime":   DateTimeTool(),
-            "memory":     MemoryTool(),
-            "summarizer": SummarizerTool(),
+            "web_search":    WebSearchTool(),
+            "calculator":    CalculatorTool(),
+            "datetime":      DateTimeTool(),
+            "memory":        MemoryTool(),
+            "summarizer":    SummarizerTool(),
+            # NEW — Day 11
+            "webhook":       WebhookTool(),
+            "read_webpage":  WebpageReaderTool(),
         }
 
     def get_tool(self, slug: str) -> Optional[Any]:

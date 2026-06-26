@@ -1,7 +1,9 @@
-fastapi==0.109.0
-uvicorn==0.27.0
-anthropic==0.20.0
-pydantic==2.5.3
-duckduckgo-search==4.4.3
-python-dotenv==1.0.0
-python-dateutil==2.8.2
+fastapi
+uvicorn[standard]
+anthropic
+pydantic
+duckduckgo-search
+python-dotenv
+python-dateutil
+requests
+beautifulsoup4
