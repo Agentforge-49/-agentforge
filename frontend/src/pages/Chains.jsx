@@ -1,341 +1,118 @@
-import { Router } from 'express';
-import fetch from 'node-fetch';
-import { supabase } from '../lib/supabase.js';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Link2, ArrowRight, Trash2 } from 'lucide-react'
+import { getChains, deleteChain } from '../lib/api'
 
+export default function Chains() {
+  const navigate = useNavigate()
 
-const router = Router();
-router.use(requireAuth);
+  const [chains,  setChains]  = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
 
-// Loads one agent plus its enabled tools, formatted exactly how the
-// Python engine expects it. Used inside the chain-running loop below.
-async function loadAgentConfig(agentId, userId) {
-  const { data: agent, error } = await supabase
-    .from('agents')
-    .select(`*, agent_tools ( tools ( slug ) )`)
-    .eq('id', agentId)
-    .eq('user_id', userId)
-    .single();
-
-  if (error || !agent) return null;
-
-  const enabled_tool_slugs = (agent.agent_tools || [])
-    .map(at => at.tools?.slug)
-    .filter(Boolean);
-
-  return {
-    id: agent.id,
-    name: agent.name,
-    system_prompt: agent.system_prompt || '',
-    personality: agent.personality || 'professional',
-    model: agent.model || 'claude-sonnet-4-6',
-    temperature: agent.temperature ?? 0.7,
-    max_tokens: agent.max_tokens || 1000,
-    enabled_tool_slugs,
-  };
-}
-
-// Runs a single agent through the engine and returns the raw result.
-// Shared helper used by both the main chain loop and the new branch step.
-async function runOneAgent(agentConfig, inputMessage) {
-  const response = await fetch(`${process.env.AGENT_ENGINE_URL}/execute`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agent_config: agentConfig, user_message: inputMessage }),
-  });
-  if (!response.ok) {
-    const t = await response.text();
-    throw new Error(`Engine error: ${t}`);
-  }
-  return response.json();
-}
-
-// GET /api/chains  — list all chains the user has created
-router.get('/', async (req, res, next) => {
-  try {
-    const { data: chains, error } = await supabase
-      .from('agent_chains')
-      .select('*')
-      .eq('user_id', req.userId)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-
-    const allAgentIds = [...new Set(chains.flatMap(c => c.agent_ids))];
-    let agentMap = {};
-    if (allAgentIds.length > 0) {
-      const { data: agents } = await supabase
-        .from('agents')
-        .select('id, name')
-        .in('id', allAgentIds);
-      agentMap = Object.fromEntries((agents || []).map(a => [a.id, a.name]));
-    }
-
-    const result = chains.map(c => ({
-      ...c,
-      agent_names: c.agent_ids.map(id => agentMap[id] || 'Unknown agent'),
-    }));
-
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
-// POST /api/chains  — create a new chain
-// body: { name, description, agent_ids: [uuid, uuid, ...],
-//         branch_keyword?, branch_agent_if_id?, branch_agent_else_id? }
-router.post('/', async (req, res, next) => {
-  try {
-    const {
-      name, description, agent_ids,
-      branch_keyword, branch_agent_if_id, branch_agent_else_id,
-    } = req.body;
-
-    if (!name) return res.status(400).json({ error: 'Chain name is required' });
-    if (!Array.isArray(agent_ids) || agent_ids.length < 2) {
-      return res.status(400).json({ error: 'A chain needs at least 2 agents' });
-    }
-
-    const { data: chain, error } = await supabase
-      .from('agent_chains')
-      .insert({
-        user_id: req.userId,
-        name,
-        description,
-        agent_ids,
-        // NEW — Day 10 — optional branch fields. If not provided,
-        // these are simply undefined and Postgres stores them as null.
-        branch_keyword: branch_keyword || null,
-        branch_agent_if_id: branch_agent_if_id || null,
-        branch_agent_else_id: branch_agent_else_id || null,
-      })
-      .select()
-      .single();
-    if (error) throw error;
-
-    res.status(201).json(chain);
-  } catch (err) { next(err); }
-});
-
-// GET /api/chains/:id  — one chain with its agents in order
-router.get('/:id', async (req, res, next) => {
-  try {
-    const { data: chain, error } = await supabase
-      .from('agent_chains')
-      .select('*')
-      .eq('id', req.params.id)
-      .eq('user_id', req.userId)
-      .single();
-    if (error || !chain) return res.status(404).json({ error: 'Chain not found' });
-
-    const { data: agents } = await supabase
-      .from('agents')
-      .select('id, name, description, category')
-      .in('id', chain.agent_ids);
-
-    const orderedAgents = chain.agent_ids
-      .map(id => agents.find(a => a.id === id))
-      .filter(Boolean);
-
-    res.json({ ...chain, agents: orderedAgents });
-  } catch (err) { next(err); }
-});
-
-// DELETE /api/chains/:id
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const { error } = await supabase
-      .from('agent_chains')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('user_id', req.userId);
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (err) { next(err); }
-});
-
-// POST /api/chains/:id/run  — THE CORE FEATURE
-// Runs each agent in order. Each agent's answer becomes the
-// next agent's input automatically. If the chain has a branch
-// condition set up, one extra agent runs at the end based on
-// whether the final answer matched the keyword.
-// body: { message }
-router.post('/:id/run', async (req, res, next) => {
-  try {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ error: 'message is required' });
-
-    const { data: chain, error: chainError } = await supabase
-      .from('agent_chains')
-      .select('*')
-      .eq('id', req.params.id)
-      .eq('user_id', req.userId)
-      .single();
-    if (chainError || !chain) return res.status(404).json({ error: 'Chain not found' });
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('api_calls_used, api_calls_limit')
-      .eq('id', req.userId)
-      .single();
-    if (profile && profile.api_calls_used >= profile.api_calls_limit) {
-      return res.status(429).json({ error: 'Monthly limit reached. Upgrade to Pro.' });
-    }
-
-    const steps = [];
-    let currentInput   = message;   // starts as the user's message
-    let totalTokens     = 0;
-    let totalDuration   = 0;
-    let chainStatus      = 'completed';
-    let errorMessage     = null;
-
-    // ── Main linear chain loop (unchanged from Day 7) ──────────────────────
-    for (const agentId of chain.agent_ids) {
-      const agentConfig = await loadAgentConfig(agentId, req.userId);
-
-      if (!agentConfig) {
-        chainStatus  = 'failed';
-        errorMessage = `Agent ${agentId} not found`;
-        steps.push({ agent_id: agentId, status: 'failed', error: errorMessage });
-        break;
-      }
-
-      let engineResult;
+  useEffect(() => {
+    async function load() {
       try {
-        engineResult = await runOneAgent(agentConfig, currentInput);
-      } catch (engineErr) {
-        chainStatus  = 'failed';
-        errorMessage = engineErr.message;
-        steps.push({
-          agent_id: agentId,
-          agent_name: agentConfig.name,
-          input: currentInput,
-          status: 'failed',
-          error: errorMessage,
-        });
-        break;
+        const data = await getChains()
+        setChains(data)
+      } catch (err) {
+        setError(err.message || 'Failed to load chains')
+      } finally {
+        setLoading(false)
       }
-
-      totalTokens   += engineResult.tokens_used  || 0;
-      totalDuration += engineResult.duration_ms  || 0;
-
-      steps.push({
-        agent_id:    agentId,
-        agent_name:  agentConfig.name,
-        input:       currentInput,
-        output:      engineResult.final_answer,
-        tokens_used: engineResult.tokens_used,
-        duration_ms: engineResult.duration_ms,
-        status:      engineResult.status,
-      });
-
-      if (engineResult.status !== 'completed') {
-        chainStatus  = 'failed';
-        errorMessage = engineResult.error_message || 'Agent step failed';
-        break;
-      }
-
-      currentInput = engineResult.final_answer;
     }
+    load()
+  }, [])
 
-    // ── NEW — Day 10 — optional branch step ─────────────────────────────────
-    // Only runs if the main loop finished successfully AND the chain has
-    // a branch keyword set AND at least one branch agent is configured.
-    if (
-      chainStatus === 'completed' &&
-      chain.branch_keyword &&
-      (chain.branch_agent_if_id || chain.branch_agent_else_id)
-    ) {
-      const matched = currentInput
-        .toLowerCase()
-        .includes(chain.branch_keyword.toLowerCase());
-
-      const branchAgentId = matched
-        ? chain.branch_agent_if_id
-        : chain.branch_agent_else_id;
-
-      if (branchAgentId) {
-        const branchConfig = await loadAgentConfig(branchAgentId, req.userId);
-
-        if (branchConfig) {
-          try {
-            const branchResult = await runOneAgent(branchConfig, currentInput);
-
-            totalTokens   += branchResult.tokens_used || 0;
-            totalDuration += branchResult.duration_ms || 0;
-
-            steps.push({
-              agent_id:        branchAgentId,
-              agent_name:      branchConfig.name,
-              input:           currentInput,
-              output:          branchResult.final_answer,
-              tokens_used:     branchResult.tokens_used,
-              duration_ms:     branchResult.duration_ms,
-              status:          branchResult.status,
-              is_branch_step:  true,
-              branch_matched:  matched,
-            });
-
-            if (branchResult.status === 'completed') {
-              currentInput = branchResult.final_answer;
-            } else {
-              chainStatus  = 'failed';
-              errorMessage = branchResult.error_message || 'Branch step failed';
-            }
-          } catch (branchErr) {
-            chainStatus  = 'failed';
-            errorMessage = branchErr.message;
-            steps.push({
-              agent_id:       branchAgentId,
-              agent_name:     branchConfig.name,
-              input:          currentInput,
-              status:         'failed',
-              error:          errorMessage,
-              is_branch_step: true,
-              branch_matched: matched,
-            });
-          }
-        }
-      }
-      // If branchAgentId is null/undefined, we simply skip — no extra step.
+  const handleDelete = async (id, e) => {
+    e.stopPropagation()
+    if (!confirm('Delete this chain? This cannot be undone.')) return
+    try {
+      await deleteChain(id)
+      setChains(prev => prev.filter(c => c.id !== id))
+    } catch (err) {
+      alert(err.message)
     }
+  }
 
-    const { data: chainRun, error: runError } = await supabase
-      .from('chain_runs')
-      .insert({
-        chain_id:        chain.id,
-        user_id:         req.userId,
-        status:          chainStatus,
-        initial_message: message,
-        steps,
-        total_tokens:      totalTokens,
-        total_duration_ms: totalDuration,
-        error_message:     errorMessage,
-        completed_at:       new Date().toISOString(),
-      })
-      .select()
-      .single();
-    if (runError) throw runError;
+  if (loading) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', color:'#9CA3AF', fontSize:14 }}>
+      Loading your chains...
+    </div>
+  )
 
-    if (profile) {
-      await supabase.from('profiles')
-        .update({ api_calls_used: profile.api_calls_used + steps.length })
-        .eq('id', req.userId);
-    }
+  return (
+    <div style={{ color:'white', fontFamily:'system-ui, sans-serif' }}>
 
-    res.json(chainRun);
-  } catch (err) { next(err); }
-});
+      {/* Header */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
+        <div>
+          <h1 style={{ fontSize:24, fontWeight:600, marginBottom:4 }}>Agent Chains</h1>
+          <p style={{ color:'#9CA3AF', fontSize:14 }}>Connect agents together — one agent's answer automatically feeds the next.</p>
+        </div>
+        <button onClick={() => navigate('/chains/new')}
+          style={{ display:'flex', alignItems:'center', gap:7, background:'#7C3AED', color:'white', border:'none', padding:'10px 18px', borderRadius:10, cursor:'pointer', fontSize:14, fontWeight:500 }}>
+          <Plus size={15} /> Create Chain
+        </button>
+      </div>
 
-// GET /api/chains/:id/runs  — past runs of one chain
-router.get('/:id/runs', async (req, res, next) => {
-  try {
-    const { data: runs, error } = await supabase
-      .from('chain_runs')
-      .select('*')
-      .eq('chain_id', req.params.id)
-      .eq('user_id', req.userId)
-      .order('started_at', { ascending: false });
-    if (error) throw error;
-    res.json(runs);
-  } catch (err) { next(err); }
-});
+      {error && (
+        <div style={{ background:'#2D1515', border:'1px solid #EF4444', borderRadius:10, padding:'12px 16px', color:'#FCA5A5', fontSize:13, marginBottom:16 }}>
+          {error}
+        </div>
+      )}
 
-export default router;
+      {/* Empty state */}
+      {chains.length === 0 && !error && (
+        <div style={{ background:'#1A1D27', border:'1px dashed #2A2D3E', borderRadius:16, padding:'60px 20px', textAlign:'center' }}>
+          <Link2 size={42} color="#374151" style={{ marginBottom:16 }} />
+          <h3 style={{ fontSize:17, fontWeight:500, marginBottom:8 }}>No chains yet</h3>
+          <p style={{ color:'#9CA3AF', fontSize:13, marginBottom:24, maxWidth:340, margin:'0 auto 24px' }}>
+            A chain connects 2 or more of your agents in order. The first agent's answer becomes the next agent's question — automatically.
+          </p>
+          <button onClick={() => navigate('/chains/new')}
+            style={{ background:'#7C3AED', color:'white', border:'none', padding:'11px 24px', borderRadius:10, cursor:'pointer', fontSize:14, fontWeight:500 }}>
+            Create your first chain
+          </button>
+        </div>
+      )}
+
+      {/* Chain list */}
+      {chains.length > 0 && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14 }}>
+          {chains.map(chain => (
+            <div key={chain.id}
+              onClick={() => navigate(`/chains/${chain.id}/run`)}
+              onMouseEnter={e => e.currentTarget.style.borderColor='#7C3AED'}
+              onMouseLeave={e => e.currentTarget.style.borderColor='#2A2D3E'}
+              style={{ background:'#1A1D27', border:'1px solid #2A2D3E', borderRadius:16, padding:18, cursor:'pointer', transition:'border-color .15s' }}>
+
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
+                <h3 style={{ fontSize:15, fontWeight:600 }}>{chain.name}</h3>
+                <button onClick={(e) => handleDelete(chain.id, e)}
+                  style={{ background:'transparent', border:'none', color:'#6B7280', cursor:'pointer', padding:4 }}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+
+              {chain.description && (
+                <p style={{ fontSize:12, color:'#9CA3AF', marginBottom:14, lineHeight:1.5 }}>{chain.description}</p>
+              )}
+
+              <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:6 }}>
+                {chain.agent_names.map((name, i) => (
+                  <span key={i} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ fontSize:11, fontWeight:500, padding:'4px 10px', borderRadius:8, background:'#0F1117', border:'1px solid #2A2D3E' }}>
+                      {name}
+                    </span>
+                    {i < chain.agent_names.length - 1 && <ArrowRight size={12} color="#4B5563" />}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
