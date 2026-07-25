@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CheckCircle2, XCircle, Loader2, Clock, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { getAgent, getAgentRuns } from '../lib/api'
 
 const STATUS = {

@@ -1,5 +1,3 @@
-import React from "react";
-
 const SKELETON_ANIMATION_NAME = "agentforgeSkeletonShimmer";
 
 let hasInjectedSkeletonStyles = false;

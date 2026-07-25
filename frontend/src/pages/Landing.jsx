@@ -1,5 +1,46 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const ICON_COMMON = {
+  width: 24,
+  height: 24,
+  stroke: 'currentColor',
+  strokeWidth: 1.9,
+  fill: 'none',
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const RobotIcon = () => (
+  <svg viewBox="0 0 24 24" style={ICON_COMMON} aria-hidden="true">
+    <path d="M12 3v3" />
+    <path d="M8 6h8" />
+    <rect x="4" y="8" width="16" height="10" rx="4" />
+    <path d="M9 18v2" />
+    <path d="M15 18v2" />
+    <path d="M7 12h.01" />
+    <path d="M17 12h.01" />
+    <path d="M8.5 15c1 .8 2.2 1.2 3.5 1.2s2.5-.4 3.5-1.2" />
+    <path d="M4 12H2" />
+    <path d="M22 12h-2" />
+  </svg>
+);
+
+const LinkIcon = () => (
+  <svg viewBox="0 0 24 24" style={ICON_COMMON} aria-hidden="true">
+    <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.7 5.23" />
+    <path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07l1.41-1.41" />
+  </svg>
+);
+
+const RocketIcon = () => (
+  <svg viewBox="0 0 24 24" style={ICON_COMMON} aria-hidden="true">
+    <path d="M4.5 19.5c2.5-.2 4.2-1 5.7-2.5" />
+    <path d="M8 16l-2.5 2.5" />
+    <path d="M13 11l-4 4" />
+    <path d="M14 10c3.4-3.4 4.7-6.9 5-9 0 0-5.6.4-9 3.8L7 8l9 9 3-3z" />
+    <circle cx="15.5" cy="8.5" r="1.2" />
+  </svg>
+);
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -286,48 +327,6 @@ const Landing = () => {
       letterSpacing: '0.01em',
     },
   };
-
-  const iconCommon = {
-    width: 24,
-    height: 24,
-    stroke: 'currentColor',
-    strokeWidth: 1.9,
-    fill: 'none',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-  };
-
-  const RobotIcon = () => (
-    <svg viewBox="0 0 24 24" style={iconCommon} aria-hidden="true">
-      <path d="M12 3v3" />
-      <path d="M8 6h8" />
-      <rect x="4" y="8" width="16" height="10" rx="4" />
-      <path d="M9 18v2" />
-      <path d="M15 18v2" />
-      <path d="M7 12h.01" />
-      <path d="M17 12h.01" />
-      <path d="M8.5 15c1 .8 2.2 1.2 3.5 1.2s2.5-.4 3.5-1.2" />
-      <path d="M4 12H2" />
-      <path d="M22 12h-2" />
-    </svg>
-  );
-
-  const LinkIcon = () => (
-    <svg viewBox="0 0 24 24" style={iconCommon} aria-hidden="true">
-      <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.7 5.23" />
-      <path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07l1.41-1.41" />
-    </svg>
-  );
-
-  const RocketIcon = () => (
-    <svg viewBox="0 0 24 24" style={iconCommon} aria-hidden="true">
-      <path d="M4.5 19.5c2.5-.2 4.2-1 5.7-2.5" />
-      <path d="M8 16l-2.5 2.5" />
-      <path d="M13 11l-4 4" />
-      <path d="M14 10c3.4-3.4 4.7-6.9 5-9 0 0-5.6.4-9 3.8L7 8l9 9 3-3z" />
-      <circle cx="15.5" cy="8.5" r="1.2" />
-    </svg>
-  );
 
   const featureCards = [
     {

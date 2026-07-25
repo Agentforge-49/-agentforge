@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from tools.http_safety import UnsafeUrlError, safe_request
 
 
 class WebpageReaderTool:
@@ -39,7 +40,7 @@ class WebpageReaderTool:
             headers = {
                 "User-Agent": "Mozilla/5.0 (compatible; AgentForge Bot/1.0; +https://agentforge.ai)"
             }
-            response = requests.get(url, headers=headers, timeout=10)
+            response = safe_request("GET", url, headers=headers, timeout=10)
             
             # Check status code
             if response.status_code != 200:
@@ -74,6 +75,9 @@ class WebpageReaderTool:
         
         except requests.exceptions.Timeout:
             return "Error: The page took too long to respond"
+
+        except UnsafeUrlError as e:
+            return f"Error: Unsafe URL - {str(e)}"
         
         except requests.exceptions.RequestException as e:
             return f"Error: Could not read page - {str(e)}"

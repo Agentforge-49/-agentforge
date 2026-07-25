@@ -7,7 +7,7 @@ class AgentConfig(BaseModel):
     name: str = Field(..., description="Human-readable name of the agent")
     system_prompt: str = Field(default="", description="System prompt defining agent behavior")
     personality: Literal["professional", "friendly", "concise", "creative"] = "professional"
-    model: str = "claude-sonnet-4-6-20250514"
+    model: str = "claude-sonnet-4-6"
     temperature: float = Field(0.7, ge=0.0, le=1.0)
     max_tokens: int = Field(1000, ge=1, le=4096)
     enabled_tool_slugs: List[str] = Field(default_factory=list)

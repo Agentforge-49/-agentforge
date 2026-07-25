@@ -1,20 +1,6 @@
 // src/components/Toast.jsx
 
-import { useEffect, useState } from "react";
-
-export function useToast() {
-  const [toast, setToast] = useState(null);
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-  };
-
-  const hideToast = () => {
-    setToast(null);
-  };
-
-  return [toast, showToast, hideToast];
-}
+import { useCallback, useEffect, useState } from "react";
 
 export default function Toast({
   message,
@@ -22,6 +8,14 @@ export default function Toast({
   onClose,
 }) {
   const [visible, setVisible] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setVisible(false);
+
+    setTimeout(() => {
+      onClose?.();
+    }, 250);
+  }, [onClose]);
 
   useEffect(() => {
     const enterTimer = setTimeout(() => {
@@ -36,15 +30,7 @@ export default function Toast({
       clearTimeout(enterTimer);
       clearTimeout(closeTimer);
     };
-  }, []);
-
-  const handleClose = () => {
-    setVisible(false);
-
-    setTimeout(() => {
-      onClose?.();
-    }, 250);
-  };
+  }, [handleClose]);
 
   const config = {
     success: {

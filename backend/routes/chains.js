@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import fetch from 'node-fetch';
 import { supabase } from '../lib/supabase.js';
+import { executeAgent } from '../lib/engine.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -166,16 +166,7 @@ router.post('/:id/run', async (req, res, next) => {
 
       let engineResult;
       try {
-        const engineResponse = await fetch(`${process.env.AGENT_ENGINE_URL}/execute`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ agent_config: agentConfig, user_message: currentInput }),
-        });
-        if (!engineResponse.ok) {
-          const t = await engineResponse.text();
-          throw new Error(`Engine error: ${t}`);
-        }
-        engineResult = await engineResponse.json();
+        engineResult = await executeAgent(agentConfig, currentInput);
       } catch (engineErr) {
         chainStatus  = 'failed';
         errorMessage = engineErr.message;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import fetch from 'node-fetch';
 import { supabase } from '../lib/supabase.js';
+import { executeAgent } from '../lib/engine.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -103,13 +103,15 @@ router.post('/:id/run', async (req, res, next) => {
     const { data: run } = await supabase.from('agent_runs').insert({ agent_id: id, user_id: req.userId, status: 'running', input_text: message }).select().single();
 
     try {
-      const response = await fetch(`${process.env.AGENT_ENGINE_URL}/execute`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent_config: { ...agent, tools: agent.agent_tools.map(at => at.tools) }, user_message: message })
-      });
-      if (!response.ok) throw new Error(await response.text());
-      const result = await response.json();
+      const result = await executeAgent(
+        {
+          ...agent,
+          enabled_tool_slugs: agent.agent_tools
+            .map(at => at.tools?.slug)
+            .filter(Boolean),
+        },
+        message
+      );
 
       const { data: finalRun } = await supabase.from('agent_runs').update({
         status: 'completed', output_text: result.final_answer, run_trace: result.run_trace || [],

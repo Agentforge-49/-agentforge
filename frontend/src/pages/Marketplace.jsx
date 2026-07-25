@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getTemplates, useTemplate } from '../lib/api'
+import { getTemplates, useTemplate as instantiateTemplate } from '../lib/api'
 
 const CATEGORY_COLORS = {
   research:   '#3B82F6',
@@ -47,7 +47,7 @@ export default function Marketplace() {
   const handleUseTemplate = async (template) => {
     setUsing(template.id)
     try {
-      await useTemplate(template.id)
+      await instantiateTemplate(template.id)
       setToast(`✅ "${template.name}" added to your agents!`)
       setTimeout(() => { setToast(''); navigate('/dashboard') }, 2000)
     } catch (err) {

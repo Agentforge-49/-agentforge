@@ -1,8 +1,8 @@
 import os
 import logging
+import secrets
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from models import AgentConfig, RunResult
@@ -32,6 +32,8 @@ async def lifespan(app: FastAPI):
     executor = AgentExecutor()
     logger.info("AgentForge Engine ready - API key verified")
     logger.info(f"Registered tools: {list(executor.registry._tools.keys())}")
+    if not os.getenv("ENGINE_API_KEY"):
+        logger.warning("ENGINE_API_KEY is not set; /execute is not protected")
     yield
 
 app = FastAPI(
@@ -40,17 +42,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def require_engine_key(x_agentforge_key: str | None = Header(default=None)):
+    """Protect the internal execution endpoint with a shared backend key."""
+    expected_key = os.getenv("ENGINE_API_KEY")
+    if not expected_key:
+        return
+    if not x_agentforge_key or not secrets.compare_digest(x_agentforge_key, expected_key):
+        raise HTTPException(status_code=401, detail="Invalid engine credentials")
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.post("/execute", response_model=RunResult)
-async def execute_agent(request: ExecuteRequest):
+async def execute_agent(
+    request: ExecuteRequest,
+    _authorized: None = Depends(require_engine_key),
+):
     """
     Run an agent. Receives agent_config + user_message wrapped in ExecuteRequest.
     Returns RunResult with final_answer, run_trace, tokens_used, duration_ms, status.

@@ -286,36 +286,39 @@ export default function ChainRunHistory() {
   const [error, setError] = useState("");
   const [expandedRuns, setExpandedRuns] = useState({});
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const [chainResponse, runsResponse] = await Promise.all([
-        getChain(chainId),
-        getChainRuns(chainId),
-      ]);
-
-      setChain(chainResponse || null);
-
-      const sortedRuns = Array.isArray(runsResponse)
-        ? [...runsResponse].sort(
-            (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
-          )
-        : [];
-
-      setRuns(sortedRuns);
-    } catch (err) {
-      setError(
-        err?.message || "Something went wrong while loading chain run history."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+
+    Promise.all([getChain(chainId), getChainRuns(chainId)])
+      .then(([chainResponse, runsResponse]) => {
+        if (cancelled) return;
+
+        setChain(chainResponse || null);
+        setRuns(
+          Array.isArray(runsResponse)
+            ? [...runsResponse].sort(
+                (a, b) =>
+                  new Date(b.started_at).getTime() -
+                  new Date(a.started_at).getTime()
+              )
+            : []
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            err?.message ||
+              "Something went wrong while loading chain run history."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [chainId]);
 
   const runCountLabel = useMemo(() => {

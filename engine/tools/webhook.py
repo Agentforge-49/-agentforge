@@ -1,5 +1,5 @@
 import requests
-import json
+from tools.http_safety import UnsafeUrlError, safe_request
 
 
 class WebhookTool:
@@ -46,21 +46,21 @@ class WebhookTool:
             
             # Execute request based on method
             if method == "GET":
-                response = requests.get(url, headers=headers, timeout=10)
+                response = safe_request("GET", url, headers=headers, timeout=10)
             
             elif method == "POST":
                 if body and body.strip():
                     headers["Content-Type"] = "application/json"
-                    response = requests.post(url, data=body, headers=headers, timeout=10)
+                    response = safe_request("POST", url, data=body, headers=headers, timeout=10)
                 else:
-                    response = requests.post(url, headers=headers, timeout=10)
+                    response = safe_request("POST", url, headers=headers, timeout=10)
             
             elif method == "PUT":
                 if body and body.strip():
                     headers["Content-Type"] = "application/json"
-                    response = requests.put(url, data=body, headers=headers, timeout=10)
+                    response = safe_request("PUT", url, data=body, headers=headers, timeout=10)
                 else:
-                    response = requests.put(url, headers=headers, timeout=10)
+                    response = safe_request("PUT", url, headers=headers, timeout=10)
             
             else:
                 return f"Error: Unsupported method '{method}'. Use GET, POST, or PUT."
@@ -74,6 +74,9 @@ class WebhookTool:
         
         except requests.exceptions.Timeout:
             return "Error: The request timed out after 10 seconds"
+
+        except UnsafeUrlError as e:
+            return f"Error: Unsafe URL - {str(e)}"
         
         except requests.exceptions.RequestException as e:
             return f"Error: {str(e)}"
