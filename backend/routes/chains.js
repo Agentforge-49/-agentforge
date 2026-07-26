@@ -34,6 +34,23 @@ async function loadAgentConfig(agentId, userId) {
   };
 }
 
+async function validateOwnedAgents(agentIds, userId) {
+  const uniqueIds = [...new Set(agentIds)];
+
+  const { data: ownedAgents, error } = await supabase
+    .from('agents')
+    .select('id')
+    .eq('user_id', userId)
+    .in('id', uniqueIds);
+
+  if (error) throw error;
+  if ((ownedAgents || []).length !== uniqueIds.length) {
+    return { error: 'Every chain agent must belong to your account' };
+  }
+
+  return { error: null };
+}
+
 // GET /api/chains  — list all chains the user has created
 router.get('/', async (req, res, next) => {
   try {
@@ -50,6 +67,7 @@ router.get('/', async (req, res, next) => {
       const { data: agents } = await supabase
         .from('agents')
         .select('id, name')
+        .eq('user_id', req.userId)
         .in('id', allAgentIds);
       agentMap = Object.fromEntries((agents || []).map(a => [a.id, a.name]));
     }
@@ -67,15 +85,49 @@ router.get('/', async (req, res, next) => {
 // body: { name, description, agent_ids: [uuid, uuid, ...] }
 router.post('/', async (req, res, next) => {
   try {
-    const { name, description, agent_ids } = req.body;
+    const {
+      name,
+      description,
+      agent_ids,
+      branch_keyword,
+      branch_agent_if_id,
+      branch_agent_else_id,
+    } = req.body;
     if (!name) return res.status(400).json({ error: 'Chain name is required' });
     if (!Array.isArray(agent_ids) || agent_ids.length < 2) {
       return res.status(400).json({ error: 'A chain needs at least 2 agents' });
     }
+    if (agent_ids.length > 25) {
+      return res.status(400).json({ error: 'A chain can contain at most 25 agents' });
+    }
+    if (new Set(agent_ids).size !== agent_ids.length) {
+      return res.status(400).json({ error: 'A chain cannot contain duplicate agents' });
+    }
+    if ((branch_agent_if_id || branch_agent_else_id) && !branch_keyword?.trim()) {
+      return res.status(400).json({ error: 'A branch keyword is required when branch agents are selected' });
+    }
+
+    const referencedAgentIds = [
+      ...agent_ids,
+      branch_agent_if_id,
+      branch_agent_else_id,
+    ].filter(Boolean);
+    const validation = await validateOwnedAgents(referencedAgentIds, req.userId);
+    if (validation.error) {
+      return res.status(400).json({ error: validation.error });
+    }
 
     const { data: chain, error } = await supabase
       .from('agent_chains')
-      .insert({ user_id: req.userId, name, description, agent_ids })
+      .insert({
+        user_id: req.userId,
+        name: name.trim(),
+        description,
+        agent_ids,
+        branch_keyword: branch_keyword?.trim() || null,
+        branch_agent_if_id: branch_agent_if_id || null,
+        branch_agent_else_id: branch_agent_else_id || null,
+      })
       .select()
       .single();
     if (error) throw error;
@@ -98,6 +150,7 @@ router.get('/:id', async (req, res, next) => {
     const { data: agents } = await supabase
       .from('agents')
       .select('id, name, description, category')
+      .eq('user_id', req.userId)
       .in('id', chain.agent_ids);
 
     const orderedAgents = chain.agent_ids
@@ -221,9 +274,10 @@ router.post('/:id/run', async (req, res, next) => {
     if (runError) throw runError;
 
     if (profile) {
-      await supabase.from('profiles')
-        .update({ api_calls_used: profile.api_calls_used + chain.agent_ids.length })
-        .eq('id', req.userId);
+      await supabase.rpc('increment_api_usage', {
+        p_user_id: req.userId,
+        p_amount: steps.length,
+      });
     }
 
     res.json(chainRun);

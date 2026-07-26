@@ -118,9 +118,10 @@ router.post('/:id/run', async (req, res, next) => {
         tokens_used: result.tokens_used || 0, duration_ms: result.duration_ms || 0, completed_at: new Date().toISOString()
       }).eq('id', run.id).select().single();
 
-      await supabase.from('profiles')
-        .update({ api_calls_used: profile.api_calls_used + 1 })
-        .eq('id', req.userId);
+      await supabase.rpc('increment_api_usage', {
+        p_user_id: req.userId,
+        p_amount: 1,
+      });
 
       await supabase.from('agents')
         .update({ 
@@ -132,7 +133,10 @@ router.post('/:id/run', async (req, res, next) => {
       return res.status(200).json(finalRun);
     } catch (err) {
       const { data: failedRun } = await supabase.from('agent_runs').update({ status: 'failed', error_message: err.message, completed_at: new Date().toISOString() }).eq('id', run.id).select().single();
-      await supabase.from('profiles').update({ api_calls_used: profile.api_calls_used + 1 }).eq('id', req.userId);
+      await supabase.rpc('increment_api_usage', {
+        p_user_id: req.userId,
+        p_amount: 1,
+      });
       return res.status(200).json(failedRun);
     }
   } catch (err) { next(err); }

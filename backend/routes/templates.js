@@ -31,7 +31,9 @@ router.post('/:id/use', requireAuth, async (req, res, next) => {
         attachedTools = tools;
       }
     }
-    await supabase.from('templates').update({ usage_count: template.usage_count + 1 }).eq('id', template.id);
+    await supabase.rpc('increment_template_usage', {
+      p_template_id: template.id,
+    });
     return res.status(201).json({ ...agent, tools: attachedTools });
   } catch (err) { next(err); }
 });
