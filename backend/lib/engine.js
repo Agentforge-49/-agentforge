@@ -1,15 +1,27 @@
 import fetch from 'node-fetch';
 
-export async function executeAgent(agentConfig, userMessage) {
+function getEngineUrl() {
   const engineUrl = process.env.AGENT_ENGINE_URL?.replace(/\/+$/, '');
   if (!engineUrl) {
     throw new Error('AGENT_ENGINE_URL is not configured');
   }
+  return engineUrl;
+}
 
-  const headers = { 'Content-Type': 'application/json' };
+function getEngineHeaders() {
+  const headers = {};
   if (process.env.ENGINE_API_KEY) {
     headers['X-AgentForge-Key'] = process.env.ENGINE_API_KEY;
   }
+  return headers;
+}
+
+export async function executeAgent(agentConfig, userMessage) {
+  const engineUrl = getEngineUrl();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getEngineHeaders(),
+  };
 
   const response = await fetch(`${engineUrl}/execute`, {
     method: 'POST',
@@ -26,4 +38,22 @@ export async function executeAgent(agentConfig, userMessage) {
   }
 
   return response.json();
+}
+
+export async function getEngineHealth() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    const response = await fetch(`${getEngineUrl()}/health`, {
+      headers: getEngineHeaders(),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Engine health check returned ${response.status}`);
+    }
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }

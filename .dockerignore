@@ -1,0 +1,12 @@
+.git
+.gitignore
+.vscode
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/__pycache__
+**/*.pyc
+frontend/dist
+docs
+supabase

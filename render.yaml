@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: agentforge-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://agentforge-qccm.vercel.app
+      - key: AGENT_ENGINE_URL
+        value: http://127.0.0.1:8000
+      - key: SUPABASE_URL
+        value: https://elieqqaxxkzfvyseqhlu.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ENGINE_API_KEY
+        generateValue: true

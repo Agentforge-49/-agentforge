@@ -7,6 +7,7 @@ import runsRouter from './routes/runs.js';
 import templatesRouter from './routes/templates.js';
 import dashboardRouter from './routes/dashboard.js';
 import chainsRouter from './routes/chains.js';
+import { getEngineHealth } from './lib/engine.js';
 
 dotenv.config();
 
@@ -26,8 +27,21 @@ app.use('/api/templates', templatesRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/chains', chainsRouter);
 // Base Diagnostics
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+app.get('/health', async (req, res) => {
+  try {
+    const engine = await getEngineHealth();
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date(),
+      engine: engine.status,
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'degraded',
+      timestamp: new Date(),
+      engine: 'unavailable',
+    });
+  }
 });
 
 // Structural Fallback Error Capture Handler
