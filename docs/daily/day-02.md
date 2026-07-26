@@ -34,6 +34,10 @@ Date: 2026-07-25
 - Raised the Supabase minimum password length from 6 to 8.
 - Enabled recent reauthentication and current-password checks for password
   changes.
+- Added a single-container Docker deployment that runs the Node API and Python
+  agent engine together with an authenticated private engine connection.
+- Created the free Render `agentforge-api` service and moved the production
+  frontend API configuration off the expired Railway deployment.
 
 ## Verified
 
@@ -49,13 +53,19 @@ Date: 2026-07-25
 - Backend JavaScript syntax: passed.
 - Frontend lint: passed.
 - Frontend production build: passed.
+- Combined API and engine smoke test: passed.
+- Render production health check: `status=ok`, `engine=ok`.
+- Vercel production redeploy: ready.
+- Production frontend bundle references the Render API URL.
+- Production CORS preflight: passed for the Vercel origin.
+- Unauthenticated production API request: rejected with HTTP 401 as expected.
 
 ## Blockers
 
 - Supabase leaked-password checking requires a Pro plan, so it remains disabled.
   No purchase was made.
-- Railway still requires plan reactivation before the backend and engine can run
-  in production.
+- The free Render instance sleeps after inactivity, so the first request after
+  a quiet period can take roughly 50 seconds. No purchase was made.
 
 ## Next priority
 
