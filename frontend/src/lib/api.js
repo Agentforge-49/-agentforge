@@ -32,6 +32,16 @@ export const createAgent  = (data)       => request('POST',   '/api/agents', dat
 export const updateAgent  = (id, data)   => request('PUT',    `/api/agents/${id}`, data)
 export const deleteAgent  = (id)         => request('DELETE', `/api/agents/${id}`)
 export const runAgent     = (id, message)=> request('POST',   `/api/agents/${id}/run`, { message })
+export const getAgentVersions = (id)     => request('GET',    `/api/agents/${id}/versions`)
+export const publishAgent = (id, changeSummary = '') =>
+  request('POST', `/api/agents/${id}/publish`, { change_summary: changeSummary })
+export const rollbackAgent = (id, versionId, changeSummary = '') =>
+  request('POST', `/api/agents/${id}/rollback`, {
+    version_id: versionId,
+    change_summary: changeSummary
+  })
+export const pauseAgent  = (id) => request('POST', `/api/agents/${id}/pause`)
+export const resumeAgent = (id) => request('POST', `/api/agents/${id}/resume`)
 
 // ── Runs ─────────────────────────────────────────────────────────────────────
 export const getRuns      = ()    => request('GET', '/api/runs')

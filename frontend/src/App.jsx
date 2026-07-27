@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import CreateAgent from './pages/CreateAgent'
 import AgentRun from './pages/AgentRun'
 import AgentRunHistory from './pages/AgentRunHistory'
+import AgentVersions from './pages/AgentVersions'
 import Marketplace from './pages/Marketplace'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -57,6 +58,8 @@ export default function App() {
         <Route path="/signup"            element={<Signup   setUser={setUser} />} />
         <Route path="/dashboard"         element={protect(Dashboard)} />
         <Route path="/agents/new"        element={protect(CreateAgent)} />
+        <Route path="/agents/:id/edit"   element={protect(CreateAgent)} />
+        <Route path="/agents/:id/versions" element={protect(AgentVersions)} />
         <Route path="/agents/:id/run"    element={protect(AgentRun)} />
         <Route path="/agents/:id/runs"   element={protect(AgentRunHistory)} />
         <Route path="/marketplace"       element={protect(Marketplace)} />

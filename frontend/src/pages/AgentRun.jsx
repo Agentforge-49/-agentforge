@@ -115,6 +115,11 @@ export default function AgentRun() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: statusColors[agent?.status] || '#6B7280', display: 'inline-block' }} />
             <span style={{ color: '#9CA3AF', fontSize: 12 }}>{agent?.description || 'No description'}</span>
+            {agent?.published_version_id && (
+              <span style={{ color: '#C4B5FD', fontSize: 11, background: '#4C1D9555', padding: '2px 6px', borderRadius: 6 }}>
+                Published v{agent.latest_version_number}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -159,6 +164,10 @@ export default function AgentRun() {
             <div style={{ marginTop: 12, padding: 14, background: '#0F1117', border: '1px solid #2A2D3E', borderRadius: 10 }}>
               <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>Model</div>
               <div style={{ fontSize: 13, color: 'white', marginBottom: 10 }}>{agent?.model || 'claude-sonnet-4-6'}</div>
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>Version</div>
+              <div style={{ fontSize: 13, color: 'white', marginBottom: 10 }}>
+                {agent?.latest_version_number ? `Published v${agent.latest_version_number}` : 'Unpublished draft'}
+              </div>
               <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>Enabled Tools</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {agent?.tools?.length > 0
@@ -224,6 +233,7 @@ export default function AgentRun() {
                 <span>⏱ {((result.duration_ms || 0) / 1000).toFixed(1)}s</span>
                 <span>🔤 {result.tokens_used || 0} tokens</span>
                 <span>🤖 {agent?.model || 'claude-sonnet-4-6'}</span>
+                <span>Version {result.agent_version_number || agent?.latest_version_number || '—'}</span>
                 <span style={{ color: result.status === 'completed' ? '#34D399' : '#EF4444' }}>
                   {result.status === 'completed' ? '✓ Completed' : result.status === 'timeout' ? '⏱ Timeout' : '✗ Failed'}
                 </span>

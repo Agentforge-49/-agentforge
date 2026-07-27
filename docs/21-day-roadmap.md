@@ -56,7 +56,8 @@ the architecture and flagship experience needed to compete.
 
 ## Current external constraint
 
-Railway cannot run the backend or engine while the workspace trial is expired.
-No purchase will be made automatically. Code and configuration work can continue,
-but production end-to-end execution needs an active compute plan or an approved
-alternative host.
+The backend and engine now run together on Render's free tier, replacing the
+expired Railway deployment without a purchase. The service sleeps after
+inactivity, so the first request after a quiet period can take roughly 50
+seconds. Supabase leaked-password checking also remains unavailable on the free
+plan.

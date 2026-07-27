@@ -6,31 +6,39 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 router.use(requireAuth);
 
-// Loads one agent plus its enabled tools, formatted exactly how the
-// Python engine expects it. Used inside the chain-running loop below.
+// Loads the immutable published version used by a chain step.
 async function loadAgentConfig(agentId, userId) {
   const { data: agent, error } = await supabase
     .from('agents')
-    .select(`*, agent_tools ( tools ( slug ) )`)
+    .select('id, status, published_version_id')
     .eq('id', agentId)
     .eq('user_id', userId)
     .single();
 
   if (error || !agent) return null;
+  if (agent.status !== 'active' || !agent.published_version_id) return null;
 
-  const enabled_tool_slugs = (agent.agent_tools || [])
-    .map(at => at.tools?.slug)
-    .filter(Boolean);
+  const { data: version, error: versionError } = await supabase
+    .from('agent_versions')
+    .select('*')
+    .eq('id', agent.published_version_id)
+    .eq('agent_id', agent.id)
+    .eq('user_id', userId)
+    .single();
+
+  if (versionError || !version) return null;
 
   return {
     id: agent.id,
-    name: agent.name,
-    system_prompt: agent.system_prompt || '',
-    personality: agent.personality || 'professional',
-    model: agent.model || 'claude-sonnet-4-6',
-    temperature: agent.temperature ?? 0.7,
-    max_tokens: agent.max_tokens || 1000,
-    enabled_tool_slugs,
+    version_id: version.id,
+    version_number: version.version_number,
+    name: version.name,
+    system_prompt: version.system_prompt || '',
+    personality: version.personality || 'professional',
+    model: version.model || 'claude-sonnet-4-6',
+    temperature: version.temperature ?? 0.7,
+    max_tokens: version.max_tokens || 1000,
+    enabled_tool_slugs: version.tool_slugs || [],
   };
 }
 
@@ -39,13 +47,16 @@ async function validateOwnedAgents(agentIds, userId) {
 
   const { data: ownedAgents, error } = await supabase
     .from('agents')
-    .select('id')
+    .select('id, status, published_version_id')
     .eq('user_id', userId)
     .in('id', uniqueIds);
 
   if (error) throw error;
   if ((ownedAgents || []).length !== uniqueIds.length) {
     return { error: 'Every chain agent must belong to your account' };
+  }
+  if (ownedAgents.some(agent => agent.status !== 'active' || !agent.published_version_id)) {
+    return { error: 'Every chain agent must be published and active' };
   }
 
   return { error: null };
@@ -212,7 +223,7 @@ router.post('/:id/run', async (req, res, next) => {
 
       if (!agentConfig) {
         chainStatus  = 'failed';
-        errorMessage = `Agent ${agentId} not found`;
+        errorMessage = `Agent ${agentId} is missing, paused, or unpublished`;
         steps.push({ agent_id: agentId, status: 'failed', error: errorMessage });
         break;
       }
@@ -225,6 +236,8 @@ router.post('/:id/run', async (req, res, next) => {
         errorMessage = engineErr.message;
         steps.push({
           agent_id: agentId,
+          agent_version_id: agentConfig.version_id,
+          agent_version_number: agentConfig.version_number,
           agent_name: agentConfig.name,
           input: currentInput,
           status: 'failed',
@@ -238,6 +251,8 @@ router.post('/:id/run', async (req, res, next) => {
 
       steps.push({
         agent_id:    agentId,
+        agent_version_id: agentConfig.version_id,
+        agent_version_number: agentConfig.version_number,
         agent_name:  agentConfig.name,
         input:       currentInput,
         output:      engineResult.final_answer,

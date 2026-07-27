@@ -24,7 +24,7 @@ export default function CreateChain() {
     async function load() {
       try {
         const data = await getAgents()
-        setAllAgents(data)
+        setAllAgents(data.filter(agent => agent.status === 'active' && agent.published_version_id))
       } catch (err) {
         setError(err.message || 'Failed to load your agents')
       } finally {
@@ -135,7 +135,7 @@ export default function CreateChain() {
 
       {allAgents.length < 2 && (
         <div style={{ background:'#2D1515', border:'1px solid #EF4444', borderRadius:10, padding:'14px 18px', color:'#FCA5A5', fontSize:13, marginBottom:20 }}>
-          ⚠️ You need at least 2 agents before you can build a chain. Go to the Dashboard and create another agent first.
+          ⚠️ You need at least 2 published, active agents before you can build a chain.
         </div>
       )}
 

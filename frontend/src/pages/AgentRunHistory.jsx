@@ -119,8 +119,9 @@ export default function AgentRunHistory() {
         <div style={{ background:'#1A1D27', border:'1px solid #2A2D3E', borderRadius:16, overflow:'hidden' }}>
 
           {/* Table header */}
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 3fr', gap:10, padding:'12px 18px', borderBottom:'1px solid #2A2D3E', fontSize:11, color:'#6B7280', textTransform:'uppercase', letterSpacing:'.4px' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1.5fr .8fr 1fr 1fr 1fr 3fr', gap:10, padding:'12px 18px', borderBottom:'1px solid #2A2D3E', fontSize:11, color:'#6B7280', textTransform:'uppercase', letterSpacing:'.4px' }}>
             <div>Time</div>
+            <div>Version</div>
             <div>Status</div>
             <div>Duration</div>
             <div>Tokens</div>
@@ -136,13 +137,16 @@ export default function AgentRunHistory() {
               <div key={run.id}>
                 {/* Row */}
                 <button onClick={() => setExpanded(isExp ? null : run.id)}
-                  style={{ width:'100%', display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 3fr', gap:10, padding:'14px 18px', background:'transparent', border:'none', borderBottom: i < filtered.length-1 ? '1px solid #2A2D3E' : 'none', cursor:'pointer', textAlign:'left', color:'white', alignItems:'center' }}
+                  style={{ width:'100%', display:'grid', gridTemplateColumns:'1.5fr .8fr 1fr 1fr 1fr 3fr', gap:10, padding:'14px 18px', background:'transparent', border:'none', borderBottom: i < filtered.length-1 ? '1px solid #2A2D3E' : 'none', cursor:'pointer', textAlign:'left', color:'white', alignItems:'center' }}
                   onMouseEnter={e => e.currentTarget.style.background='#0F1117'}
                   onMouseLeave={e => e.currentTarget.style.background='transparent'}
                 >
                   <div>
                     <div style={{ fontSize:13 }}>{timeAgo(run.started_at)}</div>
                     <div style={{ fontSize:11, color:'#6B7280', marginTop:2 }}>{new Date(run.started_at).toLocaleTimeString()}</div>
+                  </div>
+                  <div style={{ fontSize:12, color:'#C4B5FD' }}>
+                    {run.agent_version_number ? `v${run.agent_version_number}` : 'Legacy'}
                   </div>
                   <div>
                     <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:500, padding:'3px 8px', borderRadius:8, background: s.bg, color: s.color }}>
