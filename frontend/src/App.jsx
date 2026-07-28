@@ -17,6 +17,8 @@ import ChainRun from './pages/ChainRun'
 import ChainRunHistory from './pages/ChainRunHistory'
 import Workflows from './pages/Workflows'
 import WorkflowBuilder from './pages/WorkflowBuilder'
+import Triggers from './pages/Triggers'
+import Credentials from './pages/Credentials'
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -73,6 +75,8 @@ export default function App() {
         <Route path="/workflows"         element={protect(Workflows)} />
         <Route path="/workflows/new"     element={protect(WorkflowBuilder)} />
         <Route path="/workflows/:id/edit" element={protect(WorkflowBuilder)} />
+        <Route path="/triggers"          element={protect(Triggers)} />
+        <Route path="/credentials"       element={protect(Credentials)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

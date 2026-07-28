@@ -16,6 +16,8 @@ services:
         value: https://agentforge-qccm.vercel.app
       - key: AGENT_ENGINE_URL
         value: http://127.0.0.1:8000
+      - key: PUBLIC_API_URL
+        value: https://agentforge-api-yml4.onrender.com
       - key: SUPABASE_URL
         value: https://elieqqaxxkzfvyseqhlu.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -24,3 +26,7 @@ services:
         sync: false
       - key: ENGINE_API_KEY
         generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY_VERSION
+        value: v1

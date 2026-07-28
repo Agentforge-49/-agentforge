@@ -84,3 +84,28 @@ export const runWorkflow = (id, input, idempotencyKey) =>
     idempotency_key: idempotencyKey
   })
 export const getWorkflowRuns = (id) => request('GET', `/api/workflows/${id}/runs`)
+
+// Triggers
+export const getTriggers = () => request('GET', '/api/triggers')
+export const createTrigger = (data) => request('POST', '/api/triggers', data)
+export const deleteTrigger = (id) => request('DELETE', `/api/triggers/${id}`)
+export const pauseTrigger = (id) => request('POST', `/api/triggers/${id}/pause`)
+export const resumeTrigger = (id) => request('POST', `/api/triggers/${id}/resume`)
+export const fireTrigger = (id, input, idempotencyKey) =>
+  request('POST', `/api/triggers/${id}/fire`, {
+    input,
+    idempotency_key: idempotencyKey
+  })
+export const rotateTriggerSecret = (id) =>
+  request('POST', `/api/triggers/${id}/rotate-secret`)
+export const getTriggerEvents = (id) => request('GET', `/api/triggers/${id}/events`)
+
+// Credential vault
+export const getCredentials = () => request('GET', '/api/credentials')
+export const createCredential = (data) => request('POST', '/api/credentials', data)
+export const updateCredential = (id, data) => request('PUT', `/api/credentials/${id}`, data)
+export const rotateCredential = (id, secret) =>
+  request('POST', `/api/credentials/${id}/rotate`, { secret })
+export const testCredential = (id) => request('POST', `/api/credentials/${id}/test`)
+export const deleteCredential = (id) => request('DELETE', `/api/credentials/${id}`)
+export const getCredentialAccessLogs = () => request('GET', '/api/credentials/access/logs')

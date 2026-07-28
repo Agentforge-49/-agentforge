@@ -9,15 +9,24 @@ import dashboardRouter from './routes/dashboard.js';
 import chainsRouter from './routes/chains.js';
 import jobsRouter from './routes/jobs.js';
 import workflowsRouter from './routes/workflows.js';
+import triggersRouter from './routes/triggers.js';
+import webhooksRouter from './routes/webhooks.js';
+import credentialsRouter from './routes/credentials.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
+import { startTriggerScheduler } from './lib/trigger-scheduler.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(express.json());
+app.use(express.json({
+  limit: '64kb',
+  verify: (req, _res, buffer) => {
+    req.rawBody = Buffer.from(buffer);
+  },
+}));
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
@@ -31,6 +40,9 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/chains', chainsRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/workflows', workflowsRouter);
+app.use('/api/triggers', triggersRouter);
+app.use('/api/credentials', credentialsRouter);
+app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {
   try {
@@ -60,10 +72,12 @@ const server = app.listen(PORT, () => {
   console.log(`AgentForge API running on port ${PORT}`);
 });
 const stopWorker = startJobWorker();
+const stopScheduler = startTriggerScheduler();
 
 function shutdown(signal) {
   console.log(`${signal} received; stopping AgentForge`);
   stopWorker();
+  stopScheduler();
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(1), 10000).unref();
 }
