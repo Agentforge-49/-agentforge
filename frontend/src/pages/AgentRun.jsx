@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate }       from 'react-router-dom'
 import { Play, ChevronDown, ChevronUp, Bot, Zap, Search, Calculator, Brain, FileText, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
-import { getAgent, runAgent } from '../lib/api'
+import { cancelJob, getAgent, getJob, runAgent } from '../lib/api'
 
 // Icon for each trace step type
 const STEP_ICONS = {
@@ -41,6 +41,7 @@ export default function AgentRun() {
   const [running,      setRunning]      = useState(false)
   const [runError,     setRunError]     = useState('')
   const [result,       setResult]       = useState(null)   // RunResult from engine
+  const [job,          setJob]          = useState(null)
   const [showTrace,    setShowTrace]    = useState(true)
   const [showSettings, setShowSettings] = useState(false)
 
@@ -71,13 +72,32 @@ export default function AgentRun() {
     setRunning(true)
     setRunError('')
     setResult(null)
+    setJob(null)
     try {
-      const data = await runAgent(id, message.trim())
-      setResult(data)
+      const queued = await runAgent(id, message.trim(), crypto.randomUUID())
+      setJob(queued.job)
+      let current = queued.job
+      while (!['succeeded', 'failed', 'cancelled'].includes(current.status)) {
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        current = await getJob(current.id)
+        setJob(current)
+      }
+      const run = current.resource || queued.run
+      setResult(run)
     } catch (err) {
       setRunError(err.message || 'Run failed. Please try again.')
     } finally {
       setRunning(false)
+    }
+  }
+
+  const handleCancel = async () => {
+    if (!job?.id) return
+    try {
+      const cancelled = await cancelJob(job.id)
+      setJob(cancelled)
+    } catch (err) {
+      setRunError(err.message || 'Could not cancel this run')
     }
   }
 
@@ -147,6 +167,18 @@ export default function AgentRun() {
               ? <><Loader2 size={16} style={{ animation: 'spin .8s linear infinite' }} /> Running...</>
               : <><Play    size={16} /> Run Agent</>}
           </button>
+
+          {running && job && (
+            <div style={{ marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, color:'#9CA3AF', fontSize:12 }}>
+              <span>
+                Job {job.status === 'retry_wait' ? `retrying after attempt ${job.attempt}` : job.status}
+              </span>
+              <button onClick={handleCancel}
+                style={{ background:'transparent', border:'1px solid #7F1D1D', color:'#FCA5A5', padding:'5px 10px', borderRadius:7, cursor:'pointer', fontSize:11 }}>
+                Cancel
+              </button>
+            </div>
+          )}
 
           {runError && (
             <div style={{ marginTop: 12, background: '#2D1515', border: '1px solid #EF4444', borderRadius: 10, padding: '10px 14px', color: '#FCA5A5', fontSize: 13 }}>

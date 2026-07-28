@@ -7,7 +7,10 @@ import runsRouter from './routes/runs.js';
 import templatesRouter from './routes/templates.js';
 import dashboardRouter from './routes/dashboard.js';
 import chainsRouter from './routes/chains.js';
+import jobsRouter from './routes/jobs.js';
+import workflowsRouter from './routes/workflows.js';
 import { getEngineHealth } from './lib/engine.js';
+import { startJobWorker } from './lib/job-worker.js';
 
 dotenv.config();
 
@@ -26,6 +29,8 @@ app.use('/api/runs', runsRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/chains', chainsRouter);
+app.use('/api/jobs', jobsRouter);
+app.use('/api/workflows', workflowsRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {
   try {
@@ -51,6 +56,17 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: err.message || 'Internal Server Error' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`AgentForge API running on port ${PORT}`);
 });
+const stopWorker = startJobWorker();
+
+function shutdown(signal) {
+  console.log(`${signal} received; stopping AgentForge`);
+  stopWorker();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

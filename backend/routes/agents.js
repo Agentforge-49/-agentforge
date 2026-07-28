@@ -5,7 +5,6 @@ import {
   validateAgentConfig,
   validateToolSlugs,
 } from '../lib/agent-config.js';
-import { executeAgent } from '../lib/engine.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -400,113 +399,23 @@ router.post('/:id/run', async (req, res, next) => {
     if (message.length > 50000) {
       return validationError(res, ['Message must be 50,000 characters or fewer']);
     }
-
-    const agent = await loadOwnedAgent(
-      req.params.id,
-      req.userId,
-      'id, status, published_version_id, run_count',
-    );
-    if (!agent) return res.status(404).json({ error: 'Agent not found' });
-    if (!agent.published_version_id || agent.status === 'draft') {
-      return res.status(409).json({ error: 'Publish the agent before running it' });
+    const idempotencyKey = req.get('Idempotency-Key')
+      || req.body?.idempotency_key
+      || null;
+    const { data, error } = await supabase.rpc('enqueue_agent_run', {
+      p_user_id: req.userId,
+      p_agent_id: req.params.id,
+      p_message: message,
+      p_idempotency_key: idempotencyKey,
+    });
+    if (error) {
+      const status = /not found/i.test(error.message) ? 404
+        : /published and active/i.test(error.message) ? 409
+          : /monthly limit/i.test(error.message) ? 429
+            : 400;
+      return res.status(status).json({ error: error.message });
     }
-    if (agent.status === 'paused') {
-      return res.status(409).json({ error: 'Resume the agent before running it' });
-    }
-
-    const { data: version, error: versionError } = await supabase
-      .from('agent_versions')
-      .select('*')
-      .eq('id', agent.published_version_id)
-      .eq('agent_id', agent.id)
-      .eq('user_id', req.userId)
-      .single();
-    if (versionError || !version) {
-      return res.status(409).json({ error: 'Published agent version is unavailable' });
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_calls_used, api_calls_limit')
-      .eq('id', req.userId)
-      .single();
-    if (profileError) throw profileError;
-    if (profile.api_calls_used >= profile.api_calls_limit) {
-      return res.status(429).json({ error: 'Monthly limit reached. Upgrade to Pro.' });
-    }
-
-    const { data: run, error: runError } = await supabase
-      .from('agent_runs')
-      .insert({
-        agent_id: agent.id,
-        agent_version_id: version.id,
-        user_id: req.userId,
-        status: 'running',
-        input_text: message,
-      })
-      .select()
-      .single();
-    if (runError) throw runError;
-
-    try {
-      const result = await executeAgent({
-        ...version,
-        id: agent.id,
-        enabled_tool_slugs: version.tool_slugs || [],
-      }, message);
-
-      const { data: finalRun, error: finalError } = await supabase
-        .from('agent_runs')
-        .update({
-          status: 'completed',
-          output_text: result.final_answer,
-          run_trace: result.run_trace || [],
-          tokens_used: result.tokens_used || 0,
-          duration_ms: result.duration_ms || 0,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', run.id)
-        .eq('user_id', req.userId)
-        .select()
-        .single();
-      if (finalError) throw finalError;
-
-      await supabase.rpc('increment_api_usage', {
-        p_user_id: req.userId,
-        p_amount: 1,
-      });
-      await supabase
-        .from('agents')
-        .update({ run_count: (agent.run_count || 0) + 1 })
-        .eq('id', agent.id)
-        .eq('user_id', req.userId);
-
-      return res.status(200).json({
-        ...finalRun,
-        agent_version_number: version.version_number,
-      });
-    } catch (err) {
-      const { data: failedRun } = await supabase
-        .from('agent_runs')
-        .update({
-          status: 'failed',
-          error_message: err.message,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', run.id)
-        .eq('user_id', req.userId)
-        .select()
-        .single();
-
-      await supabase.rpc('increment_api_usage', {
-        p_user_id: req.userId,
-        p_amount: 1,
-      });
-      return res.status(200).json({
-        ...failedRun,
-        agent_version_number: version.version_number,
-      });
-    }
+    return res.status(data.deduplicated ? 200 : 202).json(data);
   } catch (err) {
     next(err);
   }

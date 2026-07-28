@@ -1,11 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Bot, Store, Link2, LogOut } from 'lucide-react'
+import { LayoutDashboard, Bot, Store, Link2, LogOut, Workflow } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const NAV = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
   { to: '/agents/new',  icon: Bot,             label: 'New Agent'   },
   { to: '/chains',      icon: Link2,           label: 'Chains'      },
+  { to: '/workflows',   icon: Workflow,        label: 'Workflows'   },
   { to: '/marketplace', icon: Store,           label: 'Marketplace' },
 ]
 

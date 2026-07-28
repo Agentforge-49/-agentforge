@@ -31,7 +31,11 @@ export const getAgent     = (id)         => request('GET',    `/api/agents/${id}
 export const createAgent  = (data)       => request('POST',   '/api/agents', data)
 export const updateAgent  = (id, data)   => request('PUT',    `/api/agents/${id}`, data)
 export const deleteAgent  = (id)         => request('DELETE', `/api/agents/${id}`)
-export const runAgent     = (id, message)=> request('POST',   `/api/agents/${id}/run`, { message })
+export const runAgent = (id, message, idempotencyKey) =>
+  request('POST', `/api/agents/${id}/run`, {
+    message,
+    idempotency_key: idempotencyKey
+  })
 export const getAgentVersions = (id)     => request('GET',    `/api/agents/${id}/versions`)
 export const publishAgent = (id, changeSummary = '') =>
   request('POST', `/api/agents/${id}/publish`, { change_summary: changeSummary })
@@ -47,6 +51,9 @@ export const resumeAgent = (id) => request('POST', `/api/agents/${id}/resume`)
 export const getRuns      = ()    => request('GET', '/api/runs')
 export const getRun       = (id)  => request('GET', `/api/runs/${id}`)
 export const getAgentRuns = (id)  => request('GET', `/api/runs/agent/${id}`)
+export const getJobs      = ()    => request('GET', '/api/jobs')
+export const getJob       = (id)  => request('GET', `/api/jobs/${id}`)
+export const cancelJob    = (id)  => request('POST', `/api/jobs/${id}/cancel`)
 
 // ── Templates ────────────────────────────────────────────────────────────────
 export const getTemplates  = ()   => request('GET',  '/api/templates')
@@ -62,3 +69,18 @@ export const createChain   = (data)              => request('POST',   '/api/chai
 export const deleteChain   = (id)                => request('DELETE', `/api/chains/${id}`)
 export const runChain      = (id, message)       => request('POST',   `/api/chains/${id}/run`, { message })
 export const getChainRuns  = (id)                => request('GET',    `/api/chains/${id}/runs`)
+
+// Workflows
+export const getWorkflows = () => request('GET', '/api/workflows')
+export const getWorkflow = (id) => request('GET', `/api/workflows/${id}`)
+export const createWorkflow = (data) => request('POST', '/api/workflows', data)
+export const updateWorkflow = (id, data) => request('PUT', `/api/workflows/${id}`, data)
+export const deleteWorkflow = (id) => request('DELETE', `/api/workflows/${id}`)
+export const activateWorkflow = (id) => request('POST', `/api/workflows/${id}/activate`)
+export const pauseWorkflow = (id) => request('POST', `/api/workflows/${id}/pause`)
+export const runWorkflow = (id, input, idempotencyKey) =>
+  request('POST', `/api/workflows/${id}/run`, {
+    input,
+    idempotency_key: idempotencyKey
+  })
+export const getWorkflowRuns = (id) => request('GET', `/api/workflows/${id}/runs`)

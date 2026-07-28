@@ -16,28 +16,43 @@ function getEngineHeaders() {
   return headers;
 }
 
-export async function executeAgent(agentConfig, userMessage) {
+export async function executeAgent(agentConfig, userMessage, options = {}) {
   const engineUrl = getEngineUrl();
+  const controller = new AbortController();
+  const timeoutMs = Math.max(5000, (options.timeoutSeconds || 90) * 1000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const headers = {
     'Content-Type': 'application/json',
     ...getEngineHeaders(),
   };
 
-  const response = await fetch(`${engineUrl}/execute`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      agent_config: agentConfig,
-      user_message: userMessage,
-    }),
-  });
+  try {
+    const response = await fetch(`${engineUrl}/execute`, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        agent_config: agentConfig,
+        user_message: userMessage,
+      }),
+    });
 
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Engine error (${response.status}): ${detail.slice(0, 500)}`);
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Engine error (${response.status}): ${detail.slice(0, 500)}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error(`Execution exceeded ${Math.round(timeoutMs / 1000)} seconds`);
+      timeoutError.code = 'EXECUTION_TIMEOUT';
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return response.json();
 }
 
 export async function getEngineHealth() {

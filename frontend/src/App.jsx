@@ -15,6 +15,8 @@ import Chains from './pages/Chains'
 import CreateChain from './pages/CreateChain'
 import ChainRun from './pages/ChainRun'
 import ChainRunHistory from './pages/ChainRunHistory'
+import Workflows from './pages/Workflows'
+import WorkflowBuilder from './pages/WorkflowBuilder'
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -68,6 +70,9 @@ export default function App() {
         <Route path="/chains/new"        element={protect(CreateChain)} />
         <Route path="/chains/:id/run"    element={protect(ChainRun)} />
         <Route path="/chains/:id/runs" element={protect(ChainRunHistory)} />
+        <Route path="/workflows"         element={protect(Workflows)} />
+        <Route path="/workflows/new"     element={protect(WorkflowBuilder)} />
+        <Route path="/workflows/:id/edit" element={protect(WorkflowBuilder)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
