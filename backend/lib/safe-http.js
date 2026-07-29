@@ -47,7 +47,10 @@ export async function resolvePublicUrl(value, { allowedHostSuffix = null } = {})
   } catch {
     throw new Error('Connector URL is invalid');
   }
-  const hostname = url.hostname.replace(/\.$/, '').toLowerCase();
+  const hostname = url.hostname
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '')
+    .toLowerCase();
   if (url.protocol !== 'https:' || url.username || url.password) {
     throw new Error('Connector URLs must use HTTPS without embedded credentials');
   }
