@@ -31,6 +31,7 @@ const EnterpriseAccess = lazy(() => import('./pages/EnterpriseAccess'))
 const Billing = lazy(() => import('./pages/Billing'))
 const DeveloperPlatform = lazy(() => import('./pages/DeveloperPlatform'))
 const LaunchReadiness = lazy(() => import('./pages/LaunchReadiness'))
+const Settings = lazy(() => import('./pages/Settings'))
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -106,6 +107,7 @@ export default function App() {
         <Route path="/billing"           element={protect(Billing)} />
         <Route path="/developer"         element={protect(DeveloperPlatform)} />
         <Route path="/launch"            element={protect(LaunchReadiness)} />
+        <Route path="/settings"          element={protect(Settings)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

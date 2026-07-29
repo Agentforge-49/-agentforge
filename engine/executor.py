@@ -19,7 +19,7 @@ TIMEOUT_SECONDS = 60
 
 class AgentExecutor:
     def __init__(self):
-        self.client = anthropic.Anthropic()
+        self.client = anthropic.Anthropic(timeout=TIMEOUT_SECONDS)
         from tools.registry import ToolRegistry
         self.registry = ToolRegistry()
 

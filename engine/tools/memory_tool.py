@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 class MemoryTool:
     def __init__(self):
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     def _get_memory_file(self, agent_id: str) -> str:
         return f"/tmp/agentforge_memory_{agent_id}.json"
@@ -45,37 +45,38 @@ class MemoryTool:
 
     def run(self, action: str, agent_id: str, key: str = None, value: str = None) -> str:
         try:
-            memory = self._load_memory(agent_id)
+            with self._lock:
+                memory = self._load_memory(agent_id)
 
-            if action == "store":
-                if not key:
-                    return "Error: key is required"
-                memory[key] = value
-                self._save_memory(agent_id, memory)
-                return f"Stored '{key}' in memory"
-
-            elif action == "retrieve":
-                if not key:
-                    return "Error: key is required"
-                val = memory.get(key)
-                return f"Value for '{key}': {val}" if val is not None else f"No value found for '{key}'"
-
-            elif action == "list_keys":
-                if not memory:
-                    return "No keys stored in memory"
-                return f"Stored keys: {', '.join(sorted(memory.keys()))}"
-
-            elif action == "delete":
-                if not key:
-                    return "Error: key is required"
-                if key in memory:
-                    del memory[key]
+                if action == "store":
+                    if not key:
+                        return "Error: key is required"
+                    memory[key] = value
                     self._save_memory(agent_id, memory)
-                    return f"Deleted '{key}' from memory"
-                return f"Key '{key}' not found"
+                    return f"Stored '{key}' in memory"
 
-            else:
-                return f"Error: Unknown action '{action}'"
+                elif action == "retrieve":
+                    if not key:
+                        return "Error: key is required"
+                    val = memory.get(key)
+                    return f"Value for '{key}': {val}" if val is not None else f"No value found for '{key}'"
+
+                elif action == "list_keys":
+                    if not memory:
+                        return "No keys stored in memory"
+                    return f"Stored keys: {', '.join(sorted(memory.keys()))}"
+
+                elif action == "delete":
+                    if not key:
+                        return "Error: key is required"
+                    if key in memory:
+                        del memory[key]
+                        self._save_memory(agent_id, memory)
+                        return f"Deleted '{key}' from memory"
+                    return f"Key '{key}' not found"
+
+                else:
+                    return f"Error: Unknown action '{action}'"
 
         except Exception as e:
             return f"Memory error: {str(e)}"

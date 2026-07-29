@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import { assertSafeConnectorUrl } from './connectors.js';
+import { requestPublicUrl } from './safe-http.js';
 
 export const DEVELOPER_SCOPES = [
   'agents:read',
@@ -101,7 +102,7 @@ export function signWebhookPayload(payload, secret, timestamp = Math.floor(Date.
 export async function deliverDeveloperWebhook({
   subscription,
   event,
-  fetchImpl = fetch,
+  fetchImpl = null,
   endpointValidator = assertSafeWebhookEndpoint,
 }) {
   await endpointValidator(subscription.endpoint_url);
@@ -116,7 +117,7 @@ export async function deliverDeveloperWebhook({
   const started = Date.now();
   let response;
   try {
-    response = await fetchImpl(subscription.endpoint_url, {
+    const options = {
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -127,8 +128,31 @@ export async function deliverDeveloperWebhook({
       },
       body:signed.body,
       redirect:'manual',
-      signal:AbortSignal.timeout(10000),
-    });
+    };
+    if (fetchImpl) {
+      const rawResponse = await fetchImpl(subscription.endpoint_url, {
+        ...options,
+        signal:AbortSignal.timeout(10000),
+      });
+      const declaredLength = Number(rawResponse.headers.get('content-length'));
+      if (Number.isFinite(declaredLength) && declaredLength > 100_000) {
+        throw new Error('Webhook response exceeded 100 KB');
+      }
+      const bodyText = await rawResponse.text().catch(() => '');
+      if (Buffer.byteLength(bodyText) > 100_000) {
+        throw new Error('Webhook response exceeded 100 KB');
+      }
+      response = {
+        status:rawResponse.status,
+        bodyText,
+      };
+    } else {
+      response = await requestPublicUrl(subscription.endpoint_url, {
+        ...options,
+        maxResponseBytes:100_000,
+        timeoutMs:10_000,
+      });
+    }
   } catch (error) {
     const deliveryError = new Error('Webhook endpoint could not be reached');
     deliveryError.code = error?.name === 'TimeoutError' || error?.name === 'AbortError'
@@ -136,7 +160,7 @@ export async function deliverDeveloperWebhook({
     deliveryError.durationMs = Date.now() - started;
     throw deliveryError;
   }
-  const responseText = await response.text().catch(() => '');
+  const responseText = response.bodyText;
   const result = {
     delivered:response.status >= 200 && response.status < 300,
     status:response.status,

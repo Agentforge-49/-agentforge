@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import crypto from 'node:crypto';
 
 import agentsRouter from './routes/agents.js';
 import runsRouter from './routes/runs.js';
@@ -26,6 +28,7 @@ import billingRouter from './routes/billing.js';
 import developerRouter from './routes/developer.js';
 import publicApiRouter from './routes/public-api.js';
 import launchRouter from './routes/launch.js';
+import settingsRouter from './routes/settings.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -34,7 +37,20 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const allowedOrigins = new Set(
+  String(process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(value => value.trim().replace(/\/$/, ''))
+    .filter(Boolean),
+);
 
+app.disable('x-powered-by');
+app.use(helmet());
+app.use((req, res, next) => {
+  req.requestId = String(req.headers['x-request-id'] || crypto.randomUUID()).slice(0, 100);
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
 app.use(express.json({
   limit: '2mb',
   verify: (req, _res, buffer) => {
@@ -42,7 +58,15 @@ app.use(express.json({
   },
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+      return;
+    }
+    const error = new Error('Origin is not allowed');
+    error.status = 403;
+    callback(error);
+  },
   credentials: true,
   exposedHeaders:[
     'Content-Disposition', 'X-AgentForge-Content-SHA256', 'X-AgentForge-Audit-Records',
@@ -75,6 +99,7 @@ app.use('/api/billing', billingRouter);
 app.use('/api/developer', developerRouter);
 app.use('/api/v1', publicApiRouter);
 app.use('/api/launch', launchRouter);
+app.use('/api/settings', settingsRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {
@@ -97,8 +122,11 @@ app.get('/health', async (req, res) => {
 // Structural Fallback Error Capture Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled Server Exception:', err);
-  const status = err.status || 500;
-  res.status(status).json({ error: err.message || 'Internal Server Error' });
+  const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600
+    ? err.status : 500;
+  const message = status >= 500 ? 'Internal Server Error'
+    : err.message || 'Request failed';
+  res.status(status).json({ error:message, request_id:req.requestId });
 });
 
 const server = app.listen(PORT, () => {

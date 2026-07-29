@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  CONNECTOR_DEFINITIONS,
   assertSafeConnectorUrl,
   renderConnectorParameters,
   validateConnectorConfig,
@@ -19,6 +20,8 @@ test('connector configuration requires supported actions and credentials', () =>
     parameters:{},
   });
   assert.match(invalid.errors.join(' '), /requires a credential/);
+  const email = CONNECTOR_DEFINITIONS.find(item => item.action === 'email.send');
+  assert.deepEqual(email.providers, ['resend']);
 });
 
 test('connector templates render nested values without mutating input', () => {
@@ -41,6 +44,14 @@ test('connector URL controls reject insecure and private destinations', async ()
   );
   await assert.rejects(
     () => assertSafeConnectorUrl('https://127.0.0.1/internal'),
+    /blocked network/,
+  );
+  await assert.rejects(
+    () => assertSafeConnectorUrl('https://192.0.2.1/documentation-network'),
+    /blocked network/,
+  );
+  await assert.rejects(
+    () => assertSafeConnectorUrl('https://[::1]/internal'),
     /blocked network/,
   );
   await assert.rejects(

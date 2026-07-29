@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 import secrets
@@ -22,6 +23,16 @@ class ExecuteRequest(BaseModel):
 
 # ── App startup ───────────────────────────────────────────────────────────────
 executor = None
+execution_slots = asyncio.Semaphore(max(1, int(os.getenv("ENGINE_MAX_CONCURRENCY", "4"))))
+
+
+async def run_executor(agent_executor, agent_config, user_message):
+    async with execution_slots:
+        return await asyncio.to_thread(
+            agent_executor.run,
+            agent_config,
+            user_message,
+        )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,7 +73,7 @@ async def execute_agent(
     """
     logger.info(f"Executing agent: {request.agent_config.name} | message: {request.user_message[:80]}")
     try:
-        result = executor.run(request.agent_config, request.user_message)
+        result = await run_executor(executor, request.agent_config, request.user_message)
         logger.info(f"Done — status={result.status} tokens={result.tokens_used} ms={result.duration_ms}")
         return result
     except Exception as e:

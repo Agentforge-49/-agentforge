@@ -9,7 +9,7 @@ class AgentConfig(BaseModel):
     personality: Literal["professional", "friendly", "concise", "creative"] = "professional"
     model: str = "claude-sonnet-4-6"
     temperature: float = Field(0.7, ge=0.0, le=1.0)
-    max_tokens: int = Field(1000, ge=1, le=4096)
+    max_tokens: int = Field(1000, ge=1, le=8192)
     enabled_tool_slugs: List[str] = Field(default_factory=list)
 
 

@@ -22,6 +22,7 @@ async function request(method, path, body = null) {
     const err = await response.json().catch(() => ({ error: 'Request failed' }))
     throw new Error(err.error || `Error ${response.status}`)
   }
+  if (response.status === 204) return null
   return response.json()
 }
 
@@ -374,3 +375,10 @@ export async function downloadRecoverySnapshot(id) {
   URL.revokeObjectURL(url)
   return response.headers.get('X-AgentForge-Recovery-SHA256')
 }
+
+// Account settings
+export const getSettings = () => request('GET', '/api/settings')
+export const updateProfile = fullName =>
+  request('PUT', '/api/settings/profile', { full_name:fullName })
+export const deleteAccount = confirmation =>
+  request('DELETE', '/api/settings/account', { confirmation })

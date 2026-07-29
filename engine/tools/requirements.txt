@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-anthropic
-pydantic
-duckduckgo-search
-python-dotenv
-python-dateutil
-requests
-beautifulsoup4

@@ -1,13 +1,12 @@
 import crypto from 'node:crypto';
-import dns from 'node:dns/promises';
-import net from 'node:net';
 
 import { decryptSecret } from './credential-vault.js';
+import { parsePublicResponse, requestPublicUrl, resolvePublicUrl } from './safe-http.js';
 import { supabase } from './supabase.js';
 
 export const CONNECTOR_DEFINITIONS = [
   { action:'http.request', name:'HTTP Request', credential_optional:true },
-  { action:'email.send', name:'Send Email', providers:['resend', 'generic'] },
+  { action:'email.send', name:'Send Email', providers:['resend'] },
   { action:'slack.message', name:'Slack Message', providers:['slack'] },
   { action:'google_sheets.append', name:'Google Sheets: Append Row', providers:['google'] },
   { action:'google_drive.create_file', name:'Google Drive: Create File', providers:['google'] },
@@ -66,44 +65,8 @@ export function renderConnectorParameters(parameters, input) {
   return templateValue(parameters, input);
 }
 
-function isPrivateIp(address) {
-  if (net.isIPv4(address)) {
-    const [a, b] = address.split('.').map(Number);
-    return a === 10 || a === 127 || a === 0
-      || (a === 169 && b === 254)
-      || (a === 172 && b >= 16 && b <= 31)
-      || (a === 192 && b === 168)
-      || (a === 100 && b >= 64 && b <= 127)
-      || a >= 224;
-  }
-  const normalized = address.toLowerCase();
-  return normalized === '::1' || normalized === '::'
-    || normalized.startsWith('fc') || normalized.startsWith('fd')
-    || normalized.startsWith('fe8') || normalized.startsWith('fe9')
-    || normalized.startsWith('fea') || normalized.startsWith('feb')
-    || normalized.startsWith('::ffff:127.')
-    || normalized.startsWith('::ffff:10.')
-    || normalized.startsWith('::ffff:192.168.');
-}
-
 export async function assertSafeConnectorUrl(value, { allowedHostSuffix = null } = {}) {
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error('Connector URL is invalid');
-  }
-  if (url.protocol !== 'https:' || url.username || url.password) {
-    throw new Error('Connector URLs must use HTTPS without embedded credentials');
-  }
-  if (allowedHostSuffix && !url.hostname.endsWith(allowedHostSuffix)) {
-    throw new Error(`Connector URL must use a ${allowedHostSuffix} host`);
-  }
-  const addresses = await dns.lookup(url.hostname, { all:true, verbatim:true });
-  if (!addresses.length || addresses.some(item => isPrivateIp(item.address))) {
-    throw new Error('Connector URL resolves to a blocked network');
-  }
-  return url;
+  return (await resolvePublicUrl(value, { allowedHostSuffix })).url;
 }
 
 async function loadCredential(credentialId, userId, definition) {
@@ -145,19 +108,8 @@ function redact(value, secret) {
   return value;
 }
 
-async function parseResponse(response) {
-  const contentType = response.headers.get('content-type') || '';
-  const body = contentType.includes('application/json')
-    ? await response.json().catch(() => ({}))
-    : await response.text();
-  if (!response.ok) throw new Error(`Connector provider returned ${response.status}`);
-  const serialized = JSON.stringify(body);
-  if (serialized.length > 100000) throw new Error('Connector response exceeded 100 KB');
-  return body;
-}
-
 async function executeHttp(parameters, credential) {
-  const url = await assertSafeConnectorUrl(text(parameters.url));
+  const url = text(parameters.url);
   const method = text(parameters.method || 'GET').toUpperCase();
   if (!HTTP_METHODS.has(method)) throw new Error('HTTP method is unsupported');
   const configuredHeaders = parameters.headers && typeof parameters.headers === 'object'
@@ -176,14 +128,12 @@ async function executeHttp(parameters, credential) {
     if (body.length > 50000) throw new Error('HTTP request body exceeded 50 KB');
     if (typeof parameters.body !== 'string') headers['Content-Type'] = 'application/json';
   }
-  const response = await fetch(url, {
+  const response = await requestPublicUrl(url, {
     method,
     headers,
     body,
-    redirect:'manual',
-    signal:AbortSignal.timeout(15000),
   });
-  return { status:response.status, body:await parseResponse(response) };
+  return { status:response.status, body:parsePublicResponse(response) };
 }
 
 async function executeEmail(parameters, credential) {
@@ -194,28 +144,24 @@ async function executeEmail(parameters, credential) {
   if (!to || !from || !subject || !emailText) {
     throw new Error('Email requires to, from, subject, and text');
   }
-  const response = await fetch('https://api.resend.com/emails', {
+  const response = await requestPublicUrl('https://api.resend.com/emails', {
     method:'POST',
     headers:{ Authorization:`Bearer ${credential.secret}`, 'Content-Type':'application/json' },
     body:JSON.stringify({ to:[to], from, subject, text:emailText }),
-    redirect:'manual',
-    signal:AbortSignal.timeout(15000),
   });
-  return parseResponse(response);
+  return parsePublicResponse(response);
 }
 
 async function executeSlack(parameters, credential) {
   const channel = text(parameters.channel);
   const message = text(parameters.text);
   if (!channel || !message) throw new Error('Slack requires channel and text');
-  const response = await fetch('https://slack.com/api/chat.postMessage', {
+  const response = await requestPublicUrl('https://slack.com/api/chat.postMessage', {
     method:'POST',
     headers:{ Authorization:`Bearer ${credential.secret}`, 'Content-Type':'application/json' },
     body:JSON.stringify({ channel, text:message }),
-    redirect:'manual',
-    signal:AbortSignal.timeout(15000),
   });
-  const body = await parseResponse(response);
+  const body = parsePublicResponse(response);
   if (!body.ok) throw new Error('Slack rejected the connector request');
   return { ok:true, channel:body.channel, timestamp:body.ts };
 }
@@ -228,14 +174,12 @@ async function executeSheets(parameters, credential) {
     throw new Error('Google Sheets requires a spreadsheet, range, and up to 100 values');
   }
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
-  const response = await fetch(url, {
+  const response = await requestPublicUrl(url, {
     method:'POST',
     headers:{ Authorization:`Bearer ${credential.secret}`, 'Content-Type':'application/json' },
     body:JSON.stringify({ values:[values] }),
-    redirect:'manual',
-    signal:AbortSignal.timeout(15000),
   });
-  const body = await parseResponse(response);
+  const body = parsePublicResponse(response);
   return { updated_range:body.updates?.updatedRange, updated_cells:body.updates?.updatedCells };
 }
 
@@ -251,14 +195,12 @@ async function executeDrive(parameters, credential) {
     `--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${content}\r\n`,
     `--${boundary}--`,
   ].join('');
-  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
+  const response = await requestPublicUrl('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
     method:'POST',
     headers:{ Authorization:`Bearer ${credential.secret}`, 'Content-Type':`multipart/related; boundary=${boundary}` },
     body:multipart,
-    redirect:'manual',
-    signal:AbortSignal.timeout(15000),
   });
-  return parseResponse(response);
+  return parsePublicResponse(response);
 }
 
 async function executeDatabase(action, parameters, credential) {
@@ -267,7 +209,7 @@ async function executeDatabase(action, parameters, credential) {
   if (!/^[A-Za-z_][A-Za-z0-9_]{0,62}$/.test(table)) {
     throw new Error('Database table name is invalid');
   }
-  const base = await assertSafeConnectorUrl(projectUrl, { allowedHostSuffix:'.supabase.co' });
+  const base = new URL(projectUrl);
   const url = new URL(`/rest/v1/${table}`, base);
   const headers = {
     apikey:credential.secret,
@@ -292,14 +234,13 @@ async function executeDatabase(action, parameters, credential) {
     body = JSON.stringify(parameters.row ?? {});
     if (body.length > 50000) throw new Error('Database row exceeded 50 KB');
   }
-  const response = await fetch(url, {
+  const response = await requestPublicUrl(url, {
     method,
     headers,
     body,
-    redirect:'manual',
-    signal:AbortSignal.timeout(15000),
+    allowedHostSuffix:'.supabase.co',
   });
-  return parseResponse(response);
+  return parsePublicResponse(response);
 }
 
 export async function executeConnector(config, input, userId) {
