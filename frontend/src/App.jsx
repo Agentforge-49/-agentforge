@@ -24,6 +24,7 @@ import Observability from './pages/Observability'
 import Evaluations from './pages/Evaluations'
 import Knowledge from './pages/Knowledge'
 import MultiAgents from './pages/MultiAgents'
+import UsagePlans from './pages/UsagePlans'
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="/evaluations"       element={protect(Evaluations)} />
         <Route path="/knowledge"         element={protect(Knowledge)} />
         <Route path="/multi-agents"      element={protect(MultiAgents)} />
+        <Route path="/usage"             element={protect(UsagePlans)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

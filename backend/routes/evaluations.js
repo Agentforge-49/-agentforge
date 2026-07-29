@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { validateEvaluationCases } from '../lib/evaluations.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
+import { assertUsageAllowance } from '../lib/usage.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -116,6 +117,17 @@ router.delete('/:id', async (req, res, next) => {
 
 router.post('/:id/run', async (req, res, next) => {
   try {
+    const { count, error:countError } = await supabase
+      .from('evaluation_cases')
+      .select('id', { count:'exact', head:true })
+      .eq('suite_id', req.params.id)
+      .eq('user_id', req.userId);
+    if (countError) throw countError;
+    try {
+      await assertUsageAllowance(req.userId, (count || 0) * 2);
+    } catch (error) {
+      return res.status(429).json({ error:error.message, allowance:error.allowance });
+    }
     const key = req.get('Idempotency-Key') || req.body?.idempotency_key
       || `evaluation:${req.params.id}:${crypto.randomUUID()}`;
     const { data, error } = await supabase.rpc('enqueue_evaluation_run', {

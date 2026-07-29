@@ -1,6 +1,9 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import { supabase } from '../lib/supabase.js';
 import { executeAgent } from '../lib/engine.js';
+import { estimateCostUsd } from '../lib/observability.js';
+import { assertUsageAllowance, recordUsage } from '../lib/usage.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -202,13 +205,10 @@ router.post('/:id/run', async (req, res, next) => {
       .single();
     if (chainError || !chain) return res.status(404).json({ error: 'Chain not found' });
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('api_calls_used, api_calls_limit')
-      .eq('id', req.userId)
-      .single();
-    if (profile && profile.api_calls_used >= profile.api_calls_limit) {
-      return res.status(429).json({ error: 'Monthly limit reached. Upgrade to Pro.' });
+    try {
+      await assertUsageAllowance(req.userId, chain.agent_ids.length);
+    } catch (error) {
+      return res.status(429).json({ error:error.message, allowance:error.allowance });
     }
 
     const steps = [];
@@ -218,7 +218,8 @@ router.post('/:id/run', async (req, res, next) => {
     let chainStatus      = 'completed';
     let errorMessage     = null;
 
-    for (const agentId of chain.agent_ids) {
+    const requestId = crypto.randomUUID();
+    for (const [index, agentId] of chain.agent_ids.entries()) {
       const agentConfig = await loadAgentConfig(agentId, req.userId);
 
       if (!agentConfig) {
@@ -248,6 +249,20 @@ router.post('/:id/run', async (req, res, next) => {
 
       totalTokens   += engineResult.tokens_used  || 0;
       totalDuration += engineResult.duration_ms  || 0;
+      await recordUsage({
+        userId:req.userId,
+        resourceType:'chain',
+        resourceId:chain.id,
+        modelCalls:1,
+        tokens:engineResult.tokens_used || 0,
+        estimatedCostUsd:estimateCostUsd(engineResult.tokens_used || 0, agentConfig.model),
+        idempotencyKey:`chain:${chain.id}:${requestId}:${index}`,
+        metadata:{
+          agent_id:agentId,
+          agent_version_id:agentConfig.version_id,
+          engine_status:engineResult.status,
+        },
+      });
 
       steps.push({
         agent_id:    agentId,
@@ -287,13 +302,6 @@ router.post('/:id/run', async (req, res, next) => {
       .select()
       .single();
     if (runError) throw runError;
-
-    if (profile) {
-      await supabase.rpc('increment_api_usage', {
-        p_user_id: req.userId,
-        p_amount: steps.length,
-      });
-    }
 
     res.json(chainRun);
   } catch (err) { next(err); }

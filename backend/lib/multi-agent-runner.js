@@ -9,6 +9,7 @@ import {
 } from './multi-agent.js';
 import { estimateCostUsd, recordRunEvent } from './observability.js';
 import { supabase } from './supabase.js';
+import { assertUsageAllowance, recordUsage } from './usage.js';
 
 async function loadVersion(agentId, userId) {
   const { data:agent, error } = await supabase
@@ -69,15 +70,7 @@ export async function processMultiAgentRun(job) {
     .sort((left, right) => left.position - right.position);
   if (!members.length) throw new Error('Multi-agent system has no available workers');
 
-  const { data:profile, error:profileError } = await supabase
-    .from('profiles')
-    .select('api_calls_used, api_calls_limit')
-    .eq('id', job.user_id)
-    .single();
-  if (profileError) throw profileError;
-  if (profile.api_calls_used + system.max_delegations > profile.api_calls_limit) {
-    throw new Error('Not enough monthly API calls remain for this delegation limit');
-  }
+  await assertUsageAllowance(job.user_id, system.max_delegations);
 
   const startedAt = Date.now();
   const deadline = startedAt + Math.min(job.timeout_seconds, system.timeout_seconds) * 1000;
@@ -147,11 +140,28 @@ export async function processMultiAgentRun(job) {
       const result = await executeAgent(version, augmentPrompt(task.input_text, knowledge), {
         timeoutSeconds:timeoutRemaining(deadline),
       });
+      const tokens = Number(result.tokens_used) || 0;
+      const cost = estimateCostUsd(tokens, version.model);
+      await recordUsage({
+        userId:job.user_id,
+        executionJobId:job.id,
+        resourceType:'multi_agent',
+        resourceId:job.resource_id,
+        modelCalls:1,
+        tokens,
+        estimatedCostUsd:cost,
+        idempotencyKey:`multi-agent:${job.id}:${task.id}`,
+        metadata:{
+          task_id:task.id,
+          agent_id:task.agent_id,
+          depth:task.depth,
+          model:version.model,
+          engine_status:result.status,
+        },
+      });
       if (result.status !== 'completed') {
         throw new Error(result.error_message || `Agent returned ${result.status}`);
       }
-      const tokens = Number(result.tokens_used) || 0;
-      const cost = estimateCostUsd(tokens, version.model);
       state.tokens += tokens;
       state.cost += cost;
       const { error:updateError } = await supabase.from('multi_agent_tasks').update({
@@ -171,7 +181,6 @@ export async function processMultiAgentRun(job) {
         output:result.final_answer,
         knowledgeBaseIds:knowledge.knowledgeBaseIds,
       });
-      await supabase.rpc('increment_api_usage', { p_user_id:job.user_id, p_amount:1 });
       await supabase.rpc('increment_agent_run_count', {
         p_agent_id:task.agent_id,
         p_user_id:job.user_id,

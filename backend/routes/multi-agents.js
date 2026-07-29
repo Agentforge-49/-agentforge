@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { validateMultiAgentSystem } from '../lib/multi-agent.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
+import { assertUsageAllowance } from '../lib/usage.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -262,6 +263,13 @@ router.post('/:id/pause', async (req, res, next) => {
 
 router.post('/:id/run', async (req, res, next) => {
   try {
+    const system = await loadSystem(req.params.id, req.userId, 'id, max_delegations');
+    if (!system) return res.status(404).json({ error:'Multi-agent system not found' });
+    try {
+      await assertUsageAllowance(req.userId, system.max_delegations);
+    } catch (error) {
+      return res.status(429).json({ error:error.message, allowance:error.allowance });
+    }
     const key = req.get('Idempotency-Key') || req.body?.idempotency_key
       || `multi-agent:${req.params.id}:${crypto.randomUUID()}`;
     const { data, error } = await supabase.rpc('enqueue_multi_agent_run', {

@@ -25,6 +25,7 @@ import {
   validateWorkflowGraph,
 } from './workflow-graph.js';
 import { processMultiAgentRun } from './multi-agent-runner.js';
+import { assertUsageAllowance, recordUsage } from './usage.js';
 
 const POLL_INTERVAL_MS = Number(process.env.JOB_POLL_INTERVAL_MS || 1500);
 const WORKER_ID = `${os.hostname()}:${process.pid}`;
@@ -75,6 +76,7 @@ async function finishAgentRun(job, updates) {
 
 async function processAgentRun(job) {
   const payload = job.payload || {};
+  await assertUsageAllowance(job.user_id, 1);
   await finishAgentRun(job, {
     status: 'running',
     error_message: null,
@@ -93,6 +95,17 @@ async function processAgentRun(job) {
   );
   const result = await executeAgent(version, augmentPrompt(payload.message, knowledge), {
     timeoutSeconds: job.timeout_seconds,
+  });
+  await recordUsage({
+    userId:job.user_id,
+    executionJobId:job.id,
+    resourceType:'agent',
+    resourceId:payload.agent_id,
+    modelCalls:1,
+    tokens:result.tokens_used || 0,
+    estimatedCostUsd:estimateCostUsd(result.tokens_used || 0, version.model),
+    idempotencyKey:`agent:${job.id}`,
+    metadata:{ model:version.model, version_id:version.version_id, engine_status:result.status },
   });
   if (result.status !== 'completed') {
     throw new Error(result.error_message || `Engine returned ${result.status}`);
@@ -134,10 +147,6 @@ async function processAgentRun(job) {
       data:{ sequence:index + 1, trace },
     });
   }
-  await supabase.rpc('increment_api_usage', {
-    p_user_id: job.user_id,
-    p_amount: 1,
-  });
   await supabase.rpc('increment_agent_run_count', {
     p_agent_id: payload.agent_id,
     p_user_id: job.user_id,
@@ -390,15 +399,7 @@ async function processWorkflowRun(job) {
           estimated_cost_usd:totalCost,
         };
       } else if (node.type === 'agent') {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('api_calls_used, api_calls_limit')
-          .eq('id', job.user_id)
-          .single();
-        if (profileError) throw profileError;
-        if (profile.api_calls_used >= profile.api_calls_limit) {
-          throw new Error('Monthly API call limit reached');
-        }
+        await assertUsageAllowance(job.user_id, 1);
         const version = await loadAgentVersion(node.config.agent_id, job.user_id);
         const originalInput = String(input ?? '');
         const knowledge = await loadAgentKnowledge(
@@ -410,12 +411,23 @@ async function processWorkflowRun(job) {
         const result = await executeAgent(version, augmentPrompt(originalInput, knowledge), {
           timeoutSeconds: Math.min(job.timeout_seconds, 90),
         });
+        stepTokens = result.tokens_used || 0;
+        stepCost = estimateCostUsd(stepTokens, version.model);
+        await recordUsage({
+          userId:job.user_id,
+          executionJobId:job.id,
+          resourceType:'workflow',
+          resourceId:payload.workflow_id,
+          modelCalls:1,
+          tokens:stepTokens,
+          estimatedCostUsd:stepCost,
+          idempotencyKey:`workflow:${job.id}:${node.id}`,
+          metadata:{ node_id:node.id, agent_id:node.config.agent_id, model:version.model },
+        });
         if (result.status !== 'completed') {
           throw new Error(result.error_message || `Agent returned ${result.status}`);
         }
         output = result.final_answer;
-        stepTokens = result.tokens_used || 0;
-        stepCost = estimateCostUsd(stepTokens, version.model);
         totalTokens += stepTokens;
         totalCost += stepCost;
         versionId = version.version_id;
@@ -427,10 +439,6 @@ async function processWorkflowRun(job) {
           input:originalInput,
           output:result.final_answer,
           knowledgeBaseIds:knowledge.knowledgeBaseIds,
-        });
-        await supabase.rpc('increment_api_usage', {
-          p_user_id: job.user_id,
-          p_amount: 1,
         });
         await supabase.rpc('increment_agent_run_count', {
           p_agent_id: node.config.agent_id,
@@ -537,17 +545,8 @@ async function processEvaluationRun(job) {
     .eq('user_id', job.user_id)
     .order('created_at');
   if (caseError) throw caseError;
+  await assertUsageAllowance(job.user_id, (cases || []).length * 2);
   if (!cases?.length) throw new Error('Evaluation suite has no cases');
-
-  const { data:profile, error:profileError } = await supabase
-    .from('profiles')
-    .select('api_calls_used, api_calls_limit')
-    .eq('id', job.user_id)
-    .single();
-  if (profileError) throw profileError;
-  if (profile.api_calls_used + cases.length * 2 > profile.api_calls_limit) {
-    throw new Error('Monthly API call limit cannot cover this evaluation');
-  }
 
   const baseline = await loadAgentVersion(
     payload.agent_id,
@@ -598,9 +597,16 @@ async function processEvaluationRun(job) {
       } catch (error) {
         evaluationError = structuredError(error);
       }
-      await supabase.rpc('increment_api_usage', {
-        p_user_id:job.user_id,
-        p_amount:1,
+      await recordUsage({
+        userId:job.user_id,
+        executionJobId:job.id,
+        resourceType:'evaluation',
+        resourceId:evaluationRun.id,
+        modelCalls:1,
+        tokens,
+        estimatedCostUsd:cost,
+        idempotencyKey:`evaluation:${job.id}:${testCase.id}:${variant}`,
+        metadata:{ case_id:testCase.id, variant, model:version.model },
       });
       totalTokens += tokens;
       totalCost += cost;
@@ -733,12 +739,6 @@ async function markRetryOrFailure(job, error) {
     error_message: error.message.slice(0, 2000),
     completed_at: new Date().toISOString(),
   }).eq('id', job.resource_id).eq('user_id', job.user_id);
-  if (job.job_type === 'agent_run') {
-    await supabase.rpc('increment_api_usage', {
-      p_user_id: job.user_id,
-      p_amount: 1,
-    });
-  }
   return 'failed';
 }
 

@@ -196,3 +196,33 @@ export const runMultiAgentSystem = (id, input, idempotencyKey) =>
     idempotency_key:idempotencyKey,
   })
 export const getMultiAgentRun = id => request('GET', `/api/multi-agents/runs/${id}`)
+
+// Marketplace
+export const getMarketplaceListings = (filters = {}) => {
+  const query = new URLSearchParams(
+    Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
+  )
+  return request('GET', `/api/marketplace${query.size ? `?${query}` : ''}`)
+}
+export const getMyMarketplaceListings = () => request('GET', '/api/marketplace/mine')
+export const publishMarketplaceListing = data => request('POST', '/api/marketplace/publish', data)
+export const updateMarketplaceListing = (id, data) =>
+  request('PUT', `/api/marketplace/${id}/publish`, data)
+export const installMarketplaceListing = id =>
+  request('POST', `/api/marketplace/${id}/install`)
+export const reviewMarketplaceListing = (id, rating, reviewText = '') =>
+  request('POST', `/api/marketplace/${id}/review`, {
+    rating,
+    review_text:reviewText,
+  })
+export const unlistMarketplaceListing = id =>
+  request('POST', `/api/marketplace/${id}/unlist`)
+
+// Usage, budgets, and plans
+export const getUsageSummary = () => request('GET', '/api/usage')
+export const updateUsageBudget = data => request('PUT', '/api/usage/budget', data)
+export const acknowledgeUsageBudget = () => request('POST', '/api/usage/budget/acknowledge')
+export const requestPlanChange = (planKey, note = '') =>
+  request('POST', '/api/usage/plan-request', { plan_key:planKey, note })
+export const cancelPlanChangeRequest = id =>
+  request('DELETE', `/api/usage/plan-request/${id}`)

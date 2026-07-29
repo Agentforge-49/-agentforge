@@ -39,6 +39,12 @@ export async function purgeExpiredKnowledge() {
   return data || { documents_deleted:0, memories_deleted:0 };
 }
 
+export async function refreshUsageCounters() {
+  const { data, error } = await supabase.rpc('refresh_legacy_usage_counters');
+  if (error) throw error;
+  return Number(data) || 0;
+}
+
 export function startTriggerScheduler() {
   let stopped = false;
   let working = false;
@@ -49,6 +55,7 @@ export function startTriggerScheduler() {
     try {
       await expirePendingApprovals();
       await purgeExpiredKnowledge();
+      await refreshUsageCounters();
       while (!stopped && await processNextScheduledTrigger()) {
         // Drain every due schedule before waiting for the next polling interval.
       }
