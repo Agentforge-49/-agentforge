@@ -4,6 +4,10 @@ import { supabase } from '../lib/supabase.js';
 import { executeAgent } from '../lib/engine.js';
 import { estimateCostUsd } from '../lib/observability.js';
 import { assertUsageAllowance, recordUsage } from '../lib/usage.js';
+import {
+  assertOrganizationResourceDeletable,
+  enforceOrganizationExecutionPolicy,
+} from '../lib/organizations.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -178,6 +182,7 @@ router.get('/:id', async (req, res, next) => {
 // DELETE /api/chains/:id
 router.delete('/:id', async (req, res, next) => {
   try {
+    await assertOrganizationResourceDeletable('chain', req.params.id, req.userId);
     const { error } = await supabase
       .from('agent_chains')
       .delete()
@@ -204,6 +209,28 @@ router.post('/:id/run', async (req, res, next) => {
       .eq('user_id', req.userId)
       .single();
     if (chainError || !chain) return res.status(404).json({ error: 'Chain not found' });
+
+    const governedConfigs = (
+      await Promise.all(chain.agent_ids.map(agentId => loadAgentConfig(agentId, req.userId)))
+    ).filter(Boolean);
+    try {
+      await enforceOrganizationExecutionPolicy({
+        userId:req.userId,
+        resourceType:'chain',
+        resourceId:chain.id,
+        modelCalls:chain.agent_ids.length,
+        models:governedConfigs.map(config => config.model),
+        estimatedCostUsd:governedConfigs.reduce(
+          (total, config) => total + estimateCostUsd(config.max_tokens, config.model),
+          0,
+        ),
+      });
+    } catch (error) {
+      if (error.code === 'ORGANIZATION_POLICY_DENIED') {
+        return res.status(403).json({ error:error.message, policy:error.policy });
+      }
+      throw error;
+    }
 
     try {
       await assertUsageAllowance(req.userId, chain.agent_ids.length);

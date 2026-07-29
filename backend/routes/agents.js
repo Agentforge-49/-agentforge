@@ -6,6 +6,11 @@ import {
   validateToolSlugs,
 } from '../lib/agent-config.js';
 import { supabase } from '../lib/supabase.js';
+import {
+  assertOrganizationResourceDeletable,
+  enforceOrganizationExecutionPolicy,
+} from '../lib/organizations.js';
+import { estimateCostUsd } from '../lib/observability.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -377,6 +382,7 @@ router.put('/:id', async (req, res, next) => {
 // DELETE /api/agents/:id
 router.delete('/:id', async (req, res, next) => {
   try {
+    await assertOrganizationResourceDeletable('agent', req.params.id, req.userId);
     const { data, error } = await supabase
       .from('agents')
       .delete()
@@ -398,6 +404,27 @@ router.post('/:id/run', async (req, res, next) => {
     if (!message) return validationError(res, ['Message is required']);
     if (message.length > 50000) {
       return validationError(res, ['Message must be 50,000 characters or fewer']);
+    }
+    const governedAgent = await loadOwnedAgent(
+      req.params.id,
+      req.userId,
+      'id, model, max_tokens',
+    );
+    if (!governedAgent) return res.status(404).json({ error:'Agent not found' });
+    try {
+      await enforceOrganizationExecutionPolicy({
+        userId:req.userId,
+        resourceType:'agent',
+        resourceId:governedAgent.id,
+        modelCalls:1,
+        models:[governedAgent.model],
+        estimatedCostUsd:estimateCostUsd(governedAgent.max_tokens, governedAgent.model),
+      });
+    } catch (error) {
+      if (error.code === 'ORGANIZATION_POLICY_DENIED') {
+        return res.status(403).json({ error:error.message, policy:error.policy });
+      }
+      throw error;
     }
     const idempotencyKey = req.get('Idempotency-Key')
       || req.body?.idempotency_key

@@ -45,6 +45,37 @@ export async function refreshUsageCounters() {
   return Number(data) || 0;
 }
 
+export async function purgeOrganizationGovernanceData() {
+  const { data:expired, error:expiryError } = await supabase
+    .from('governance_change_requests')
+    .update({ status:'expired' })
+    .eq('status', 'pending')
+    .lte('expires_at', new Date().toISOString())
+    .select('id, organization_id, change_type');
+  if (expiryError) throw expiryError;
+  for (const request of expired || []) {
+    const { error:auditError } = await supabase.rpc('record_organization_audit', {
+      p_organization_id:request.organization_id,
+      p_actor_user_id:null,
+      p_event_type:'governance.change_expired',
+      p_target_type:'governance_request',
+      p_target_id:request.id,
+      p_details:{ change_type:request.change_type },
+    });
+    if (auditError) throw auditError;
+  }
+  const { data, error } = await supabase.rpc('purge_organization_governance_data');
+  if (error) throw error;
+  return {
+    ...(data || {
+      audit_events_deleted:0,
+      invitations_deleted:0,
+      exports_expired:0,
+    }),
+    governance_requests_expired:(expired || []).length,
+  };
+}
+
 export function startTriggerScheduler() {
   let stopped = false;
   let working = false;
@@ -56,6 +87,7 @@ export function startTriggerScheduler() {
       await expirePendingApprovals();
       await purgeExpiredKnowledge();
       await refreshUsageCounters();
+      await purgeOrganizationGovernanceData();
       while (!stopped && await processNextScheduledTrigger()) {
         // Drain every due schedule before waiting for the next polling interval.
       }

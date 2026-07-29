@@ -5,6 +5,11 @@ import { validateEvaluationCases } from '../lib/evaluations.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { assertUsageAllowance } from '../lib/usage.js';
+import {
+  assertOrganizationResourceDeletable,
+  enforceOrganizationExecutionPolicy,
+} from '../lib/organizations.js';
+import { estimateCostUsd } from '../lib/observability.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -101,6 +106,7 @@ router.post('/', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
+    await assertOrganizationResourceDeletable('evaluation_suite', req.params.id, req.userId);
     const { data, error } = await supabase
       .from('evaluation_suites')
       .delete()
@@ -123,6 +129,33 @@ router.post('/:id/run', async (req, res, next) => {
       .eq('suite_id', req.params.id)
       .eq('user_id', req.userId);
     if (countError) throw countError;
+    const versionIds = [req.body?.baseline_version_id, req.body?.candidate_version_id].filter(Boolean);
+    const { data:versions, error:versionError } = versionIds.length
+      ? await supabase.from('agent_versions').select('id, model, max_tokens')
+        .eq('user_id', req.userId).in('id', versionIds)
+      : { data:[], error:null };
+    if (versionError) throw versionError;
+    try {
+      await enforceOrganizationExecutionPolicy({
+        userId:req.userId,
+        resourceType:'evaluation_suite',
+        resourceId:req.params.id,
+        modelCalls:(count || 0) * 2,
+        models:(versions || []).map(version => version.model),
+        estimatedCostUsd:(versions || []).reduce(
+          (total, version) => total + estimateCostUsd(
+            version.max_tokens * (count || 0),
+            version.model,
+          ),
+          0,
+        ),
+      });
+    } catch (error) {
+      if (error.code === 'ORGANIZATION_POLICY_DENIED') {
+        return res.status(403).json({ error:error.message, policy:error.policy });
+      }
+      throw error;
+    }
     try {
       await assertUsageAllowance(req.userId, (count || 0) * 2);
     } catch (error) {

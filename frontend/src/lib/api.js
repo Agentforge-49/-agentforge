@@ -226,3 +226,71 @@ export const requestPlanChange = (planKey, note = '') =>
   request('POST', '/api/usage/plan-request', { plan_key:planKey, note })
 export const cancelPlanChangeRequest = id =>
   request('DELETE', `/api/usage/plan-request/${id}`)
+
+// Organizations and governance
+export const getOrganizations = () => request('GET', '/api/organizations')
+export const createOrganization = data => request('POST', '/api/organizations', data)
+export const getOrganization = id => request('GET', `/api/organizations/${id}`)
+export const updateOrganization = (id, data) =>
+  request('PATCH', `/api/organizations/${id}`, data)
+export const archiveOrganization = (id, archived = true) =>
+  request('POST', `/api/organizations/${id}/archive`, { archived })
+export const deleteOrganization = (id, confirmationSlug) =>
+  request('DELETE', `/api/organizations/${id}`, { confirmation_slug:confirmationSlug })
+export const getOrganizationResourceOptions = () =>
+  request('GET', '/api/organizations/resource-options')
+export const inviteOrganizationMember = (id, data) =>
+  request('POST', `/api/organizations/${id}/invitations`, data)
+export const acceptOrganizationInvitation = token =>
+  request('POST', '/api/organizations/invitations/accept', { token })
+export const revokeOrganizationInvitation = (id, invitationId) =>
+  request('DELETE', `/api/organizations/${id}/invitations/${invitationId}`)
+export const updateOrganizationMember = (id, userId, data) =>
+  request('PATCH', `/api/organizations/${id}/members/${userId}`, data)
+export const removeOrganizationMember = (id, userId, reason) =>
+  request('DELETE', `/api/organizations/${id}/members/${userId}`, { reason })
+export const shareOrganizationResource = (id, data) =>
+  request('POST', `/api/organizations/${id}/resources`, data)
+export const unshareOrganizationResource = (id, shareId, reason) =>
+  request('DELETE', `/api/organizations/${id}/resources/${shareId}`, { reason })
+export const cloneOrganizationResource = (id, shareId) =>
+  request('POST', `/api/organizations/${id}/resources/${shareId}/clone`)
+export const updateOrganizationPolicy = (id, data) =>
+  request('PUT', `/api/organizations/${id}/policy`, data)
+export const decideGovernanceChange = (id, requestId, decision, note = '') =>
+  request('POST', `/api/organizations/${id}/governance/${requestId}/decision`, {
+    decision,
+    note,
+  })
+export const cancelGovernanceChange = (id, requestId) =>
+  request('DELETE', `/api/organizations/${id}/governance/${requestId}`)
+export const getOrganizationAudit = (id, filters = {}) => {
+  const query = new URLSearchParams(
+    Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
+  )
+  return request('GET', `/api/organizations/${id}/audit${query.size ? `?${query}` : ''}`)
+}
+export async function downloadComplianceExport(id, format = 'json', filters = {}) {
+  const query = new URLSearchParams({
+    format,
+    ...Object.fromEntries(
+      Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
+    ),
+  })
+  const headers = await getHeaders()
+  const response = await fetch(
+    `${API_URL}/api/organizations/${id}/compliance/export?${query}`,
+    { headers },
+  )
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ error:'Export failed' }))
+    throw new Error(payload.error || `Error ${response.status}`)
+  }
+  return {
+    blob:await response.blob(),
+    filename:(response.headers.get('Content-Disposition') || '')
+      .match(/filename="([^"]+)"/)?.[1] || `agentforge-compliance.${format}`,
+    sha256:response.headers.get('X-AgentForge-Content-SHA256'),
+    recordCount:Number(response.headers.get('X-AgentForge-Audit-Records') || 0),
+  }
+}

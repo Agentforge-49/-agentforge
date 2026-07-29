@@ -5,6 +5,11 @@ import { validateMultiAgentSystem } from '../lib/multi-agent.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { assertUsageAllowance } from '../lib/usage.js';
+import {
+  assertOrganizationResourceDeletable,
+  enforceOrganizationExecutionPolicy,
+} from '../lib/organizations.js';
+import { estimateCostUsd } from '../lib/observability.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -203,6 +208,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
+    await assertOrganizationResourceDeletable('multi_agent', req.params.id, req.userId);
     const { data, error } = await supabase
       .from('multi_agent_systems')
       .delete()
@@ -265,6 +271,35 @@ router.post('/:id/run', async (req, res, next) => {
   try {
     const system = await loadSystem(req.params.id, req.userId, 'id, max_delegations');
     if (!system) return res.status(404).json({ error:'Multi-agent system not found' });
+    const { data:memberRows, error:memberError } = await supabase
+      .from('multi_agent_members').select('agent_id')
+      .eq('system_id', system.id).eq('user_id', req.userId);
+    if (memberError) throw memberError;
+    const memberAgentIds = [...new Set((memberRows || []).map(member => member.agent_id))];
+    const { data:memberAgents, error:agentError } = memberAgentIds.length
+      ? await supabase.from('agents').select('id, model, max_tokens')
+        .eq('user_id', req.userId).in('id', memberAgentIds)
+      : { data:[], error:null };
+    if (agentError) throw agentError;
+    const highestCost = Math.max(
+      0,
+      ...(memberAgents || []).map(agent => estimateCostUsd(agent.max_tokens, agent.model)),
+    );
+    try {
+      await enforceOrganizationExecutionPolicy({
+        userId:req.userId,
+        resourceType:'multi_agent',
+        resourceId:system.id,
+        modelCalls:system.max_delegations,
+        models:(memberAgents || []).map(agent => agent.model),
+        estimatedCostUsd:highestCost * system.max_delegations,
+      });
+    } catch (error) {
+      if (error.code === 'ORGANIZATION_POLICY_DENIED') {
+        return res.status(403).json({ error:error.message, policy:error.policy });
+      }
+      throw error;
+    }
     try {
       await assertUsageAllowance(req.userId, system.max_delegations);
     } catch (error) {

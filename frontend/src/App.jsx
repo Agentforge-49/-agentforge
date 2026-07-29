@@ -1,30 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import MainLayout from './layouts/MainLayout'
-import Dashboard from './pages/Dashboard'
-import CreateAgent from './pages/CreateAgent'
-import AgentRun from './pages/AgentRun'
-import AgentRunHistory from './pages/AgentRunHistory'
-import AgentVersions from './pages/AgentVersions'
-import Marketplace from './pages/Marketplace'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Landing from './pages/Landing'
-import Chains from './pages/Chains'
-import CreateChain from './pages/CreateChain'
-import ChainRun from './pages/ChainRun'
-import ChainRunHistory from './pages/ChainRunHistory'
-import Workflows from './pages/Workflows'
-import WorkflowBuilder from './pages/WorkflowBuilder'
-import Triggers from './pages/Triggers'
-import Credentials from './pages/Credentials'
-import Approvals from './pages/Approvals'
-import Observability from './pages/Observability'
-import Evaluations from './pages/Evaluations'
-import Knowledge from './pages/Knowledge'
-import MultiAgents from './pages/MultiAgents'
-import UsagePlans from './pages/UsagePlans'
+
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const CreateAgent = lazy(() => import('./pages/CreateAgent'))
+const AgentRun = lazy(() => import('./pages/AgentRun'))
+const AgentRunHistory = lazy(() => import('./pages/AgentRunHistory'))
+const AgentVersions = lazy(() => import('./pages/AgentVersions'))
+const Marketplace = lazy(() => import('./pages/Marketplace'))
+const Chains = lazy(() => import('./pages/Chains'))
+const CreateChain = lazy(() => import('./pages/CreateChain'))
+const ChainRun = lazy(() => import('./pages/ChainRun'))
+const ChainRunHistory = lazy(() => import('./pages/ChainRunHistory'))
+const Workflows = lazy(() => import('./pages/Workflows'))
+const WorkflowBuilder = lazy(() => import('./pages/WorkflowBuilder'))
+const Triggers = lazy(() => import('./pages/Triggers'))
+const Credentials = lazy(() => import('./pages/Credentials'))
+const Approvals = lazy(() => import('./pages/Approvals'))
+const Observability = lazy(() => import('./pages/Observability'))
+const Evaluations = lazy(() => import('./pages/Evaluations'))
+const Knowledge = lazy(() => import('./pages/Knowledge'))
+const MultiAgents = lazy(() => import('./pages/MultiAgents'))
+const UsagePlans = lazy(() => import('./pages/UsagePlans'))
+const Organizations = lazy(() => import('./pages/Organizations'))
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -55,7 +57,13 @@ export default function App() {
   const protect = (Component) => (
     <ProtectedRoute user={user}>
       <MainLayout user={user}>
-        <Component />
+        <Suspense fallback={(
+          <div style={{ color:'#8B8FA3', padding:24, textAlign:'center' }}>
+            Loading workspace…
+          </div>
+        )}>
+          <Component />
+        </Suspense>
       </MainLayout>
     </ProtectedRoute>
   )
@@ -89,6 +97,7 @@ export default function App() {
         <Route path="/knowledge"         element={protect(Knowledge)} />
         <Route path="/multi-agents"      element={protect(MultiAgents)} />
         <Route path="/usage"             element={protect(UsagePlans)} />
+        <Route path="/organizations"     element={protect(Organizations)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

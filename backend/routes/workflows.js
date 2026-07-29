@@ -4,6 +4,11 @@ import { supabase } from '../lib/supabase.js';
 import { validateWorkflowGraph } from '../lib/workflow-graph.js';
 import { requireAuth } from '../middleware/auth.js';
 import { assertUsageAllowance } from '../lib/usage.js';
+import {
+  assertOrganizationResourceDeletable,
+  enforceOrganizationExecutionPolicy,
+} from '../lib/organizations.js';
+import { estimateCostUsd } from '../lib/observability.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -118,6 +123,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
+    await assertOrganizationResourceDeletable('workflow', req.params.id, req.userId);
     const { data, error } = await supabase
       .from('workflows')
       .delete()
@@ -175,6 +181,34 @@ router.post('/:id/run', async (req, res, next) => {
     const workflow = await ownedWorkflow(req.params.id, req.userId);
     if (!workflow) return res.status(404).json({ error:'Workflow not found' });
     const requestedCalls = (workflow.nodes || []).filter(node => node.type === 'agent').length;
+    const agentIds = [...new Set(
+      (workflow.nodes || [])
+        .filter(node => node.type === 'agent' && node.config?.agent_id)
+        .map(node => node.config.agent_id),
+    )];
+    const { data:governedAgents, error:governedAgentError } = agentIds.length
+      ? await supabase.from('agents').select('id, model, max_tokens')
+        .eq('user_id', req.userId).in('id', agentIds)
+      : { data:[], error:null };
+    if (governedAgentError) throw governedAgentError;
+    try {
+      await enforceOrganizationExecutionPolicy({
+        userId:req.userId,
+        resourceType:'workflow',
+        resourceId:workflow.id,
+        modelCalls:requestedCalls,
+        models:(governedAgents || []).map(agent => agent.model),
+        estimatedCostUsd:(governedAgents || []).reduce(
+          (total, agent) => total + estimateCostUsd(agent.max_tokens, agent.model),
+          0,
+        ),
+      });
+    } catch (error) {
+      if (error.code === 'ORGANIZATION_POLICY_DENIED') {
+        return res.status(403).json({ error:error.message, policy:error.policy });
+      }
+      throw error;
+    }
     if (requestedCalls > 0) {
       try {
         await assertUsageAllowance(req.userId, requestedCalls);

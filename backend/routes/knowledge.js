@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 
 import { chunkDocument, retrieveKnowledge } from '../lib/knowledge.js';
+import { assertOrganizationResourceDeletable } from '../lib/organizations.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -128,6 +129,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
+    await assertOrganizationResourceDeletable('knowledge_base', req.params.id, req.userId);
     const { data, error } = await supabase
       .from('knowledge_bases')
       .delete()

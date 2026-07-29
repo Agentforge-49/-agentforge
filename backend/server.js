@@ -20,6 +20,7 @@ import knowledgeRouter from './routes/knowledge.js';
 import multiAgentsRouter from './routes/multi-agents.js';
 import marketplaceRouter from './routes/marketplace.js';
 import usageRouter from './routes/usage.js';
+import organizationsRouter from './routes/organizations.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -37,7 +38,8 @@ app.use(express.json({
 }));
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  credentials: true,
+  exposedHeaders:['Content-Disposition', 'X-AgentForge-Content-SHA256', 'X-AgentForge-Audit-Records'],
 }));
 
 // Route Definitions
@@ -58,6 +60,7 @@ app.use('/api/knowledge', knowledgeRouter);
 app.use('/api/multi-agents', multiAgentsRouter);
 app.use('/api/marketplace', marketplaceRouter);
 app.use('/api/usage', usageRouter);
+app.use('/api/organizations', organizationsRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

@@ -163,6 +163,7 @@ router.post('/admin/override', async (req, res, next) => {
     const allowedLimits = new Set([
       'model_calls', 'tokens', 'estimated_cost_usd',
       'agents', 'workflows', 'marketplace_installs',
+      'organizations', 'organization_members',
     ]);
     const cleanLimits = {};
     for (const [key, value] of Object.entries(overrideLimits)) {
