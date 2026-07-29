@@ -14,6 +14,8 @@ import webhooksRouter from './routes/webhooks.js';
 import credentialsRouter from './routes/credentials.js';
 import connectorsRouter from './routes/connectors.js';
 import approvalsRouter from './routes/approvals.js';
+import observabilityRouter from './routes/observability.js';
+import evaluationsRouter from './routes/evaluations.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -46,6 +48,8 @@ app.use('/api/triggers', triggersRouter);
 app.use('/api/credentials', credentialsRouter);
 app.use('/api/connectors', connectorsRouter);
 app.use('/api/approvals', approvalsRouter);
+app.use('/api/observability', observabilityRouter);
+app.use('/api/evaluations', evaluationsRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

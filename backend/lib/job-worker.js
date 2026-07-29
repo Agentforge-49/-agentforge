@@ -2,6 +2,17 @@ import os from 'node:os';
 
 import { executeConnector } from './connectors.js';
 import { executeAgent } from './engine.js';
+import {
+  scoreEvaluationOutput,
+  weightedEvaluationScore,
+} from './evaluations.js';
+import {
+  estimateCostUsd,
+  finishRunObservability,
+  recordRunEvent,
+  startRunObservability,
+  structuredError,
+} from './observability.js';
 import { supabase } from './supabase.js';
 import {
   applyTransform,
@@ -92,6 +103,15 @@ async function processAgentRun(job) {
     error_message: null,
     completed_at: new Date().toISOString(),
   });
+  for (const [index, trace] of (result.run_trace || []).entries()) {
+    await recordRunEvent(job, {
+      event_type:'agent.trace',
+      status:'completed',
+      message:String(trace?.tool || trace?.name || `Agent trace ${index + 1}`),
+      duration_ms:Number(trace?.duration_ms) || null,
+      data:{ sequence:index + 1, trace },
+    });
+  }
   await supabase.rpc('increment_api_usage', {
     p_user_id: job.user_id,
     p_amount: 1,
@@ -104,6 +124,9 @@ async function processAgentRun(job) {
     run_id: job.resource_id,
     agent_version_id: version.version_id,
     agent_version_number: version.version_number,
+    tokens_used:result.tokens_used || 0,
+    estimated_cost_usd:estimateCostUsd(result.tokens_used || 0, version.model),
+    model:version.model,
   };
 }
 
@@ -148,6 +171,7 @@ function serializeWorkflowState({
   values,
   nextIndex,
   totalTokens,
+  totalCost,
 }) {
   return {
     active_nodes:[...activeNodes],
@@ -155,6 +179,7 @@ function serializeWorkflowState({
     values:[...values.entries()],
     next_index:nextIndex,
     total_tokens:totalTokens,
+    total_cost:totalCost,
   };
 }
 
@@ -182,6 +207,7 @@ async function processWorkflowRun(job) {
   const startIndex = Number.isInteger(checkpoint?.next_index)
     ? checkpoint.next_index : 0;
   let totalTokens = Number(checkpoint?.total_tokens) || 0;
+  let totalCost = Number(checkpoint?.total_cost) || 0;
 
   if (checkpoint) {
     let cleanup = supabase
@@ -219,6 +245,13 @@ async function processWorkflowRun(job) {
     if (!activeNodes.has(nodeId)) {
       const step = await recordStep(job.resource_id, job.user_id, node, sequence, input);
       await completeStep(step.id, { status: 'skipped', output: null });
+      await recordRunEvent(job, {
+        event_type:'workflow.step.skipped',
+        status:'skipped',
+        message:`${node.label} skipped`,
+        node_id:node.id,
+        data:{ node_type:node.type, sequence },
+      });
       continue;
     }
     if (await cancellationRequested(job.id)) {
@@ -246,12 +279,20 @@ async function processWorkflowRun(job) {
         output:{ value:output, decision:approvalResolution.decision },
         error_message:null,
       });
+      await recordRunEvent(job, {
+        event_type:'workflow.approval.resolved',
+        status:'completed',
+        message:`${node.label} ${approvalResolution.decision}`,
+        node_id:node.id,
+        data:{ decision:approvalResolution.decision, approval_id:approvalResolution.approval_id },
+      });
       const resumeState = serializeWorkflowState({
         activeNodes,
         selectedEdges,
         values,
         nextIndex:index + 1,
         totalTokens,
+        totalCost,
       });
       await checkpointJob(job.id, payload, resumeState, { clearResolution:true });
       continue;
@@ -259,9 +300,18 @@ async function processWorkflowRun(job) {
 
     const step = await recordStep(job.resource_id, job.user_id, node, sequence, input);
     const startedAt = Date.now();
+    await recordRunEvent(job, {
+      event_type:'workflow.step.started',
+      status:'running',
+      message:`${node.label} started`,
+      node_id:node.id,
+      data:{ node_type:node.type, sequence, input },
+    });
     try {
       let output = input;
       let versionId = null;
+      let stepTokens = 0;
+      let stepCost = 0;
       if (node.type === 'approval') {
         const timeoutMinutes = Number(node.config.timeout_minutes);
         const resumeState = serializeWorkflowState({
@@ -270,6 +320,7 @@ async function processWorkflowRun(job) {
           values,
           nextIndex:index,
           totalTokens,
+          totalCost,
         });
         const expiresAt = new Date(Date.now() + timeoutMinutes * 60000).toISOString();
         const { data: approval, error: approvalError } = await supabase
@@ -298,11 +349,21 @@ async function processWorkflowRun(job) {
           status:'waiting_approval',
           error_message:null,
         }).eq('id', job.resource_id).eq('user_id', job.user_id);
+        await recordRunEvent(job, {
+          event_type:'workflow.approval.requested',
+          status:'waiting_approval',
+          message:`${node.label} is waiting for approval`,
+          node_id:node.id,
+          duration_ms:Date.now() - startedAt,
+          data:{ approval_id:approval.id, expires_at:expiresAt },
+        });
         return {
           waiting_for_approval:true,
           approval_id:approval.id,
           workflow_run_id:job.resource_id,
           expires_at:expiresAt,
+          total_tokens:totalTokens,
+          estimated_cost_usd:totalCost,
         };
       } else if (node.type === 'agent') {
         const { data: profile, error: profileError } = await supabase
@@ -322,7 +383,10 @@ async function processWorkflowRun(job) {
           throw new Error(result.error_message || `Agent returned ${result.status}`);
         }
         output = result.final_answer;
-        totalTokens += result.tokens_used || 0;
+        stepTokens = result.tokens_used || 0;
+        stepCost = estimateCostUsd(stepTokens, version.model);
+        totalTokens += stepTokens;
+        totalCost += stepCost;
         versionId = version.version_id;
         await supabase.rpc('increment_api_usage', {
           p_user_id: job.user_id,
@@ -356,11 +420,30 @@ async function processWorkflowRun(job) {
         agent_version_id: versionId,
         duration_ms: Date.now() - startedAt,
       });
+      await recordRunEvent(job, {
+        event_type:'workflow.step.completed',
+        status:'completed',
+        message:`${node.label} completed`,
+        node_id:node.id,
+        duration_ms:Date.now() - startedAt,
+        tokens_used:stepTokens,
+        estimated_cost_usd:stepCost,
+        data:{ node_type:node.type, sequence, output, agent_version_id:versionId },
+      });
     } catch (error) {
       await completeStep(step.id, {
         status: 'failed',
         error_message: error.message,
         duration_ms: Date.now() - startedAt,
+      });
+      await recordRunEvent(job, {
+        event_type:'workflow.step.failed',
+        level:'error',
+        status:'failed',
+        message:`${node.label} failed`,
+        node_id:node.id,
+        duration_ms:Date.now() - startedAt,
+        data:{ node_type:node.type, sequence, error:structuredError(error) },
       });
       throw error;
     }
@@ -375,12 +458,188 @@ async function processWorkflowRun(job) {
     .from('workflow_runs')
     .update({
       status: 'completed',
-      output: { outputs: finalOutput, total_tokens: totalTokens },
+      output: {
+        outputs: finalOutput,
+        total_tokens: totalTokens,
+        estimated_cost_usd:totalCost,
+      },
       completed_at: new Date().toISOString(),
     })
     .eq('id', job.resource_id)
     .eq('user_id', job.user_id);
-  return { workflow_run_id: job.resource_id, outputs: finalOutput, total_tokens: totalTokens };
+  return {
+    workflow_run_id:job.resource_id,
+    outputs:finalOutput,
+    total_tokens:totalTokens,
+    estimated_cost_usd:totalCost,
+  };
+}
+
+async function processEvaluationRun(job) {
+  const payload = job.payload || {};
+  const { data:evaluationRun, error:runError } = await supabase
+    .from('evaluation_runs')
+    .update({
+      status:'running',
+      error_message:null,
+      started_at:new Date().toISOString(),
+      completed_at:null,
+    })
+    .eq('id', job.resource_id)
+    .eq('user_id', job.user_id)
+    .select()
+    .single();
+  if (runError || !evaluationRun) throw runError || new Error('Evaluation run is unavailable');
+  const { data:cases, error:caseError } = await supabase
+    .from('evaluation_cases')
+    .select('*')
+    .eq('suite_id', payload.suite_id)
+    .eq('user_id', job.user_id)
+    .order('created_at');
+  if (caseError) throw caseError;
+  if (!cases?.length) throw new Error('Evaluation suite has no cases');
+
+  const { data:profile, error:profileError } = await supabase
+    .from('profiles')
+    .select('api_calls_used, api_calls_limit')
+    .eq('id', job.user_id)
+    .single();
+  if (profileError) throw profileError;
+  if (profile.api_calls_used + cases.length * 2 > profile.api_calls_limit) {
+    throw new Error('Monthly API call limit cannot cover this evaluation');
+  }
+
+  const baseline = await loadAgentVersion(
+    payload.agent_id,
+    job.user_id,
+    payload.baseline_version_id,
+  );
+  const candidate = await loadAgentVersion(
+    payload.agent_id,
+    job.user_id,
+    payload.candidate_version_id,
+  );
+  const results = [];
+  let totalTokens = 0;
+  let totalCost = 0;
+  for (const testCase of cases) {
+    for (const [variant, version] of [['baseline', baseline], ['candidate', candidate]]) {
+      if (await cancellationRequested(job.id)) {
+        throw Object.assign(new Error('Cancelled by user'), { code:'CANCELLED' });
+      }
+      const startedAt = Date.now();
+      await recordRunEvent(job, {
+        event_type:'evaluation.case.started',
+        status:'running',
+        message:`${testCase.name} (${variant}) started`,
+        data:{ case_id:testCase.id, variant, version_number:version.version_number },
+      });
+      let actualOutput = null;
+      let score = 0;
+      let passed = false;
+      let tokens = 0;
+      let cost = 0;
+      let evaluationError = null;
+      try {
+        const engineResult = await executeAgent(version, testCase.input_text, {
+          timeoutSeconds:Math.min(job.timeout_seconds, 120),
+        });
+        if (engineResult.status !== 'completed') {
+          throw new Error(engineResult.error_message || `Engine returned ${engineResult.status}`);
+        }
+        actualOutput = String(engineResult.final_answer || '').slice(0, 50000);
+        ({ score, passed } = scoreEvaluationOutput(
+          actualOutput,
+          testCase.expected_output,
+          testCase.assertion_type,
+        ));
+        tokens = engineResult.tokens_used || 0;
+        cost = estimateCostUsd(tokens, version.model);
+      } catch (error) {
+        evaluationError = structuredError(error);
+      }
+      await supabase.rpc('increment_api_usage', {
+        p_user_id:job.user_id,
+        p_amount:1,
+      });
+      totalTokens += tokens;
+      totalCost += cost;
+      const result = {
+        evaluation_run_id:evaluationRun.id,
+        case_id:testCase.id,
+        user_id:job.user_id,
+        variant,
+        agent_version_id:version.version_id,
+        actual_output:actualOutput,
+        score,
+        passed,
+        tokens_used:tokens,
+        duration_ms:Date.now() - startedAt,
+        estimated_cost_usd:cost,
+        error_message:evaluationError?.message || null,
+      };
+      const { error:resultError } = await supabase
+        .from('evaluation_results')
+        .upsert(result, { onConflict:'evaluation_run_id,case_id,variant' });
+      if (resultError) throw resultError;
+      results.push(result);
+      await recordRunEvent(job, {
+        event_type:'evaluation.case.completed',
+        level:evaluationError ? 'error' : passed ? 'info' : 'warning',
+        status:evaluationError ? 'failed' : 'completed',
+        message:`${testCase.name} (${variant}) scored ${score}`,
+        duration_ms:result.duration_ms,
+        tokens_used:tokens,
+        estimated_cost_usd:cost,
+        data:{
+          case_id:testCase.id,
+          variant,
+          score,
+          passed,
+          error:evaluationError,
+          version_number:version.version_number,
+        },
+      });
+    }
+  }
+
+  const baselineScore = weightedEvaluationScore(
+    results.filter(result => result.variant === 'baseline'),
+    cases,
+  );
+  const candidateScore = weightedEvaluationScore(
+    results.filter(result => result.variant === 'candidate'),
+    cases,
+  );
+  const gatePassed = candidateScore >= Number(evaluationRun.gate_threshold)
+    && candidateScore >= baselineScore;
+  const { error:updateError } = await supabase
+    .from('evaluation_runs')
+    .update({
+      status:'completed',
+      baseline_score:baselineScore,
+      candidate_score:candidateScore,
+      gate_passed:gatePassed,
+      error_message:null,
+      completed_at:new Date().toISOString(),
+    })
+    .eq('id', evaluationRun.id)
+    .eq('user_id', job.user_id);
+  if (updateError) throw updateError;
+  return {
+    evaluation_run_id:evaluationRun.id,
+    baseline_score:baselineScore,
+    candidate_score:candidateScore,
+    gate_passed:gatePassed,
+    total_tokens:totalTokens,
+    estimated_cost_usd:Number(totalCost.toFixed(6)),
+  };
+}
+
+function resourceTable(jobType) {
+  if (jobType === 'agent_run') return 'agent_runs';
+  if (jobType === 'workflow_run') return 'workflow_runs';
+  return 'evaluation_runs';
 }
 
 async function markRetryOrFailure(job, error) {
@@ -393,13 +652,13 @@ async function markRetryOrFailure(job, error) {
       locked_at: null,
       locked_by: null,
     }).eq('id', job.id);
-    const table = job.job_type === 'agent_run' ? 'agent_runs' : 'workflow_runs';
+    const table = resourceTable(job.job_type);
     await supabase.from(table).update({
       status: 'cancelled',
       error_message: 'Cancelled by user',
       completed_at: new Date().toISOString(),
     }).eq('id', job.resource_id).eq('user_id', job.user_id);
-    return;
+    return 'cancelled';
   }
 
   const canRetry = job.attempt < job.max_attempts;
@@ -412,12 +671,12 @@ async function markRetryOrFailure(job, error) {
       locked_at: null,
       locked_by: null,
     }).eq('id', job.id);
-    const table = job.job_type === 'agent_run' ? 'agent_runs' : 'workflow_runs';
+    const table = resourceTable(job.job_type);
     await supabase.from(table).update({
       status: 'queued',
       error_message: `Retry ${job.attempt} failed: ${error.message}`.slice(0, 2000),
     }).eq('id', job.resource_id).eq('user_id', job.user_id);
-    return;
+    return 'retry_wait';
   }
 
   await supabase.from('execution_jobs').update({
@@ -427,7 +686,7 @@ async function markRetryOrFailure(job, error) {
     locked_at: null,
     locked_by: null,
   }).eq('id', job.id);
-  const table = job.job_type === 'agent_run' ? 'agent_runs' : 'workflow_runs';
+  const table = resourceTable(job.job_type);
   await supabase.from(table).update({
     status: 'failed',
     error_message: error.message.slice(0, 2000),
@@ -439,6 +698,7 @@ async function markRetryOrFailure(job, error) {
       p_amount: 1,
     });
   }
+  return 'failed';
 }
 
 export async function processNextJob() {
@@ -448,22 +708,33 @@ export async function processNextJob() {
   if (error) throw error;
   if (!job?.id) return false;
 
+  await startRunObservability(job);
   try {
-    const result = job.job_type === 'agent_run'
-      ? await processAgentRun(job)
-      : await processWorkflowRun(job);
+    let result;
+    if (job.job_type === 'agent_run') result = await processAgentRun(job);
+    else if (job.job_type === 'workflow_run') result = await processWorkflowRun(job);
+    else result = await processEvaluationRun(job);
     const cancelled = result?.cancelled;
     const waiting = result?.waiting_for_approval;
+    const status = waiting ? 'waiting_approval' : cancelled ? 'cancelled' : 'succeeded';
     await supabase.from('execution_jobs').update({
-      status: waiting ? 'waiting_approval' : cancelled ? 'cancelled' : 'succeeded',
+      status,
       result,
       error_message: cancelled ? 'Cancelled by user' : null,
       completed_at: waiting ? null : new Date().toISOString(),
       locked_at: null,
       locked_by: null,
     }).eq('id', job.id);
+    await finishRunObservability(job, {
+      status,
+      result,
+      tokens:result?.tokens_used || result?.total_tokens || 0,
+      model:result?.model || null,
+      estimatedCost:result?.estimated_cost_usd ?? null,
+    });
   } catch (error) {
-    await markRetryOrFailure(job, error);
+    const status = await markRetryOrFailure(job, error);
+    await finishRunObservability(job, { status, error });
   }
   return true;
 }
@@ -488,7 +759,7 @@ export function startJobWorker() {
     const { data: jobs, error } = await supabase.rpc('recover_stale_execution_jobs');
     if (error) throw error;
     for (const job of jobs || []) {
-      const table = job.job_type === 'agent_run' ? 'agent_runs' : 'workflow_runs';
+      const table = resourceTable(job.job_type);
       await supabase.from(table).update({
         status: job.status === 'failed' ? 'failed' : 'queued',
         error_message: job.error_message,

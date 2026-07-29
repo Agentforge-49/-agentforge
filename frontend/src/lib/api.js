@@ -120,3 +120,45 @@ export const decideApproval = (id, decision, editedInput = null, note = '') =>
     edited_input: editedInput,
     note
   })
+
+// Observability
+export const getObservabilityRuns = (filters = {}) => {
+  const query = new URLSearchParams(
+    Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
+  )
+  return request('GET', `/api/observability${query.size ? `?${query}` : ''}`)
+}
+export const getObservabilityMetrics = () => request('GET', '/api/observability/metrics')
+export const getObservedRun = (id) => request('GET', `/api/observability/${id}`)
+export const replayObservedRun = (id) => request('POST', `/api/observability/${id}/replay`)
+export async function downloadObservabilityCsv(filters = {}) {
+  const query = new URLSearchParams({
+    ...Object.fromEntries(
+      Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
+    ),
+    format:'csv',
+  })
+  const headers = await getHeaders()
+  const response = await fetch(`${API_URL}/api/observability/export?${query}`, { headers })
+  if (!response.ok) throw new Error('Run export failed')
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `agentforge-runs-${Date.now()}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+// Evaluations
+export const getEvaluationSuites = () => request('GET', '/api/evaluations')
+export const createEvaluationSuite = (data) => request('POST', '/api/evaluations', data)
+export const deleteEvaluationSuite = (id) => request('DELETE', `/api/evaluations/${id}`)
+export const runEvaluationSuite = (id, baselineVersionId, candidateVersionId) =>
+  request('POST', `/api/evaluations/${id}/run`, {
+    baseline_version_id:baselineVersionId,
+    candidate_version_id:candidateVersionId,
+  })
+export const getEvaluationRun = (id) => request('GET', `/api/evaluations/runs/${id}`)
+export const promoteEvaluationRun = (id) =>
+  request('POST', `/api/evaluations/runs/${id}/promote`)

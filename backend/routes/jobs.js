@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { recordRunEvent } from '../lib/observability.js';
 import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -76,7 +77,9 @@ router.post('/:id/cancel', async (req, res, next) => {
     if (updateError) throw updateError;
 
     if (queued) {
-      const table = job.job_type === 'agent_run' ? 'agent_runs' : 'workflow_runs';
+      const table = job.job_type === 'agent_run' ? 'agent_runs'
+        : job.job_type === 'workflow_run' ? 'workflow_runs'
+          : 'evaluation_runs';
       await supabase.from(table).update({
         status: 'cancelled',
         error_message: 'Cancelled by user',
@@ -94,6 +97,22 @@ router.post('/:id/cancel', async (req, res, next) => {
           completed_at:now,
         }).eq('workflow_run_id', job.resource_id).eq('user_id', req.userId).eq('status', 'waiting');
       }
+      await supabase.from('run_observability').update({
+        status:'cancelled',
+        completed_at:now,
+        structured_error:{
+          code:'CANCELLED',
+          category:'cancelled',
+          message:'Cancelled by user',
+          retryable:false,
+        },
+      }).eq('execution_job_id', job.id).eq('user_id', req.userId);
+      await recordRunEvent(job, {
+        event_type:'run.cancelled',
+        level:'warning',
+        status:'cancelled',
+        message:'Run cancelled by user',
+      });
     }
     return res.json(updated);
   } catch (error) {
