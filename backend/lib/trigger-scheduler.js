@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 
+import { deliverDeveloperWebhook } from './developer-platform.js';
 import { supabase } from './supabase.js';
 
 const POLL_INTERVAL_MS = Number(process.env.TRIGGER_POLL_INTERVAL_MS || 30000);
@@ -85,6 +86,84 @@ export async function expireBillingSandbox() {
   };
 }
 
+export async function processNextDeveloperWebhook() {
+  const { data:delivery, error } = await supabase.rpc('claim_developer_webhook_delivery');
+  if (error) throw error;
+  if (!delivery?.id) return false;
+  const [subscriptionResult, eventResult] = await Promise.all([
+    supabase.from('developer_webhook_subscriptions').select('*')
+      .eq('id', delivery.subscription_id).single(),
+    supabase.from('developer_webhook_events').select('*')
+      .eq('id', delivery.event_id).single(),
+  ]);
+  if (subscriptionResult.error || eventResult.error) {
+    await failDeveloperWebhook(delivery, 'WEBHOOK_RESOURCE_UNAVAILABLE');
+    return true;
+  }
+  if (subscriptionResult.data.status !== 'active') {
+    await failDeveloperWebhook(delivery, 'WEBHOOK_SUBSCRIPTION_INACTIVE', true);
+    return true;
+  }
+  try {
+    const result = await deliverDeveloperWebhook({
+      subscription:subscriptionResult.data,
+      event:eventResult.data,
+    });
+    const now = new Date().toISOString();
+    const { error:updateError } = await supabase.from('developer_webhook_deliveries').update({
+      status:'delivered',
+      response_status:result.status,
+      response_sha256:result.responseSha256,
+      duration_ms:result.durationMs,
+      error_code:null,
+      delivered_at:now,
+      locked_at:null,
+      updated_at:now,
+    }).eq('id', delivery.id).eq('status', 'delivering');
+    if (updateError) throw updateError;
+    await supabase.from('developer_webhook_subscriptions').update({
+      last_delivery_at:now,
+      last_success_at:now,
+      updated_at:now,
+    }).eq('id', delivery.subscription_id);
+  } catch (deliveryError) {
+    await failDeveloperWebhook(
+      delivery,
+      String(deliveryError.code || 'WEBHOOK_DELIVERY_FAILED').slice(0, 100),
+      false,
+      deliveryError,
+    );
+  }
+  return true;
+}
+
+async function failDeveloperWebhook(delivery, errorCode, terminal = false, deliveryError = null) {
+  const exhausted = terminal || delivery.attempt >= delivery.max_attempts;
+  const delaySeconds = Math.min(3600, 30 * (2 ** Math.max(0, delivery.attempt - 1)));
+  const now = new Date();
+  const { error } = await supabase.from('developer_webhook_deliveries').update({
+    status:exhausted ? 'dead_letter' : 'retry_wait',
+    response_status:deliveryError?.status || null,
+    response_sha256:deliveryError?.responseSha256 || null,
+    duration_ms:Math.max(0, Number(deliveryError?.durationMs) || 0),
+    error_code:errorCode,
+    next_attempt_at:new Date(now.getTime() + delaySeconds * 1000).toISOString(),
+    locked_at:null,
+    updated_at:now.toISOString(),
+  }).eq('id', delivery.id).eq('status', 'delivering');
+  if (error) throw error;
+  await supabase.from('developer_webhook_subscriptions').update({
+    last_delivery_at:now.toISOString(),
+    updated_at:now.toISOString(),
+  }).eq('id', delivery.subscription_id);
+}
+
+export async function purgeDeveloperLaunchData() {
+  const { data, error } = await supabase.rpc('purge_developer_launch_data');
+  if (error) throw error;
+  return data || {};
+}
+
 export function startTriggerScheduler() {
   let stopped = false;
   let working = false;
@@ -98,6 +177,10 @@ export function startTriggerScheduler() {
       await refreshUsageCounters();
       await purgeOrganizationGovernanceData();
       await expireBillingSandbox();
+      await purgeDeveloperLaunchData();
+      for (let index = 0; index < 20 && !stopped; index += 1) {
+        if (!await processNextDeveloperWebhook()) break;
+      }
       while (!stopped && await processNextScheduledTrigger()) {
         // Drain every due schedule before waiting for the next polling interval.
       }

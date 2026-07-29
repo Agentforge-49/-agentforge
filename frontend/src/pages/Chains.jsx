@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '../lib/router.jsx'
 import { Plus, Link2, ArrowRight, Trash2 } from 'lucide-react'
 import { getChains, deleteChain } from '../lib/api'
 

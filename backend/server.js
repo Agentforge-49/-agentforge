@@ -23,6 +23,9 @@ import usageRouter from './routes/usage.js';
 import organizationsRouter from './routes/organizations.js';
 import enterpriseRouter from './routes/enterprise.js';
 import billingRouter from './routes/billing.js';
+import developerRouter from './routes/developer.js';
+import publicApiRouter from './routes/public-api.js';
+import launchRouter from './routes/launch.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -41,7 +44,11 @@ app.use(express.json({
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true,
-  exposedHeaders:['Content-Disposition', 'X-AgentForge-Content-SHA256', 'X-AgentForge-Audit-Records'],
+  exposedHeaders:[
+    'Content-Disposition', 'X-AgentForge-Content-SHA256', 'X-AgentForge-Audit-Records',
+    'X-AgentForge-Recovery-SHA256', 'X-Request-Id',
+    'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset',
+  ],
 }));
 
 // Route Definitions
@@ -65,6 +72,9 @@ app.use('/api/usage', usageRouter);
 app.use('/api/organizations', organizationsRouter);
 app.use('/api/enterprise', enterpriseRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/developer', developerRouter);
+app.use('/api/v1', publicApiRouter);
+app.use('/api/launch', launchRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

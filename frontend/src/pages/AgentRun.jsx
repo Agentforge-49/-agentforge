@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate }       from 'react-router-dom'
+import { useParams, useNavigate }       from '../lib/router.jsx'
 import { Play, ChevronDown, ChevronUp, Bot, Zap, Search, Calculator, Brain, FileText, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { cancelJob, getAgent, getJob, runAgent } from '../lib/api'
 

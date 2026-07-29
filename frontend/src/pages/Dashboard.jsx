@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '../lib/router.jsx'
 import { Plus } from 'lucide-react'
 import AgentCard from '../components/AgentCard'
 import { getAgents, getDashboardStats } from '../lib/api'

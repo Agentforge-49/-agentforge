@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../lib/router.jsx';
 
 const ICON_COMMON = {
   width: 24,

@@ -1,5 +1,5 @@
 import { Clock, Layers3, Pencil, PlayCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "../lib/router.jsx";
 
 const avatarColors = {
   research: "bg-blue-500",

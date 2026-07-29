@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Bot, GitBranch, Play, Plug, Save, ShieldCheck, Square, Type, X } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from '../lib/router.jsx'
 
 import {
   activateWorkflow,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { GitBranch, Plus, Trash2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '../lib/router.jsx'
 
 import { deleteWorkflow, getWorkflows } from '../lib/api'
 

@@ -11,7 +11,8 @@
     "verify:production:days-12-13": "node scripts/verify-production-days-12-13.mjs",
     "verify:production:days-14-15": "node scripts/verify-production-days-14-15.mjs",
     "verify:production:days-16-17": "node scripts/verify-production-days-16-17.mjs",
-    "verify:production:days-18-19": "node scripts/verify-production-days-18-19.mjs"
+    "verify:production:days-18-19": "node scripts/verify-production-days-18-19.mjs",
+    "verify:production:days-20-21": "node scripts/verify-production-days-20-21.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",

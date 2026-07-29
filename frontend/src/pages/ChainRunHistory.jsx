@@ -1,7 +1,7 @@
 // src/pages/ChainRunHistory.jsx
 
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "../lib/router.jsx";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import { getChain, getChainRuns } from "../lib/api";
 

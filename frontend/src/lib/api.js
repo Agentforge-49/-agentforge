@@ -333,3 +333,44 @@ export const cancelBillingSubscription = (immediate = false) =>
 export const resumeBillingSubscription = () =>
   request('POST', '/api/billing/subscription/resume')
 export const getBillingInvoice = id => request('GET', `/api/billing/invoices/${id}`)
+
+// Developer platform
+export const getDeveloperPlatform = () => request('GET', '/api/developer')
+export const createDeveloperKey = data => request('POST', '/api/developer/keys', data)
+export const revokeDeveloperKey = id => request('DELETE', `/api/developer/keys/${id}`)
+export const createDeveloperWebhook = data => request('POST', '/api/developer/webhooks', data)
+export const updateDeveloperWebhook = (id, status) =>
+  request('PATCH', `/api/developer/webhooks/${id}`, { status })
+export const revokeDeveloperWebhook = id =>
+  request('DELETE', `/api/developer/webhooks/${id}`)
+export const sendDeveloperWebhookTest = () => request('POST', '/api/developer/webhooks/test')
+export const retryDeveloperDelivery = id =>
+  request('POST', `/api/developer/deliveries/${id}/retry`)
+
+// Launch readiness and recovery
+export const getLaunchReadiness = () => request('GET', '/api/launch')
+export const updateOnboarding = (completedSteps, dismissed = false) =>
+  request('PUT', '/api/launch/onboarding', {
+    completed_steps:completedSteps,
+    dismissed,
+  })
+export const createRecoverySnapshot = () =>
+  request('POST', '/api/launch/recovery-snapshots')
+export const verifyRecoverySnapshot = id =>
+  request('POST', `/api/launch/recovery-snapshots/${id}/verify`)
+export const runLaunchReadiness = () => request('POST', '/api/launch/readiness')
+export async function downloadRecoverySnapshot(id) {
+  const headers = await getHeaders()
+  const response = await fetch(`${API_URL}/api/launch/recovery-snapshots/${id}/download`, {
+    headers,
+  })
+  if (!response.ok) throw new Error('Recovery snapshot download failed')
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `agentforge-recovery-${id}.json`
+  link.click()
+  URL.revokeObjectURL(url)
+  return response.headers.get('X-AgentForge-Recovery-SHA256')
+}

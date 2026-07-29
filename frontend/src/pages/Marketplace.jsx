@@ -3,7 +3,7 @@ import {
   BadgeCheck, Bot, Boxes, Download, GitBranch, PackagePlus,
   Search, ShieldCheck, Star, Upload, X,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '../lib/router.jsx'
 
 import {
   getAgents,

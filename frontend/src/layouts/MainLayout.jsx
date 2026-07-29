@@ -1,5 +1,5 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { Activity, BookOpen, Building2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Store, Link2, LogOut, Network, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
+import { NavLink, useNavigate } from '../lib/router.jsx'
+import { Activity, BookOpen, Building2, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Store, Link2, LogOut, Network, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const NAV = [
@@ -19,6 +19,8 @@ const NAV = [
   { to: '/organizations', icon: Building2,      label: 'Organizations' },
   { to: '/enterprise-access', icon: Fingerprint, label: 'Enterprise Access' },
   { to: '/billing',     icon: ReceiptText,      label: 'Billing' },
+  { to: '/developer',   icon: Code2,            label: 'Developer Platform' },
+  { to: '/launch',      icon: Rocket,           label: 'Launch Readiness' },
 ]
 
 export default function MainLayout({ children, user }) {

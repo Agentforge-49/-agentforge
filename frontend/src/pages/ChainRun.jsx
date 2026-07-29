@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from '../lib/router.jsx'
 import { Play, ArrowRight, ArrowDown, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { getChain, runChain } from '../lib/api'
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '../lib/router.jsx'
 import { ArrowRight, X, Plus } from 'lucide-react'
 import { getAgents, createChain } from '../lib/api'
 

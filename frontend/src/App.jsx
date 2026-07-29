@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from './lib/router.jsx'
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import MainLayout from './layouts/MainLayout'
@@ -29,6 +29,8 @@ const UsagePlans = lazy(() => import('./pages/UsagePlans'))
 const Organizations = lazy(() => import('./pages/Organizations'))
 const EnterpriseAccess = lazy(() => import('./pages/EnterpriseAccess'))
 const Billing = lazy(() => import('./pages/Billing'))
+const DeveloperPlatform = lazy(() => import('./pages/DeveloperPlatform'))
+const LaunchReadiness = lazy(() => import('./pages/LaunchReadiness'))
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -102,6 +104,8 @@ export default function App() {
         <Route path="/organizations"     element={protect(Organizations)} />
         <Route path="/enterprise-access" element={protect(EnterpriseAccess)} />
         <Route path="/billing"           element={protect(Billing)} />
+        <Route path="/developer"         element={protect(DeveloperPlatform)} />
+        <Route path="/launch"            element={protect(LaunchReadiness)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
