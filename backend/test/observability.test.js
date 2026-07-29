@@ -12,11 +12,13 @@ test('telemetry redacts secret keys and common credential values', () => {
     authorization:'Bearer private-token',
     nested:{ api_key:'sk_example_123456789', safe:'visible' },
     message:'Request used Bearer secret-value',
+    tokens_used:123,
   });
   assert.equal(redacted.authorization, '[REDACTED]');
   assert.equal(redacted.nested.api_key, '[REDACTED]');
   assert.equal(redacted.nested.safe, 'visible');
   assert.equal(redacted.message, 'Request used Bearer [REDACTED]');
+  assert.equal(redacted.tokens_used, 123);
 });
 
 test('cost estimates are deterministic and non-negative', () => {

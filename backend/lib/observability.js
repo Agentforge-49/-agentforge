@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-const SECRET_KEY = /(authorization|cookie|password|secret|token|api[_-]?key|ciphertext|authentication_tag)/i;
+const SECRET_KEY = /(^|[_-])(authorization|cookie|password|secret|token|api[_-]?key|ciphertext|authentication[_-]?tag)($|[_-])/i;
 const SECRET_VALUE = /(\bBearer\s+)[^\s",}]+|(\b(?:sk|xox|re)_[A-Za-z0-9_-]{8,})/gi;
 const DEFAULT_COST_PER_MILLION = {
   'claude-sonnet-4-6':9,
