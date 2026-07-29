@@ -12,6 +12,8 @@ import workflowsRouter from './routes/workflows.js';
 import triggersRouter from './routes/triggers.js';
 import webhooksRouter from './routes/webhooks.js';
 import credentialsRouter from './routes/credentials.js';
+import connectorsRouter from './routes/connectors.js';
+import approvalsRouter from './routes/approvals.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -42,6 +44,8 @@ app.use('/api/jobs', jobsRouter);
 app.use('/api/workflows', workflowsRouter);
 app.use('/api/triggers', triggersRouter);
 app.use('/api/credentials', credentialsRouter);
+app.use('/api/connectors', connectorsRouter);
+app.use('/api/approvals', approvalsRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

@@ -109,3 +109,14 @@ export const rotateCredential = (id, secret) =>
 export const testCredential = (id) => request('POST', `/api/credentials/${id}/test`)
 export const deleteCredential = (id) => request('DELETE', `/api/credentials/${id}`)
 export const getCredentialAccessLogs = () => request('GET', '/api/credentials/access/logs')
+
+// Connectors and approvals
+export const getConnectors = () => request('GET', '/api/connectors')
+export const getApprovals = (status = '') =>
+  request('GET', `/api/approvals${status ? `?status=${encodeURIComponent(status)}` : ''}`)
+export const decideApproval = (id, decision, editedInput = null, note = '') =>
+  request('POST', `/api/approvals/${id}/decide`, {
+    decision,
+    edited_input: editedInput,
+    note
+  })

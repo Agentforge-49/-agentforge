@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Bot, Store, Link2, LogOut, Workflow, Zap, KeyRound } from 'lucide-react'
+import { LayoutDashboard, Bot, Store, Link2, LogOut, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const NAV = [
@@ -9,6 +9,7 @@ const NAV = [
   { to: '/workflows',   icon: Workflow,        label: 'Workflows'   },
   { to: '/triggers',    icon: Zap,             label: 'Triggers'    },
   { to: '/credentials', icon: KeyRound,        label: 'Credentials' },
+  { to: '/approvals',   icon: ShieldCheck,     label: 'Approvals'   },
   { to: '/marketplace', icon: Store,           label: 'Marketplace' },
 ]
 

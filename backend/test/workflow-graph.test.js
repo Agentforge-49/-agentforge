@@ -56,3 +56,32 @@ test('evaluates condition operators with optional case sensitivity', () => {
     case_sensitive: true,
   }), false);
 });
+
+test('validates connector and approval nodes', () => {
+  const nodes = [
+    { id:'input', type:'input', config:{} },
+    {
+      id:'connector',
+      type:'connector',
+      config:{
+        action:'http.request',
+        credential_id:null,
+        parameters:{ url:'https://example.com', method:'GET' },
+      },
+    },
+    {
+      id:'approval',
+      type:'approval',
+      config:{ instructions:'Review output', timeout_minutes:60 },
+    },
+    { id:'output', type:'output', config:{} },
+  ];
+  const edges = [
+    { id:'e1', source:'input', target:'connector' },
+    { id:'e2', source:'connector', target:'approval' },
+    { id:'e3', source:'approval', target:'output' },
+  ];
+  assert.deepEqual(validateWorkflowGraph(nodes, edges).errors, []);
+  nodes[2].config.timeout_minutes = 1;
+  assert.match(validateWorkflowGraph(nodes, edges).errors.join(' '), /timeout/);
+});

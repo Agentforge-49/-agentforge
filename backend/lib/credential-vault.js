@@ -1,6 +1,9 @@
 import crypto from 'node:crypto';
 
-const PROVIDERS = new Set(['generic', 'openai', 'anthropic', 'slack', 'github']);
+const PROVIDERS = new Set([
+  'generic', 'openai', 'anthropic', 'slack', 'github',
+  'google', 'resend', 'supabase',
+]);
 const TEST_TARGETS = {
   openai: {
     url: 'https://api.openai.com/v1/models',
@@ -141,6 +144,9 @@ function formatLooksValid(provider, secret) {
   if (provider === 'anthropic') return secret.startsWith('sk-ant-');
   if (provider === 'slack') return secret.startsWith('xox');
   if (provider === 'github') return /^(gh[pousr]_|github_pat_)/.test(secret);
+  if (provider === 'google') return secret.length >= 20;
+  if (provider === 'resend') return secret.startsWith('re_');
+  if (provider === 'supabase') return secret.length >= 20;
   return secret.length >= 8;
 }
 

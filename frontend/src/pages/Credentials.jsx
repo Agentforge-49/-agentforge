@@ -16,13 +16,16 @@ const PROVIDERS = [
   ['anthropic', 'Anthropic'],
   ['slack', 'Slack'],
   ['github', 'GitHub'],
+  ['google', 'Google OAuth token'],
+  ['resend', 'Resend'],
+  ['supabase', 'Supabase'],
 ]
 
 export default function Credentials() {
   const [credentials, setCredentials] = useState([])
   const [logs, setLogs] = useState([])
   const [showLogs, setShowLogs] = useState(false)
-  const [form, setForm] = useState({ name:'', provider:'generic', secret:'' })
+  const [form, setForm] = useState({ name:'', provider:'generic', secret:'', project_url:'' })
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busyId, setBusyId] = useState('')
@@ -38,9 +41,14 @@ export default function Credentials() {
     event.preventDefault()
     setError('')
     try {
-      const created = await createCredential(form)
+      const created = await createCredential({
+        name:form.name,
+        provider:form.provider,
+        secret:form.secret,
+        metadata:form.provider === 'supabase' ? { project_url:form.project_url } : {},
+      })
       setCredentials(items => [created, ...items])
-      setForm(current => ({ ...current, name:'', secret:'' }))
+      setForm(current => ({ ...current, name:'', secret:'', project_url:'' }))
       setMessage('Credential encrypted and stored. The plaintext was discarded.')
     } catch (err) {
       setError(err.message)
@@ -133,6 +141,12 @@ export default function Credentials() {
               onChange={e => setForm({ ...form, secret:e.target.value })}
               autoComplete="new-password" placeholder="Will be encrypted immediately" style={input} />
           </div>
+          {form.provider === 'supabase' && <div>
+            <label style={label}>Project URL</label>
+            <input required type="url" value={form.project_url}
+              onChange={e => setForm({ ...form, project_url:e.target.value })}
+              placeholder="https://project.supabase.co" style={input} />
+          </div>}
         </div>
         <p style={{ color:'#6B7280', fontSize:11, marginTop:10 }}>Secrets use authenticated AES-256-GCM encryption. Plaintext is never returned by the API.</p>
         <button style={primaryButton}><KeyRound size={14} /> Encrypt and store</button>

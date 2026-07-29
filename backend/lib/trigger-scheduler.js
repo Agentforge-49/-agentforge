@@ -27,6 +27,12 @@ export async function processNextScheduledTrigger() {
   return true;
 }
 
+export async function expirePendingApprovals() {
+  const { data, error } = await supabase.rpc('expire_pending_approvals');
+  if (error) throw error;
+  return data || [];
+}
+
 export function startTriggerScheduler() {
   let stopped = false;
   let working = false;
@@ -35,6 +41,7 @@ export function startTriggerScheduler() {
     if (stopped || working) return;
     working = true;
     try {
+      await expirePendingApprovals();
       while (!stopped && await processNextScheduledTrigger()) {
         // Drain every due schedule before waiting for the next polling interval.
       }

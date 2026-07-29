@@ -1,5 +1,6 @@
 import os from 'node:os';
 
+import { executeConnector } from './connectors.js';
 import { executeAgent } from './engine.js';
 import { supabase } from './supabase.js';
 import {
@@ -141,6 +142,32 @@ async function completeStep(stepId, updates) {
   if (error) throw error;
 }
 
+function serializeWorkflowState({
+  activeNodes,
+  selectedEdges,
+  values,
+  nextIndex,
+  totalTokens,
+}) {
+  return {
+    active_nodes:[...activeNodes],
+    selected_edges:[...selectedEdges],
+    values:[...values.entries()],
+    next_index:nextIndex,
+    total_tokens:totalTokens,
+  };
+}
+
+async function checkpointJob(jobId, payload, resumeState, { clearResolution = false } = {}) {
+  const nextPayload = { ...payload, resume_state:resumeState };
+  if (clearResolution) delete nextPayload.approval_resolution;
+  const { error } = await supabase
+    .from('execution_jobs')
+    .update({ payload:nextPayload })
+    .eq('id', jobId);
+  if (error) throw error;
+}
+
 async function processWorkflowRun(job) {
   const payload = job.payload || {};
   const graph = validateWorkflowGraph(payload.nodes, payload.edges);
@@ -148,18 +175,32 @@ async function processWorkflowRun(job) {
   const { nodes, edges, order } = graph.value;
   const nodeMap = new Map(nodes.map(node => [node.id, node]));
   const inputNode = nodes.find(node => node.type === 'input');
-  const activeNodes = new Set([inputNode.id]);
-  const selectedEdges = new Set();
-  const values = new Map();
-  let sequence = 0;
-  let totalTokens = 0;
+  const checkpoint = payload.resume_state || null;
+  const activeNodes = new Set(checkpoint?.active_nodes || [inputNode.id]);
+  const selectedEdges = new Set(checkpoint?.selected_edges || []);
+  const values = new Map(checkpoint?.values || []);
+  const startIndex = Number.isInteger(checkpoint?.next_index)
+    ? checkpoint.next_index : 0;
+  let totalTokens = Number(checkpoint?.total_tokens) || 0;
 
-  if (job.attempt > 1) {
-    await supabase
+  if (checkpoint) {
+    let cleanup = supabase
       .from('workflow_step_runs')
       .delete()
       .eq('workflow_run_id', job.resource_id)
       .eq('user_id', job.user_id);
+    cleanup = payload.approval_resolution
+      ? cleanup.gt('sequence_number', startIndex + 1)
+      : cleanup.gte('sequence_number', startIndex + 1);
+    const { error } = await cleanup;
+    if (error) throw error;
+  } else if (job.attempt > 1) {
+    const { error } = await supabase
+      .from('workflow_step_runs')
+      .delete()
+      .eq('workflow_run_id', job.resource_id)
+      .eq('user_id', job.user_id);
+    if (error) throw error;
   }
   await supabase
     .from('workflow_runs')
@@ -167,9 +208,10 @@ async function processWorkflowRun(job) {
     .eq('id', job.resource_id)
     .eq('user_id', job.user_id);
 
-  for (const nodeId of order) {
+  for (let index = startIndex; index < order.length; index += 1) {
+    const nodeId = order[index];
     const node = nodeMap.get(nodeId);
-    sequence += 1;
+    const sequence = index + 1;
     const input = node.type === 'input'
       ? payload.input
       : incomingValue(nodeId, edges, selectedEdges, values, payload.input);
@@ -183,12 +225,86 @@ async function processWorkflowRun(job) {
       throw Object.assign(new Error('Cancelled by user'), { code: 'CANCELLED' });
     }
 
+    const approvalResolution = payload.approval_resolution;
+    if (node.type === 'approval' && approvalResolution?.node_id === node.id) {
+      const { data: step, error: stepError } = await supabase
+        .from('workflow_step_runs')
+        .select('id')
+        .eq('workflow_run_id', job.resource_id)
+        .eq('user_id', job.user_id)
+        .eq('node_id', node.id)
+        .single();
+      if (stepError || !step) throw new Error('Approval checkpoint is unavailable');
+      const output = approvalResolution.output;
+      values.set(node.id, output);
+      for (const edge of edges.filter(edge => edge.source === node.id)) {
+        selectedEdges.add(edge.id);
+        activeNodes.add(edge.target);
+      }
+      await completeStep(step.id, {
+        status:'completed',
+        output:{ value:output, decision:approvalResolution.decision },
+        error_message:null,
+      });
+      const resumeState = serializeWorkflowState({
+        activeNodes,
+        selectedEdges,
+        values,
+        nextIndex:index + 1,
+        totalTokens,
+      });
+      await checkpointJob(job.id, payload, resumeState, { clearResolution:true });
+      continue;
+    }
+
     const step = await recordStep(job.resource_id, job.user_id, node, sequence, input);
     const startedAt = Date.now();
     try {
       let output = input;
       let versionId = null;
-      if (node.type === 'agent') {
+      if (node.type === 'approval') {
+        const timeoutMinutes = Number(node.config.timeout_minutes);
+        const resumeState = serializeWorkflowState({
+          activeNodes,
+          selectedEdges,
+          values,
+          nextIndex:index,
+          totalTokens,
+        });
+        const expiresAt = new Date(Date.now() + timeoutMinutes * 60000).toISOString();
+        const { data: approval, error: approvalError } = await supabase
+          .from('approval_requests')
+          .insert({
+            user_id:job.user_id,
+            workflow_id:payload.workflow_id,
+            workflow_run_id:job.resource_id,
+            execution_job_id:job.id,
+            node_id:node.id,
+            instructions:node.config.instructions || null,
+            input:{ value:input },
+            expires_at:expiresAt,
+          })
+          .select()
+          .single();
+        if (approvalError) throw approvalError;
+        await checkpointJob(job.id, payload, resumeState);
+        await supabase.from('workflow_step_runs').update({
+          status:'waiting',
+          output:null,
+          completed_at:null,
+          duration_ms:Date.now() - startedAt,
+        }).eq('id', step.id);
+        await supabase.from('workflow_runs').update({
+          status:'waiting_approval',
+          error_message:null,
+        }).eq('id', job.resource_id).eq('user_id', job.user_id);
+        return {
+          waiting_for_approval:true,
+          approval_id:approval.id,
+          workflow_run_id:job.resource_id,
+          expires_at:expiresAt,
+        };
+      } else if (node.type === 'agent') {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('api_calls_used, api_calls_limit')
@@ -216,6 +332,8 @@ async function processWorkflowRun(job) {
           p_agent_id: node.config.agent_id,
           p_user_id: job.user_id,
         });
+      } else if (node.type === 'connector') {
+        output = await executeConnector(node.config, input, job.user_id);
       } else if (node.type === 'transform') {
         output = applyTransform(input, node.config);
       } else if (node.type === 'condition') {
@@ -335,11 +453,12 @@ export async function processNextJob() {
       ? await processAgentRun(job)
       : await processWorkflowRun(job);
     const cancelled = result?.cancelled;
+    const waiting = result?.waiting_for_approval;
     await supabase.from('execution_jobs').update({
-      status: cancelled ? 'cancelled' : 'succeeded',
+      status: waiting ? 'waiting_approval' : cancelled ? 'cancelled' : 'succeeded',
       result,
       error_message: cancelled ? 'Cancelled by user' : null,
-      completed_at: new Date().toISOString(),
+      completed_at: waiting ? null : new Date().toISOString(),
       locked_at: null,
       locked_by: null,
     }).eq('id', job.id);

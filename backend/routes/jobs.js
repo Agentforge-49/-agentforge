@@ -57,7 +57,7 @@ router.post('/:id/cancel', async (req, res, next) => {
       return res.status(409).json({ error: `Job is already ${job.status}` });
     }
 
-    const queued = ['queued', 'retry_wait'].includes(job.status);
+    const queued = ['queued', 'retry_wait', 'waiting_approval'].includes(job.status);
     const now = new Date().toISOString();
     const { data: updated, error: updateError } = await supabase
       .from('execution_jobs')
@@ -82,6 +82,18 @@ router.post('/:id/cancel', async (req, res, next) => {
         error_message: 'Cancelled by user',
         completed_at: now,
       }).eq('id', job.resource_id).eq('user_id', req.userId);
+      if (job.status === 'waiting_approval') {
+        await supabase.from('approval_requests').update({
+          status:'cancelled',
+          decision_note:'Cancelled by user',
+          resolved_at:now,
+        }).eq('execution_job_id', job.id).eq('user_id', req.userId).eq('status', 'pending');
+        await supabase.from('workflow_step_runs').update({
+          status:'cancelled',
+          error_message:'Cancelled by user',
+          completed_at:now,
+        }).eq('workflow_run_id', job.resource_id).eq('user_id', req.userId).eq('status', 'waiting');
+      }
     }
     return res.json(updated);
   } catch (error) {

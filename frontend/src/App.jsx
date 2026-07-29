@@ -19,6 +19,7 @@ import Workflows from './pages/Workflows'
 import WorkflowBuilder from './pages/WorkflowBuilder'
 import Triggers from './pages/Triggers'
 import Credentials from './pages/Credentials'
+import Approvals from './pages/Approvals'
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -77,6 +78,7 @@ export default function App() {
         <Route path="/workflows/:id/edit" element={protect(WorkflowBuilder)} />
         <Route path="/triggers"          element={protect(Triggers)} />
         <Route path="/credentials"       element={protect(Credentials)} />
+        <Route path="/approvals"         element={protect(Approvals)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

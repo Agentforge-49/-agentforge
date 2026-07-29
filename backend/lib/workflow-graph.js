@@ -1,4 +1,8 @@
-const NODE_TYPES = new Set(['input', 'agent', 'transform', 'condition', 'output']);
+import { validateConnectorConfig } from './connectors.js';
+
+const NODE_TYPES = new Set([
+  'input', 'agent', 'connector', 'transform', 'condition', 'approval', 'output',
+]);
 const TRANSFORMS = new Set(['trim', 'uppercase', 'lowercase', 'template']);
 const CONDITIONS = new Set(['contains', 'not_contains', 'equals']);
 
@@ -35,11 +39,26 @@ export function validateWorkflowGraph(nodes, edges) {
     if (type === 'transform' && !TRANSFORMS.has(config.operation)) {
       errors.push(`Transform node ${id} has an invalid operation`);
     }
+    if (type === 'connector') {
+      const connector = validateConnectorConfig(config);
+      errors.push(...connector.errors.map(error => `Connector node ${id}: ${error}`));
+    }
     if (type === 'condition') {
       if (!CONDITIONS.has(config.operator)) {
         errors.push(`Condition node ${id} has an invalid operator`);
       }
       if (!text(config.value)) errors.push(`Condition node ${id} needs a comparison value`);
+    }
+    if (type === 'approval') {
+      const timeoutMinutes = Number(config.timeout_minutes);
+      if (!Number.isInteger(timeoutMinutes) || timeoutMinutes < 5 || timeoutMinutes > 10080) {
+        errors.push(`Approval node ${id} timeout must be between 5 and 10,080 minutes`);
+      }
+      if (config.instructions && (
+        typeof config.instructions !== 'string' || config.instructions.length > 500
+      )) {
+        errors.push(`Approval node ${id} instructions must be 500 characters or fewer`);
+      }
     }
 
     const position = node?.position || {};
