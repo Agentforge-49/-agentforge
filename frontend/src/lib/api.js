@@ -294,3 +294,42 @@ export async function downloadComplianceExport(id, format = 'json', filters = {}
     recordCount:Number(response.headers.get('X-AgentForge-Audit-Records') || 0),
   }
 }
+
+// Enterprise identity and access
+export const getEnterpriseAccess = organizationId =>
+  request('GET', `/api/enterprise/organizations/${organizationId}`)
+export const addOrganizationDomain = (organizationId, domain) =>
+  request('POST', `/api/enterprise/organizations/${organizationId}/domains`, { domain })
+export const verifyOrganizationDomain = (organizationId, domainId, token) =>
+  request('POST', `/api/enterprise/organizations/${organizationId}/domains/${domainId}/verify`, {
+    token,
+  })
+export const removeOrganizationDomain = (organizationId, domainId) =>
+  request('DELETE', `/api/enterprise/organizations/${organizationId}/domains/${domainId}`)
+export const updateIdentitySettings = (organizationId, data) =>
+  request('PUT', `/api/enterprise/organizations/${organizationId}/settings`, data)
+export const rotateScimToken = organizationId =>
+  request('POST', `/api/enterprise/organizations/${organizationId}/scim-token`)
+export const createAccessReview = (organizationId, data) =>
+  request('POST', `/api/enterprise/organizations/${organizationId}/access-reviews`, data)
+export const decideAccessReviewItem = (organizationId, reviewId, itemId, data) =>
+  request(
+    'POST',
+    `/api/enterprise/organizations/${organizationId}/access-reviews/${reviewId}/items/${itemId}`,
+    data,
+  )
+export const cancelAccessReview = (organizationId, reviewId) =>
+  request('DELETE', `/api/enterprise/organizations/${organizationId}/access-reviews/${reviewId}`)
+
+// Billing sandbox and provider-neutral lifecycle
+export const getBillingSummary = () => request('GET', '/api/billing')
+export const updateBillingCustomer = data => request('PUT', '/api/billing/customer', data)
+export const createBillingCheckout = data => request('POST', '/api/billing/checkout', data)
+export const completeBillingCheckout = (id, token) =>
+  request('POST', `/api/billing/checkout/${id}/complete`, { token })
+export const cancelBillingCheckout = id => request('DELETE', `/api/billing/checkout/${id}`)
+export const cancelBillingSubscription = (immediate = false) =>
+  request('POST', '/api/billing/subscription/cancel', { immediate })
+export const resumeBillingSubscription = () =>
+  request('POST', '/api/billing/subscription/resume')
+export const getBillingInvoice = id => request('GET', `/api/billing/invoices/${id}`)

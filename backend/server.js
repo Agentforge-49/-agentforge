@@ -21,6 +21,8 @@ import multiAgentsRouter from './routes/multi-agents.js';
 import marketplaceRouter from './routes/marketplace.js';
 import usageRouter from './routes/usage.js';
 import organizationsRouter from './routes/organizations.js';
+import enterpriseRouter from './routes/enterprise.js';
+import billingRouter from './routes/billing.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -61,6 +63,8 @@ app.use('/api/multi-agents', multiAgentsRouter);
 app.use('/api/marketplace', marketplaceRouter);
 app.use('/api/usage', usageRouter);
 app.use('/api/organizations', organizationsRouter);
+app.use('/api/enterprise', enterpriseRouter);
+app.use('/api/billing', billingRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

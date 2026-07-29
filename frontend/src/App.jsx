@@ -27,6 +27,8 @@ const Knowledge = lazy(() => import('./pages/Knowledge'))
 const MultiAgents = lazy(() => import('./pages/MultiAgents'))
 const UsagePlans = lazy(() => import('./pages/UsagePlans'))
 const Organizations = lazy(() => import('./pages/Organizations'))
+const EnterpriseAccess = lazy(() => import('./pages/EnterpriseAccess'))
+const Billing = lazy(() => import('./pages/Billing'))
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -98,6 +100,8 @@ export default function App() {
         <Route path="/multi-agents"      element={protect(MultiAgents)} />
         <Route path="/usage"             element={protect(UsagePlans)} />
         <Route path="/organizations"     element={protect(Organizations)} />
+        <Route path="/enterprise-access" element={protect(EnterpriseAccess)} />
+        <Route path="/billing"           element={protect(Billing)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -76,6 +76,15 @@ export async function purgeOrganizationGovernanceData() {
   };
 }
 
+export async function expireBillingSandbox() {
+  const { data, error } = await supabase.rpc('expire_billing_sandbox');
+  if (error) throw error;
+  return data || {
+    checkout_sessions_expired:0,
+    sandbox_subscriptions_closed:0,
+  };
+}
+
 export function startTriggerScheduler() {
   let stopped = false;
   let working = false;
@@ -88,6 +97,7 @@ export function startTriggerScheduler() {
       await purgeExpiredKnowledge();
       await refreshUsageCounters();
       await purgeOrganizationGovernanceData();
+      await expireBillingSandbox();
       while (!stopped && await processNextScheduledTrigger()) {
         // Drain every due schedule before waiting for the next polling interval.
       }
