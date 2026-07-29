@@ -162,3 +162,37 @@ export const runEvaluationSuite = (id, baselineVersionId, candidateVersionId) =>
 export const getEvaluationRun = (id) => request('GET', `/api/evaluations/runs/${id}`)
 export const promoteEvaluationRun = (id) =>
   request('POST', `/api/evaluations/runs/${id}/promote`)
+
+// Knowledge and memory
+export const getKnowledgeBases = () => request('GET', '/api/knowledge')
+export const createKnowledgeBase = data => request('POST', '/api/knowledge', data)
+export const updateKnowledgeBase = (id, data) => request('PUT', `/api/knowledge/${id}`, data)
+export const deleteKnowledgeBase = id => request('DELETE', `/api/knowledge/${id}`)
+export const getKnowledgeDocuments = id => request('GET', `/api/knowledge/${id}/documents`)
+export const addKnowledgeDocument = (id, data) =>
+  request('POST', `/api/knowledge/${id}/documents`, data)
+export const deleteKnowledgeDocument = (id, documentId) =>
+  request('DELETE', `/api/knowledge/${id}/documents/${documentId}`)
+export const searchKnowledge = (id, query, topK = 6) =>
+  request('POST', `/api/knowledge/${id}/search`, { query, top_k:topK })
+export const bindKnowledgeAgent = (id, agentId) =>
+  request('POST', `/api/knowledge/${id}/bind-agent`, { agent_id:agentId })
+export const unbindKnowledgeAgent = (id, agentId) =>
+  request('DELETE', `/api/knowledge/${id}/bind-agent/${agentId}`)
+export const getKnowledgeMemory = id => request('GET', `/api/knowledge/${id}/memory`)
+export const clearKnowledgeMemory = id => request('DELETE', `/api/knowledge/${id}/memory`)
+
+// Multi-agent systems
+export const getMultiAgentSystems = () => request('GET', '/api/multi-agents')
+export const createMultiAgentSystem = data => request('POST', '/api/multi-agents', data)
+export const updateMultiAgentSystem = (id, data) =>
+  request('PUT', `/api/multi-agents/${id}`, data)
+export const deleteMultiAgentSystem = id => request('DELETE', `/api/multi-agents/${id}`)
+export const activateMultiAgentSystem = id => request('POST', `/api/multi-agents/${id}/activate`)
+export const pauseMultiAgentSystem = id => request('POST', `/api/multi-agents/${id}/pause`)
+export const runMultiAgentSystem = (id, input, idempotencyKey) =>
+  request('POST', `/api/multi-agents/${id}/run`, {
+    input,
+    idempotency_key:idempotencyKey,
+  })
+export const getMultiAgentRun = id => request('GET', `/api/multi-agents/runs/${id}`)

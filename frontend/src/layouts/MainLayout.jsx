@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Activity, FlaskConical, LayoutDashboard, Bot, Store, Link2, LogOut, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
+import { Activity, BookOpen, FlaskConical, LayoutDashboard, Bot, Store, Link2, LogOut, Network, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const NAV = [
@@ -12,6 +12,8 @@ const NAV = [
   { to: '/approvals',   icon: ShieldCheck,     label: 'Approvals'   },
   { to: '/observability', icon: Activity,       label: 'Observability' },
   { to: '/evaluations', icon: FlaskConical,     label: 'Evaluations' },
+  { to: '/knowledge',   icon: BookOpen,         label: 'Knowledge'   },
+  { to: '/multi-agents', icon: Network,         label: 'Multi-Agent' },
   { to: '/marketplace', icon: Store,           label: 'Marketplace' },
 ]
 
@@ -41,7 +43,7 @@ export default function MainLayout({ children, user }) {
           <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: '-0.2px' }}>AgentForge</span>
         </div>
 
-        <nav style={{ flex: 1, padding: '12px 10px' }}>
+        <nav style={{ flex: 1, padding: '12px 10px', overflowY:'auto' }}>
           {NAV.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} style={({ isActive }) => ({
               position: 'relative',

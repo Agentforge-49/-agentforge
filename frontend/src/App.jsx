@@ -22,6 +22,8 @@ import Credentials from './pages/Credentials'
 import Approvals from './pages/Approvals'
 import Observability from './pages/Observability'
 import Evaluations from './pages/Evaluations'
+import Knowledge from './pages/Knowledge'
+import MultiAgents from './pages/MultiAgents'
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -83,6 +85,8 @@ export default function App() {
         <Route path="/approvals"         element={protect(Approvals)} />
         <Route path="/observability"     element={protect(Observability)} />
         <Route path="/evaluations"       element={protect(Evaluations)} />
+        <Route path="/knowledge"         element={protect(Knowledge)} />
+        <Route path="/multi-agents"      element={protect(MultiAgents)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -33,6 +33,12 @@ export async function expirePendingApprovals() {
   return data || [];
 }
 
+export async function purgeExpiredKnowledge() {
+  const { data, error } = await supabase.rpc('purge_expired_knowledge');
+  if (error) throw error;
+  return data || { documents_deleted:0, memories_deleted:0 };
+}
+
 export function startTriggerScheduler() {
   let stopped = false;
   let working = false;
@@ -42,6 +48,7 @@ export function startTriggerScheduler() {
     working = true;
     try {
       await expirePendingApprovals();
+      await purgeExpiredKnowledge();
       while (!stopped && await processNextScheduledTrigger()) {
         // Drain every due schedule before waiting for the next polling interval.
       }

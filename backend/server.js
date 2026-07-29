@@ -16,6 +16,8 @@ import connectorsRouter from './routes/connectors.js';
 import approvalsRouter from './routes/approvals.js';
 import observabilityRouter from './routes/observability.js';
 import evaluationsRouter from './routes/evaluations.js';
+import knowledgeRouter from './routes/knowledge.js';
+import multiAgentsRouter from './routes/multi-agents.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -26,7 +28,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json({
-  limit: '64kb',
+  limit: '2mb',
   verify: (req, _res, buffer) => {
     req.rawBody = Buffer.from(buffer);
   },
@@ -50,6 +52,8 @@ app.use('/api/connectors', connectorsRouter);
 app.use('/api/approvals', approvalsRouter);
 app.use('/api/observability', observabilityRouter);
 app.use('/api/evaluations', evaluationsRouter);
+app.use('/api/knowledge', knowledgeRouter);
+app.use('/api/multi-agents', multiAgentsRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

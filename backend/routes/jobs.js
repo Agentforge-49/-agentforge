@@ -32,7 +32,10 @@ router.get('/:id', async (req, res, next) => {
       .single();
     if (error || !job) return res.status(404).json({ error: 'Job not found' });
 
-    const table = job.job_type === 'agent_run' ? 'agent_runs' : 'workflow_runs';
+    const table = job.job_type === 'agent_run' ? 'agent_runs'
+      : job.job_type === 'workflow_run' ? 'workflow_runs'
+        : job.job_type === 'multi_agent_run' ? 'multi_agent_runs'
+          : 'evaluation_runs';
     const { data: resource } = await supabase
       .from(table)
       .select('*')
@@ -79,7 +82,8 @@ router.post('/:id/cancel', async (req, res, next) => {
     if (queued) {
       const table = job.job_type === 'agent_run' ? 'agent_runs'
         : job.job_type === 'workflow_run' ? 'workflow_runs'
-          : 'evaluation_runs';
+          : job.job_type === 'multi_agent_run' ? 'multi_agent_runs'
+            : 'evaluation_runs';
       await supabase.from(table).update({
         status: 'cancelled',
         error_message: 'Cancelled by user',

@@ -13,12 +13,18 @@ import {
   startRunObservability,
   structuredError,
 } from './observability.js';
+import {
+  augmentPrompt,
+  loadAgentKnowledge,
+  recordAgentMemory,
+} from './knowledge.js';
 import { supabase } from './supabase.js';
 import {
   applyTransform,
   evaluateCondition,
   validateWorkflowGraph,
 } from './workflow-graph.js';
+import { processMultiAgentRun } from './multi-agent-runner.js';
 
 const POLL_INTERVAL_MS = Number(process.env.JOB_POLL_INTERVAL_MS || 1500);
 const WORKER_ID = `${os.hostname()}:${process.pid}`;
@@ -79,7 +85,13 @@ async function processAgentRun(job) {
     job.user_id,
     payload.agent_version_id,
   );
-  const result = await executeAgent(version, payload.message, {
+  const knowledge = await loadAgentKnowledge(
+    payload.agent_id,
+    job.user_id,
+    payload.message,
+    job.id,
+  );
+  const result = await executeAgent(version, augmentPrompt(payload.message, knowledge), {
     timeoutSeconds: job.timeout_seconds,
   });
   if (result.status !== 'completed') {
@@ -98,10 +110,20 @@ async function processAgentRun(job) {
     status: 'completed',
     output_text: result.final_answer,
     run_trace: result.run_trace || [],
+    citations:knowledge.citations,
+    memory_context:knowledge.memory,
     tokens_used: result.tokens_used || 0,
     duration_ms: result.duration_ms || 0,
     error_message: null,
     completed_at: new Date().toISOString(),
+  });
+  await recordAgentMemory({
+    agentId:payload.agent_id,
+    userId:job.user_id,
+    runId:job.resource_id,
+    input:payload.message,
+    output:result.final_answer,
+    knowledgeBaseIds:knowledge.knowledgeBaseIds,
   });
   for (const [index, trace] of (result.run_trace || []).entries()) {
     await recordRunEvent(job, {
@@ -127,6 +149,7 @@ async function processAgentRun(job) {
     tokens_used:result.tokens_used || 0,
     estimated_cost_usd:estimateCostUsd(result.tokens_used || 0, version.model),
     model:version.model,
+    citations:knowledge.citations,
   };
 }
 
@@ -312,6 +335,7 @@ async function processWorkflowRun(job) {
       let versionId = null;
       let stepTokens = 0;
       let stepCost = 0;
+      let citations = [];
       if (node.type === 'approval') {
         const timeoutMinutes = Number(node.config.timeout_minutes);
         const resumeState = serializeWorkflowState({
@@ -376,7 +400,14 @@ async function processWorkflowRun(job) {
           throw new Error('Monthly API call limit reached');
         }
         const version = await loadAgentVersion(node.config.agent_id, job.user_id);
-        const result = await executeAgent(version, String(input ?? ''), {
+        const originalInput = String(input ?? '');
+        const knowledge = await loadAgentKnowledge(
+          node.config.agent_id,
+          job.user_id,
+          originalInput,
+          job.id,
+        );
+        const result = await executeAgent(version, augmentPrompt(originalInput, knowledge), {
           timeoutSeconds: Math.min(job.timeout_seconds, 90),
         });
         if (result.status !== 'completed') {
@@ -388,6 +419,15 @@ async function processWorkflowRun(job) {
         totalTokens += stepTokens;
         totalCost += stepCost;
         versionId = version.version_id;
+        citations = knowledge.citations;
+        await recordAgentMemory({
+          agentId:node.config.agent_id,
+          userId:job.user_id,
+          runId:null,
+          input:originalInput,
+          output:result.final_answer,
+          knowledgeBaseIds:knowledge.knowledgeBaseIds,
+        });
         await supabase.rpc('increment_api_usage', {
           p_user_id: job.user_id,
           p_amount: 1,
@@ -416,7 +456,7 @@ async function processWorkflowRun(job) {
       }
       await completeStep(step.id, {
         status: 'completed',
-        output: { value: output },
+        output: { value: output, citations },
         agent_version_id: versionId,
         duration_ms: Date.now() - startedAt,
       });
@@ -428,7 +468,7 @@ async function processWorkflowRun(job) {
         duration_ms:Date.now() - startedAt,
         tokens_used:stepTokens,
         estimated_cost_usd:stepCost,
-        data:{ node_type:node.type, sequence, output, agent_version_id:versionId },
+        data:{ node_type:node.type, sequence, output, citations, agent_version_id:versionId },
       });
     } catch (error) {
       await completeStep(step.id, {
@@ -639,6 +679,7 @@ async function processEvaluationRun(job) {
 function resourceTable(jobType) {
   if (jobType === 'agent_run') return 'agent_runs';
   if (jobType === 'workflow_run') return 'workflow_runs';
+  if (jobType === 'multi_agent_run') return 'multi_agent_runs';
   return 'evaluation_runs';
 }
 
@@ -713,6 +754,7 @@ export async function processNextJob() {
     let result;
     if (job.job_type === 'agent_run') result = await processAgentRun(job);
     else if (job.job_type === 'workflow_run') result = await processWorkflowRun(job);
+    else if (job.job_type === 'multi_agent_run') result = await processMultiAgentRun(job);
     else result = await processEvaluationRun(job);
     const cancelled = result?.cancelled;
     const waiting = result?.waiting_for_approval;

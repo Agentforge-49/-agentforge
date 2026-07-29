@@ -12,7 +12,9 @@ const STATUSES = new Set([
   'queued', 'running', 'retry_wait', 'waiting_approval',
   'succeeded', 'failed', 'cancelled',
 ]);
-const TYPES = new Set(['agent_run', 'workflow_run', 'evaluation_run']);
+const TYPES = new Set([
+  'agent_run', 'workflow_run', 'evaluation_run', 'multi_agent_run',
+]);
 
 function applyFilters(query, req) {
   if (STATUSES.has(req.query.status)) query = query.eq('status', req.query.status);
@@ -167,6 +169,16 @@ router.get('/:id', async (req, res, next) => {
         .select('*, evaluation_results(*, evaluation_cases(name, assertion_type, expected_output))')
         .eq('id', job.resource_id).eq('user_id', req.userId).single();
       resource = result.data;
+    } else if (job?.job_type === 'multi_agent_run') {
+      const [runResult, taskResult] = await Promise.all([
+        supabase.from('multi_agent_runs').select('*')
+          .eq('id', job.resource_id).eq('user_id', req.userId).single(),
+        supabase.from('multi_agent_tasks').select('*, agents(name)')
+          .eq('multi_agent_run_id', job.resource_id).eq('user_id', req.userId)
+          .order('task_order'),
+      ]);
+      resource = runResult.data;
+      steps = taskResult.data || [];
     }
     res.json(redactTelemetry({ summary, job, events:events || [], resource, steps }));
   } catch (error) {
@@ -203,12 +215,19 @@ router.post('/:id/replay', async (req, res, next) => {
         p_input:job.payload.input,
         p_idempotency_key:key,
       }));
-    } else {
+    } else if (job.job_type === 'evaluation_run') {
       ({ data:result, error:rpcError } = await supabase.rpc('enqueue_evaluation_run', {
         p_user_id:req.userId,
         p_suite_id:job.payload.suite_id,
         p_baseline_version_id:job.payload.baseline_version_id,
         p_candidate_version_id:job.payload.candidate_version_id,
+        p_idempotency_key:key,
+      }));
+    } else {
+      ({ data:result, error:rpcError } = await supabase.rpc('enqueue_multi_agent_run', {
+        p_user_id:req.userId,
+        p_system_id:job.payload.system_id,
+        p_input:job.payload.input,
         p_idempotency_key:key,
       }));
     }

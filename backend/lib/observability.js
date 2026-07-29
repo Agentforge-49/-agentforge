@@ -91,6 +91,15 @@ async function resourceDetails(job) {
       .single();
     return { name:workflow?.name || 'Workflow run', model:null };
   }
+  if (job.job_type === 'multi_agent_run') {
+    const { data:system } = await supabase
+      .from('multi_agent_systems')
+      .select('name')
+      .eq('id', job.payload?.system_id)
+      .eq('user_id', job.user_id)
+      .single();
+    return { name:system?.name || 'Multi-agent run', model:null };
+  }
   const { data:suite } = await supabase
     .from('evaluation_suites')
     .select('name')
