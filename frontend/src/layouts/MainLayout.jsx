@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from '../lib/router.jsx'
 import { Activity, BookOpen, Building2, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Settings, Store, Link2, LogOut, Network, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import BrandLogo from '../components/BrandLogo'
 
 const NAV = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
@@ -40,14 +41,7 @@ export default function MainLayout({ children, user }) {
       <aside style={{ width: 224, background: '#13151C', borderRight: '1px solid #1F2230', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
 
         <div style={{ padding: '20px 18px', borderBottom: '1px solid #1F2230', display: 'flex', alignItems: 'center', gap: 11 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 9,
-            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 600, fontSize: 13, letterSpacing: '-0.5px',
-            boxShadow: '0 0 16px rgba(124,58,237,0.4)'
-          }}>AF</div>
-          <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: '-0.2px' }}>AgentForge</span>
+          <BrandLogo size={32} wordmarkColor="#F8FAFC" />
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', overflowY:'auto' }}>

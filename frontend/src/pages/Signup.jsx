@@ -1,82 +1,111 @@
+import { ArrowRight, CircleCheck } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate, Link } from '../lib/router.jsx'
+import BrandLogo from '../components/BrandLogo'
+import { Link, useNavigate } from '../lib/router.jsx'
 import { supabase } from '../lib/supabase'
+import './Auth.css'
 
 export default function Signup({ setUser }) {
   const navigate = useNavigate()
-  const [email,    setEmail]    = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [message,  setMessage]  = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
 
-  const handleSignup = async (e) => {
-    e.preventDefault()
+  const handleSignup = async (event) => {
+    event.preventDefault()
     setLoading(true)
     setError('')
     setMessage('')
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) {
-      setError(error.message)
+
+    const { data, error: authError } = await supabase.auth.signUp({ email, password })
+
+    if (authError) {
+      setError(authError.message)
       setLoading(false)
       return
     }
+
     if (data.user && data.session) {
       setUser(data.user)
       navigate('/dashboard')
     } else {
-      setMessage('Check your email to confirm your account, then log in.')
+      setMessage('Check your email to confirm your account, then sign in.')
     }
+
     setLoading(false)
   }
 
-  const inputStyle = {
-    width: '100%', background: '#1A1D27', border: '1px solid #2A2D3E',
-    borderRadius: '10px', padding: '11px 14px', color: 'white',
-    fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'system-ui',
-  }
-
   return (
-    <div style={{ minHeight: '100vh', background: '#0F1117', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '380px' }}>
+    <div className="auth-page">
+      <section className="auth-panel">
+        <button className="auth-brand" type="button" onClick={() => navigate('/')} aria-label="Back to AgentForge home">
+          <BrandLogo size={40} />
+        </button>
 
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '52px', height: '52px', background: '#7C3AED', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '20px', color: 'white', margin: '0 auto 16px' }}>AF</div>
-          <h1 style={{ fontSize: '24px', fontWeight: '600', color: 'white', marginBottom: '6px' }}>Create account</h1>
-          <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Start building AI agents today</p>
+        <div className="auth-form-wrap">
+          <h1>Start building.</h1>
+          <p>Create your workspace and launch your first AI workflow.</p>
+
+          <form className="auth-form" onSubmit={handleSignup}>
+            <div className="auth-field">
+              <label htmlFor="signup-email">Work email</label>
+              <input
+                id="signup-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                placeholder="you@company.com"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="signup-password">Password</label>
+              <input
+                id="signup-password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={6}
+                placeholder="At least 6 characters"
+              />
+            </div>
+
+            {error && <div className="auth-message auth-message--error" role="alert">{error}</div>}
+            {message && <div className="auth-message auth-message--success" role="status">{message}</div>}
+
+            <button className="auth-submit" type="submit" disabled={loading}>
+              {loading ? 'Creating account…' : 'Create free account'}
+              {!loading && <ArrowRight size={17} />}
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            Already have an account? <Link to="/login">Sign in</Link>
+          </p>
         </div>
+      </section>
 
-        <form onSubmit={handleSignup}>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '6px' }}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" style={inputStyle} />
+      <aside className="auth-visual">
+        <div className="auth-visual__content">
+          <span className="auth-visual__eyebrow">From idea to production</span>
+          <h2>Build automation your team can actually trust.</h2>
+          <p>
+            Combine AI reasoning, deterministic workflows, and human decisions
+            in one governed platform.
+          </p>
+          <div className="auth-visual__proof">
+            <span><CircleCheck size={18} /> Start without a credit card</span>
+            <span><CircleCheck size={18} /> Test safely before publishing</span>
+            <span><CircleCheck size={18} /> Keep every important action visible</span>
           </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '6px' }}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="At least 6 characters" style={inputStyle} />
-          </div>
-
-          {error && (
-            <div style={{ background: '#2D1515', border: '1px solid #EF4444', borderRadius: '8px', padding: '10px 14px', color: '#FCA5A5', fontSize: '13px', marginBottom: '16px' }}>
-              {error}
-            </div>
-          )}
-          {message && (
-            <div style={{ background: '#0D2D1A', border: '1px solid #34D399', borderRadius: '8px', padding: '10px 14px', color: '#6EE7B7', fontSize: '13px', marginBottom: '16px' }}>
-              {message}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? '#5B21B6' : '#7C3AED', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: '500', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'system-ui' }}>
-            {loading ? 'Creating account...' : 'Create account'}
-          </button>
-        </form>
-
-        <p style={{ textAlign: 'center', marginTop: '20px', color: '#9CA3AF', fontSize: '14px' }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: '#A78BFA', textDecoration: 'none' }}>Sign in</Link>
-        </p>
-      </div>
+        </div>
+      </aside>
     </div>
   )
 }

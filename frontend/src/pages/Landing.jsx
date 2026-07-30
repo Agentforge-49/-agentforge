@@ -1,505 +1,387 @@
-import { useNavigate } from '../lib/router.jsx';
+import {
+  Activity,
+  ArrowRight,
+  Bot,
+  Braces,
+  Check,
+  ChevronRight,
+  CircleCheck,
+  Database,
+  GitBranch,
+  KeyRound,
+  Menu,
+  Network,
+  Play,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Workflow,
+  X,
+  Zap,
+} from 'lucide-react'
+import { useState } from 'react'
+import BrandLogo from '../components/BrandLogo'
+import { useNavigate } from '../lib/router.jsx'
+import './Landing.css'
 
-const ICON_COMMON = {
-  width: 24,
-  height: 24,
-  stroke: 'currentColor',
-  strokeWidth: 1.9,
-  fill: 'none',
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-};
+const CAPABILITIES = [
+  {
+    icon: Bot,
+    eyebrow: 'Build',
+    title: 'Agents that understand the assignment',
+    description:
+      'Define goals, tools, knowledge, guardrails, and output contracts in one focused workspace.',
+  },
+  {
+    icon: Workflow,
+    eyebrow: 'Orchestrate',
+    title: 'One canvas for every kind of work',
+    description:
+      'Blend deterministic logic, AI decisions, human approvals, and multi-agent collaboration.',
+  },
+  {
+    icon: Activity,
+    eyebrow: 'Operate',
+    title: 'See what happened—and why',
+    description:
+      'Trace every run, inspect every handoff, replay failures, and measure quality, speed, and cost.',
+  },
+]
 
-const RobotIcon = () => (
-  <svg viewBox="0 0 24 24" style={ICON_COMMON} aria-hidden="true">
-    <path d="M12 3v3" />
-    <path d="M8 6h8" />
-    <rect x="4" y="8" width="16" height="10" rx="4" />
-    <path d="M9 18v2" />
-    <path d="M15 18v2" />
-    <path d="M7 12h.01" />
-    <path d="M17 12h.01" />
-    <path d="M8.5 15c1 .8 2.2 1.2 3.5 1.2s2.5-.4 3.5-1.2" />
-    <path d="M4 12H2" />
-    <path d="M22 12h-2" />
-  </svg>
-);
+const PLATFORM_FEATURES = [
+  { icon: Network, label: 'Multi-agent systems' },
+  { icon: Database, label: 'Grounded knowledge' },
+  { icon: Users, label: 'Human approvals' },
+  { icon: KeyRound, label: 'Encrypted credentials' },
+  { icon: Braces, label: 'Developer APIs' },
+  { icon: ShieldCheck, label: 'Policies and audit' },
+]
 
-const LinkIcon = () => (
-  <svg viewBox="0 0 24 24" style={ICON_COMMON} aria-hidden="true">
-    <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.7 5.23" />
-    <path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07l1.41-1.41" />
-  </svg>
-);
+const WORKFLOW_STEPS = [
+  { icon: Zap, label: 'New request', detail: 'Webhook trigger', status: 'Ready' },
+  { icon: Database, label: 'Find context', detail: 'Knowledge search', status: '12 sources' },
+  { icon: Bot, label: 'Research agent', detail: 'Analyze and decide', status: 'Running' },
+  { icon: Users, label: 'Manager review', detail: 'Approval checkpoint', status: 'Required' },
+]
 
-const RocketIcon = () => (
-  <svg viewBox="0 0 24 24" style={ICON_COMMON} aria-hidden="true">
-    <path d="M4.5 19.5c2.5-.2 4.2-1 5.7-2.5" />
-    <path d="M8 16l-2.5 2.5" />
-    <path d="M13 11l-4 4" />
-    <path d="M14 10c3.4-3.4 4.7-6.9 5-9 0 0-5.6.4-9 3.8L7 8l9 9 3-3z" />
-    <circle cx="15.5" cy="8.5" r="1.2" />
-  </svg>
-);
+const USE_CASES = [
+  'Customer operations',
+  'Revenue workflows',
+  'IT and security',
+  'Research and reporting',
+]
 
-const Landing = () => {
-  const navigate = useNavigate();
+export default function Landing() {
+  const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-  const styles = {
-    page: {
-      minHeight: '100vh',
-      background:
-        'radial-gradient(circle at top, rgba(124,58,237,0.08), transparent 28%), #0B0D12',
-      color: '#FFFFFF',
-      fontFamily:
-        'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-    },
-
-    nav: {
-      width: '100%',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      backdropFilter: 'blur(10px)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 20,
-      background: 'rgba(11, 13, 18, 0.82)',
-    },
-
-    navInner: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '18px 24px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '20px',
-    },
-
-    brand: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      cursor: 'pointer',
-      userSelect: 'none',
-    },
-
-    logo: {
-      width: '34px',
-      height: '34px',
-      borderRadius: '10px',
-      background:
-        'linear-gradient(135deg, rgba(124,58,237,1) 0%, rgba(139,92,246,1) 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#FFFFFF',
-      fontSize: '13px',
-      fontWeight: 800,
-      letterSpacing: '-0.02em',
-      boxShadow: '0 10px 30px rgba(124,58,237,0.35)',
-      flexShrink: 0,
-    },
-
-    wordmark: {
-      fontSize: '18px',
-      fontWeight: 700,
-      letterSpacing: '-0.03em',
-      color: '#F8FAFC',
-    },
-
-    navActions: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      flexShrink: 0,
-    },
-
-    textButton: {
-      background: 'transparent',
-      border: 'none',
-      color: 'rgba(255,255,255,0.78)',
-      fontSize: '14px',
-      fontWeight: 600,
-      padding: '10px 12px',
-      cursor: 'pointer',
-      transition: 'color 0.2s ease, opacity 0.2s ease',
-    },
-
-    primaryButton: {
-      background: '#7C3AED',
-      border: '1px solid rgba(124,58,237,0.95)',
-      color: '#FFFFFF',
-      fontSize: '14px',
-      fontWeight: 700,
-      padding: '12px 18px',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      transition:
-        'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
-      boxShadow: '0 14px 40px rgba(124,58,237,0.35)',
-      whiteSpace: 'nowrap',
-    },
-
-    secondaryButton: {
-      background: 'transparent',
-      border: '1px solid rgba(255,255,255,0.14)',
-      color: '#FFFFFF',
-      fontSize: '15px',
-      fontWeight: 700,
-      padding: '14px 22px',
-      borderRadius: '14px',
-      cursor: 'pointer',
-      transition:
-        'transform 0.2s ease, border-color 0.2s ease, background 0.2s ease',
-      whiteSpace: 'nowrap',
-    },
-
-    main: {
-      flex: 1,
-      width: '100%',
-    },
-
-    heroSection: {
-      position: 'relative',
-      overflow: 'hidden',
-      padding: '96px 24px 64px',
-    },
-
-    heroInner: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      position: 'relative',
-      zIndex: 1,
-    },
-
-    heroContent: {
-      maxWidth: '860px',
-      position: 'relative',
-      zIndex: 2,
-    },
-
-    glow: {
-      position: 'absolute',
-      top: '-40px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: '540px',
-      height: '300px',
-      borderRadius: '999px',
-      background: 'rgba(124,58,237,0.32)',
-      filter: 'blur(80px)',
-      zIndex: -1,
-      pointerEvents: 'none',
-    },
-
-    badge: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '8px 12px',
-      borderRadius: '999px',
-      border: '1px solid rgba(255,255,255,0.08)',
-      background: 'rgba(255,255,255,0.03)',
-      color: 'rgba(255,255,255,0.74)',
-      fontSize: '13px',
-      fontWeight: 600,
-      marginBottom: '24px',
-    },
-
-    badgeDot: {
-      width: '8px',
-      height: '8px',
-      borderRadius: '999px',
-      background: '#7C3AED',
-      boxShadow: '0 0 18px rgba(124,58,237,0.85)',
-      flexShrink: 0,
-    },
-
-    heroTitle: {
-      margin: 0,
-      fontSize: 'clamp(40px, 7vw, 56px)',
-      lineHeight: 1.02,
-      letterSpacing: '-0.055em',
-      fontWeight: 800,
-      color: '#FFFFFF',
-      maxWidth: '900px',
-    },
-
-    heroSubtitle: {
-      marginTop: '24px',
-      marginBottom: 0,
-      fontSize: 'clamp(17px, 2.2vw, 20px)',
-      lineHeight: 1.7,
-      color: 'rgba(255,255,255,0.66)',
-      maxWidth: '720px',
-      fontWeight: 400,
-    },
-
-    heroActions: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '14px',
-      marginTop: '34px',
-      flexWrap: 'wrap',
-    },
-
-    featuresSection: {
-      padding: '32px 24px 90px',
-    },
-
-    featuresInner: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-    },
-
-    featuresGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-      gap: '20px',
-    },
-
-    card: {
-      position: 'relative',
-      background:
-        'linear-gradient(180deg, rgba(26,29,39,0.95) 0%, rgba(18,20,28,0.98) 100%)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '22px',
-      padding: '28px',
-      minHeight: '240px',
-      boxShadow: '0 20px 60px rgba(0,0,0,0.28)',
-      transition:
-        'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
-      overflow: 'hidden',
-    },
-
-    cardGlow: {
-      position: 'absolute',
-      top: '-60px',
-      right: '-40px',
-      width: '160px',
-      height: '160px',
-      borderRadius: '999px',
-      background: 'rgba(124,58,237,0.12)',
-      filter: 'blur(40px)',
-      pointerEvents: 'none',
-    },
-
-    iconWrap: {
-      width: '52px',
-      height: '52px',
-      borderRadius: '16px',
-      background: 'rgba(124,58,237,0.12)',
-      border: '1px solid rgba(124,58,237,0.28)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '20px',
-      color: '#C4B5FD',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-    },
-
-    cardTitle: {
-      margin: 0,
-      fontSize: '22px',
-      lineHeight: 1.2,
-      letterSpacing: '-0.03em',
-      color: '#FFFFFF',
-      fontWeight: 700,
-    },
-
-    cardDescription: {
-      marginTop: '14px',
-      marginBottom: 0,
-      color: 'rgba(255,255,255,0.68)',
-      fontSize: '15px',
-      lineHeight: 1.75,
-      maxWidth: '95%',
-    },
-
-    footer: {
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      padding: '24px',
-      textAlign: 'center',
-      color: 'rgba(255,255,255,0.45)',
-      fontSize: '13px',
-      letterSpacing: '0.01em',
-    },
-  };
-
-  const featureCards = [
-    {
-      title: 'Build agents in minutes',
-      description:
-        'Turn a plain-language task into a working AI agent fast—define the goal, set inputs, and launch without touching code.',
-      icon: <RobotIcon />,
-    },
-    {
-      title: 'Chain them together',
-      description:
-        'Connect agents so one output becomes the next input. Research, transform, summarize, and route work automatically.',
-      icon: <LinkIcon />,
-    },
-    {
-      title: 'Deploy without code',
-      description:
-        'Publish workflows instantly with a polished runtime and no infrastructure overhead, servers, or DevOps setup.',
-      icon: <RocketIcon />,
-    },
-  ];
+  const goTo = (path) => {
+    setMobileOpen(false)
+    navigate(path)
+  }
 
   return (
-    <div style={styles.page}>
-      <header style={styles.nav}>
-        <div style={styles.navInner}>
-          <div style={styles.brand} onClick={() => navigate('/')}>
-            <div style={styles.logo}>AF</div>
-            <div style={styles.wordmark}>AgentForge</div>
-          </div>
+    <div className="landing">
+      <header className="landing-nav">
+        <div className="landing-container landing-nav__inner">
+          <button className="brand-button" type="button" onClick={() => goTo('/')} aria-label="AgentForge home">
+            <BrandLogo size={38} />
+          </button>
 
-          <div style={styles.navActions}>
-            <button
-              type="button"
-              style={styles.textButton}
-              onClick={() => navigate('/login')}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#FFFFFF';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'rgba(255,255,255,0.78)';
-              }}
-            >
+          <nav className="desktop-nav" aria-label="Primary navigation">
+            <a href="#platform">Platform</a>
+            <a href="#workflow">How it works</a>
+            <a href="#security">Security</a>
+            <a href="#use-cases">Use cases</a>
+          </nav>
+
+          <div className="landing-nav__actions">
+            <button className="button button--ghost nav-signin" type="button" onClick={() => goTo('/login')}>
               Sign in
             </button>
-
+            <button className="button button--primary nav-cta" type="button" onClick={() => goTo('/signup')}>
+              Start building
+              <ArrowRight size={16} />
+            </button>
             <button
+              className="mobile-menu-button"
               type="button"
-              style={styles.primaryButton}
-              onClick={() => navigate('/signup')}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow =
-                  '0 18px 46px rgba(124,58,237,0.45)';
-                e.currentTarget.style.background = '#8B5CF6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow =
-                  '0 14px 40px rgba(124,58,237,0.35)';
-                e.currentTarget.style.background = '#7C3AED';
-              }}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((open) => !open)}
             >
-              Get started
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
+
+        {mobileOpen && (
+          <nav className="mobile-nav" aria-label="Mobile navigation">
+            <a href="#platform" onClick={() => setMobileOpen(false)}>Platform</a>
+            <a href="#workflow" onClick={() => setMobileOpen(false)}>How it works</a>
+            <a href="#security" onClick={() => setMobileOpen(false)}>Security</a>
+            <a href="#use-cases" onClick={() => setMobileOpen(false)}>Use cases</a>
+            <button type="button" onClick={() => goTo('/login')}>Sign in</button>
+            <button className="button button--primary" type="button" onClick={() => goTo('/signup')}>
+              Start building
+            </button>
+          </nav>
+        )}
       </header>
 
-      <main style={styles.main}>
-        <section style={styles.heroSection}>
-          <div style={styles.heroInner}>
-            <div style={styles.heroContent}>
-              <div style={styles.glow} />
-
-              <div style={styles.badge}>
-                <span style={styles.badgeDot} />
-                No-code AI agents for real work
+      <main>
+        <section className="hero-section">
+          <div className="hero-grid-pattern" aria-hidden="true" />
+          <div className="landing-container hero-layout">
+            <div className="hero-copy">
+              <div className="eyebrow-pill">
+                <Sparkles size={14} />
+                The operating system for agentic work
               </div>
-
-              <h1 style={styles.heroTitle}>
-                Build AI workers in minutes, not workflows in weeks
+              <h1>
+                Build AI agents that do more than <span>just talk.</span>
               </h1>
-
-              <p style={styles.heroSubtitle}>
-                AgentForge lets anyone create AI agents, connect them into
-                multi-step systems, and ship powerful automations without
-                writing code. From research and content generation to internal
-                ops and customer workflows, your AI team starts here.
+              <p className="hero-lede">
+                Design, connect, test, and govern reliable AI workflows from one
+                workspace—then deploy them wherever work happens.
               </p>
-
-              <div style={styles.heroActions}>
-                <button
-                  type="button"
-                  style={styles.primaryButton}
-                  onClick={() => navigate('/signup')}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow =
-                      '0 18px 46px rgba(124,58,237,0.45)';
-                    e.currentTarget.style.background = '#8B5CF6';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow =
-                      '0 14px 40px rgba(124,58,237,0.35)';
-                    e.currentTarget.style.background = '#7C3AED';
-                  }}
-                >
-                  Get Started Free
+              <div className="hero-actions">
+                <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>
+                  Build your first agent
+                  <ArrowRight size={18} />
                 </button>
+                <a className="button button--secondary button--large" href="#workflow">
+                  <Play size={17} fill="currentColor" />
+                  See how it works
+                </a>
+              </div>
+              <div className="hero-proof">
+                <span><Check size={15} /> No credit card required</span>
+                <span><Check size={15} /> Human approval built in</span>
+                <span><Check size={15} /> Publish when you are ready</span>
+              </div>
+            </div>
 
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={() => navigate('/login')}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.borderColor =
-                      'rgba(124,58,237,0.55)';
-                    e.currentTarget.style.background =
-                      'rgba(124,58,237,0.08)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor =
-                      'rgba(255,255,255,0.14)';
-                    e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  Sign In
-                </button>
+            <div className="product-preview" aria-label="AgentForge workflow preview">
+              <div className="product-preview__topbar">
+                <div className="preview-window-controls" aria-hidden="true">
+                  <span /><span /><span />
+                </div>
+                <span className="preview-title">Customer request triage</span>
+                <span className="preview-status"><span /> Live</span>
+              </div>
+              <div className="product-preview__body">
+                <aside className="preview-sidebar" aria-hidden="true">
+                  <BrandLogo size={28} showWordmark={false} />
+                  <span className="preview-sidebar__active"><Workflow size={16} /></span>
+                  <span><Bot size={16} /></span>
+                  <span><Database size={16} /></span>
+                  <span><Activity size={16} /></span>
+                </aside>
+                <div className="workflow-preview">
+                  <div className="workflow-preview__heading">
+                    <div>
+                      <span className="preview-kicker">Workflow</span>
+                      <h2>Resolve customer requests</h2>
+                    </div>
+                    <button type="button" tabIndex="-1"><Play size={14} fill="currentColor" /> Run</button>
+                  </div>
+                  <div className="workflow-chain">
+                    {WORKFLOW_STEPS.map(({ icon: Icon, label, detail, status }, index) => (
+                      <div className="workflow-node-wrap" key={label}>
+                        <div className={`workflow-node workflow-node--${index + 1}`}>
+                          <div className="workflow-node__icon"><Icon size={17} /></div>
+                          <div>
+                            <strong>{label}</strong>
+                            <span>{detail}</span>
+                          </div>
+                          <small>{status}</small>
+                        </div>
+                        {index < WORKFLOW_STEPS.length - 1 && (
+                          <div className="workflow-connector" aria-hidden="true">
+                            <span />
+                            <ChevronRight size={14} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="run-summary">
+                    <span className="run-summary__icon"><CircleCheck size={17} /></span>
+                    <div>
+                      <strong>Production controls are active</strong>
+                      <span>Retries, audit trail, budget policy, and approval rules</span>
+                    </div>
+                    <div className="run-summary__metric">
+                      <strong>4 / 4</strong>
+                      <span>Controls on</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section style={styles.featuresSection}>
-          <div style={styles.featuresInner}>
-            <div style={styles.featuresGrid}>
-              {featureCards.map((card) => (
-                <div
-                  key={card.title}
-                  style={styles.card}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.borderColor =
-                      'rgba(124,58,237,0.45)';
-                    e.currentTarget.style.boxShadow =
-                      '0 24px 70px rgba(0,0,0,0.35)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor =
-                      'rgba(255,255,255,0.08)';
-                    e.currentTarget.style.boxShadow =
-                      '0 20px 60px rgba(0,0,0,0.28)';
-                  }}
-                >
-                  <div style={styles.cardGlow} />
-                  <div style={styles.iconWrap}>{card.icon}</div>
-                  <h3 style={styles.cardTitle}>{card.title}</h3>
-                  <p style={styles.cardDescription}>{card.description}</p>
-                </div>
+        <section className="trust-strip" aria-label="Platform highlights">
+          <div className="landing-container trust-strip__inner">
+            <span>Built for real operations</span>
+            <div>
+              <span><ShieldCheck size={17} /> Governed</span>
+              <span><Activity size={17} /> Observable</span>
+              <span><GitBranch size={17} /> Versioned</span>
+              <span><Users size={17} /> Human-aware</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="platform">
+          <div className="landing-container">
+            <div className="section-heading">
+              <span className="section-kicker">One connected platform</span>
+              <h2>Everything you need to move from idea to dependable automation.</h2>
+              <p>
+                AgentForge brings agent design, workflow orchestration, quality,
+                and governance into one coherent system.
+              </p>
+            </div>
+
+            <div className="capability-grid">
+              {CAPABILITIES.map(({ icon: Icon, eyebrow, title, description }, index) => (
+                <article className="capability-card" key={title}>
+                  <div className="capability-card__number">0{index + 1}</div>
+                  <div className="capability-card__icon"><Icon size={22} /></div>
+                  <span>{eyebrow}</span>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                  <a href="#workflow">Explore {eyebrow.toLowerCase()} <ArrowRight size={15} /></a>
+                </article>
+              ))}
+            </div>
+
+            <div className="feature-rail">
+              {PLATFORM_FEATURES.map(({ icon: Icon, label }) => (
+                <div key={label}><Icon size={19} /><span>{label}</span></div>
               ))}
             </div>
           </div>
         </section>
+
+        <section className="section section--tint" id="workflow">
+          <div className="landing-container split-section">
+            <div className="split-section__copy">
+              <span className="section-kicker">Control without complexity</span>
+              <h2>Let agents reason. Keep the workflow in control.</h2>
+              <p>
+                Use AI where judgment matters and deterministic steps where
+                consistency matters. Add a human whenever a decision deserves one.
+              </p>
+              <ul className="check-list">
+                <li><CircleCheck size={19} /> Visual workflows with conditions and handoffs</li>
+                <li><CircleCheck size={19} /> Durable runs with retries and checkpoints</li>
+                <li><CircleCheck size={19} /> Multi-agent routing and parallel execution</li>
+                <li><CircleCheck size={19} /> Approval gates before sensitive actions</li>
+              </ul>
+              <button className="text-link" type="button" onClick={() => goTo('/signup')}>
+                Start with a workflow <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div className="logic-card">
+              <div className="logic-card__header">
+                <span>Decision path</span>
+                <small>Every action explained</small>
+              </div>
+              <div className="logic-line">
+                <span className="logic-line__dot"><Zap size={15} /></span>
+                <div><strong>Request received</strong><small>Trigger validates the payload</small></div>
+              </div>
+              <div className="logic-line">
+                <span className="logic-line__dot"><Bot size={15} /></span>
+                <div><strong>Agent classifies intent</strong><small>Confidence: 94% · 3 sources cited</small></div>
+              </div>
+              <div className="logic-branch">
+                <div><span>Low risk</span><strong>Resolve automatically</strong></div>
+                <div className="logic-branch__active"><span>Needs judgment</span><strong>Request approval</strong></div>
+              </div>
+              <div className="logic-result">
+                <CircleCheck size={19} />
+                <div><strong>Complete and auditable</strong><small>Decision, context, and approval stored together</small></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section security-section" id="security">
+          <div className="landing-container security-panel">
+            <div className="security-panel__mark"><ShieldCheck size={28} /></div>
+            <div className="security-panel__copy">
+              <span className="section-kicker">Governance from the first run</span>
+              <h2>Move fast without losing control.</h2>
+              <p>
+                Credentials stay encrypted, risky actions can require approval,
+                and every important change is recorded in an audit trail.
+              </p>
+            </div>
+            <div className="security-stats">
+              <div><strong>Role-based</strong><span>Workspace access</span></div>
+              <div><strong>Encrypted</strong><span>Stored credentials</span></div>
+              <div><strong>Versioned</strong><span>Production changes</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="use-cases">
+          <div className="landing-container">
+            <div className="use-case-layout">
+              <div className="section-heading section-heading--left">
+                <span className="section-kicker">Built for the work between tools</span>
+                <h2>Start with one workflow. Expand into an AI workforce.</h2>
+              </div>
+              <div className="use-case-list">
+                {USE_CASES.map((item, index) => (
+                  <button type="button" key={item} onClick={() => goTo('/signup')}>
+                    <span>0{index + 1}</span>
+                    <strong>{item}</strong>
+                    <ArrowRight size={18} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="cta-section">
+          <div className="landing-container cta-panel">
+            <div>
+              <span className="section-kicker section-kicker--light">Forge the way work gets done</span>
+              <h2>Your first reliable AI workflow starts here.</h2>
+              <p>Build for free. Test safely. Publish when you are ready.</p>
+            </div>
+            <button className="button button--light button--large" type="button" onClick={() => goTo('/signup')}>
+              Start building
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </section>
       </main>
 
-      <footer style={styles.footer}>(c) 2026 AgentForge</footer>
+      <footer className="landing-footer">
+        <div className="landing-container landing-footer__top">
+          <div>
+            <BrandLogo size={38} />
+            <p>Reliable AI agents for real work.</p>
+          </div>
+          <div className="landing-footer__links">
+            <div><strong>Product</strong><a href="#platform">Platform</a><a href="#workflow">Workflows</a><a href="#security">Security</a></div>
+            <div><strong>Start</strong><button type="button" onClick={() => goTo('/signup')}>Create account</button><button type="button" onClick={() => goTo('/login')}>Sign in</button></div>
+          </div>
+        </div>
+        <div className="landing-container landing-footer__bottom">
+          <span>© 2026 AgentForge</span>
+          <span>Built for dependable automation.</span>
+        </div>
+      </footer>
     </div>
-  );
-};
-
-export default Landing;
+  )
+}
