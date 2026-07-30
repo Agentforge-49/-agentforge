@@ -1,0 +1,13 @@
+.pricing-section { padding-top: 36px; }
+.pricing-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: stretch; gap: 18px; }
+.pricing-card { position: relative; display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--af-line); border-radius: 20px; padding: 32px 28px; background: white; box-shadow: 0 18px 50px rgba(7,61,41,.06); }
+.pricing-card--featured { border-color: var(--af-green-700); box-shadow: 0 24px 65px rgba(7,92,57,.14); }
+.pricing-card__flag { position: absolute; top: 18px; right: 18px; border-radius: 999px; padding: 6px 9px; color: var(--af-green-900); background: var(--af-green-100); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.pricing-card__name { color: var(--af-green-800); font-size: 14px; font-weight: 800; }
+.pricing-card__price { margin-top: 22px; color: var(--af-ink); font-family: 'Manrope',system-ui,sans-serif; font-size: clamp(34px,4vw,48px); font-weight: 800; letter-spacing: -.05em; line-height: 1; }
+.pricing-card__suffix { margin-top: 10px; color: var(--af-muted); font-size: 13px; }
+.pricing-card > p { min-height: 68px; margin: 24px 0 0; color: var(--af-muted); font-size: 14px; line-height: 1.6; }
+.pricing-card .marketing-checks { flex: 1; padding: 22px 0 26px; border-top: 1px solid var(--af-line); }
+.pricing-card .button { width: 100%; }
+.pricing-note { max-width: 700px; margin: 25px auto 0; color: var(--af-muted); font-size: 13px; line-height: 1.55; text-align: center; }
+@media (max-width:900px) { .pricing-grid { grid-template-columns: 1fr; max-width: 660px; } .pricing-card > p { min-height: 0; } }

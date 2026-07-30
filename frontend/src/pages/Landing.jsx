@@ -90,9 +90,9 @@ export default function Landing() {
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             <a href="#platform">Platform</a>
-            <a href="#workflow">How it works</a>
-            <a href="#security">Security</a>
-            <a href="#use-cases">Use cases</a>
+            <button type="button" onClick={() => goTo('/integrations')}>Integrations</button>
+            <button type="button" onClick={() => goTo('/templates')}>Templates</button>
+            <button type="button" onClick={() => goTo('/pricing')}>Pricing</button>
           </nav>
 
           <div className="landing-nav__actions">
@@ -118,9 +118,9 @@ export default function Landing() {
         {mobileOpen && (
           <nav className="mobile-nav" aria-label="Mobile navigation">
             <a href="#platform" onClick={() => setMobileOpen(false)}>Platform</a>
-            <a href="#workflow" onClick={() => setMobileOpen(false)}>How it works</a>
-            <a href="#security" onClick={() => setMobileOpen(false)}>Security</a>
-            <a href="#use-cases" onClick={() => setMobileOpen(false)}>Use cases</a>
+            <button type="button" onClick={() => goTo('/integrations')}>Integrations</button>
+            <button type="button" onClick={() => goTo('/templates')}>Templates</button>
+            <button type="button" onClick={() => goTo('/pricing')}>Pricing</button>
             <button type="button" onClick={() => goTo('/login')}>Sign in</button>
             <button className="button button--primary" type="button" onClick={() => goTo('/signup')}>
               Start building
@@ -373,8 +373,8 @@ export default function Landing() {
             <p>Reliable AI agents for real work.</p>
           </div>
           <div className="landing-footer__links">
-            <div><strong>Product</strong><a href="#platform">Platform</a><a href="#workflow">Workflows</a><a href="#security">Security</a></div>
-            <div><strong>Start</strong><button type="button" onClick={() => goTo('/signup')}>Create account</button><button type="button" onClick={() => goTo('/login')}>Sign in</button></div>
+            <div><strong>Product</strong><a href="#platform">Platform</a><button type="button" onClick={() => goTo('/integrations')}>Integrations</button><button type="button" onClick={() => goTo('/templates')}>Templates</button></div>
+            <div><strong>Start</strong><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/signup')}>Create account</button><button type="button" onClick={() => goTo('/login')}>Sign in</button></div>
           </div>
         </div>
         <div className="landing-container landing-footer__bottom">

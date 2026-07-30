@@ -29,4 +29,7 @@ class RunResult(BaseModel):
     tokens_used: int = 0
     duration_ms: int = 0
     status: Literal["completed", "failed", "timeout"] = "completed"
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    error_code: Optional[str] = None
     error_message: Optional[str] = None

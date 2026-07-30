@@ -78,16 +78,23 @@ a {
 }
 
 .desktop-nav a,
+.desktop-nav button,
 .mobile-nav a,
 .mobile-nav > button:not(.button) {
   color: #3c5047;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
   transition: color 160ms ease;
 }
 
 .desktop-nav a:hover,
+.desktop-nav button:hover,
 .mobile-nav a:hover {
   color: var(--af-green-800);
 }

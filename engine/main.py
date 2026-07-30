@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from models import AgentConfig, RunResult
 from executor import AgentExecutor
+from providers import MODEL_CATALOG, ProviderGateway
 
 load_dotenv()
 
@@ -37,11 +38,14 @@ async def run_executor(agent_executor, agent_config, user_message):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global executor
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set in engine/.env")
+    configured = ProviderGateway.configured_providers()
+    if not any(configured.values()):
+        raise RuntimeError(
+            "At least one model provider key must be configured "
+            "(ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY)"
+        )
     executor = AgentExecutor()
-    logger.info("AgentForge Engine ready - API key verified")
+    logger.info("AgentForge Engine ready - configured providers: %s", configured)
     logger.info(f"Registered tools: {list(executor.registry._tools.keys())}")
     if not os.getenv("ENGINE_API_KEY"):
         logger.warning("ENGINE_API_KEY is not set; /execute is not protected")
@@ -49,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="AgentForge Engine",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan
 )
 
@@ -77,19 +81,30 @@ async def execute_agent(
         logger.info(f"Done — status={result.status} tokens={result.tokens_used} ms={result.duration_ms}")
         return result
     except Exception as e:
-        logger.error(f"Unexpected error: {e}", exc_info=True)
+        logger.error(f"Unexpected execution error: {e}", exc_info=True)
         return RunResult(
             status="failed",
-            error_message=str(e),
+            error_code="INTERNAL_EXECUTION_ERROR",
+            error_message="The agent engine could not complete this run",
             duration_ms=0
         )
 
 @app.get("/health")
 async def health():
+    configured = ProviderGateway.configured_providers()
     return {
         "status": "ok",
-        "version": "1.0.0",
-        "anthropic_configured": bool(os.getenv("ANTHROPIC_API_KEY"))
+        "version": "1.1.0",
+        "providers": configured,
+        "supported_models": [
+            {
+                "id": model,
+                "provider": info["provider"],
+                "label": info["label"],
+                "available": configured.get(info["provider"], False),
+            }
+            for model, info in MODEL_CATALOG.items()
+        ],
     }
 
 # ── Entry point ───────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 
 import { redactTelemetry } from './observability.js';
 import { supabase } from './supabase.js';
+import { SUPPORTED_MODELS } from './model-catalog.js';
 
 export const ORGANIZATION_ROLES = ['viewer', 'builder', 'admin', 'owner'];
 export const ORGANIZATION_RESOURCE_TYPES = {
@@ -38,7 +39,7 @@ export const ORGANIZATION_RESOURCE_TYPES = {
 };
 
 const ROLE_RANK = new Map(ORGANIZATION_ROLES.map((role, index) => [role, index]));
-const MODEL_ALLOWLIST = new Set(['claude-sonnet-4-6', 'claude-opus-4-6']);
+const MODEL_ALLOWLIST = SUPPORTED_MODELS;
 
 export function hasOrganizationRole(actual, required = 'viewer') {
   return (ROLE_RANK.get(actual) ?? -1) >= (ROLE_RANK.get(required) ?? Infinity);

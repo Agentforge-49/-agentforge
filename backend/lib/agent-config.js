@@ -14,10 +14,9 @@ export const AGENT_PERSONALITIES = new Set([
   'creative',
 ]);
 
-export const AGENT_MODELS = new Set([
-  'claude-sonnet-4-6',
-  'claude-opus-4-6',
-]);
+import { SUPPORTED_MODELS } from './model-catalog.js';
+
+export const AGENT_MODELS = SUPPORTED_MODELS;
 
 const CONFIG_FIELDS = [
   'name',

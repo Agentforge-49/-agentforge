@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, KeyRound, RefreshCw, ShieldCheck, Trash2, XCircle } from 'lucide-react'
+import { CheckCircle2, KeyRound, Link2, RefreshCw, ShieldCheck, Trash2, Unplug, XCircle } from 'lucide-react'
 
 import {
   createCredential,
+  deleteOauthConnection,
   deleteCredential,
   getCredentialAccessLogs,
   getCredentials,
+  getOauthConnections,
+  getOauthProviders,
   rotateCredential,
+  startOauthConnection,
   testCredential,
 } from '../lib/api'
 
@@ -21,21 +25,66 @@ const PROVIDERS = [
   ['supabase', 'Supabase'],
 ]
 
+function oauthNotice() {
+  const query = new URLSearchParams(window.location.search)
+  const status = query.get('oauth')
+  const provider = query.get('provider')
+  if (status === 'connected') return { message:`${provider || 'App'} connected successfully.`, error:'' }
+  if (status === 'error') return { message:'', error:'The app connection could not be completed. Please try again.' }
+  if (status === 'cancelled') return { message:'App connection was cancelled.', error:'' }
+  return { message:'', error:'' }
+}
+
 export default function Credentials() {
+  const initialNotice = oauthNotice()
   const [credentials, setCredentials] = useState([])
   const [logs, setLogs] = useState([])
   const [showLogs, setShowLogs] = useState(false)
   const [form, setForm] = useState({ name:'', provider:'generic', secret:'', project_url:'' })
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [error, setError] = useState(initialNotice.error)
+  const [message, setMessage] = useState(initialNotice.message)
   const [busyId, setBusyId] = useState('')
   const [rotatingId, setRotatingId] = useState('')
   const [rotationSecret, setRotationSecret] = useState('')
+  const [oauthProviders, setOauthProviders] = useState([])
+  const [oauthConnections, setOauthConnections] = useState([])
+  const [oauthBusy, setOauthBusy] = useState('')
 
   const load = () => getCredentials().then(setCredentials)
   useEffect(() => {
     load().catch(err => setError(err.message))
+    Promise.allSettled([getOauthProviders(), getOauthConnections()]).then(([providers, connections]) => {
+      if (providers.status === 'fulfilled') setOauthProviders(providers.value || [])
+      if (connections.status === 'fulfilled') setOauthConnections(connections.value || [])
+    })
   }, [])
+
+  const connectOauth = async provider => {
+    setOauthBusy(provider)
+    setError('')
+    try {
+      const result = await startOauthConnection(provider)
+      window.location.assign(result.authorization_url)
+    } catch (err) {
+      setError(err.message)
+      setOauthBusy('')
+    }
+  }
+
+  const disconnectOauth = async connection => {
+    if (!window.confirm(`Disconnect ${connection.provider_account_name || connection.provider}?`)) return
+    setOauthBusy(connection.id)
+    setError('')
+    try {
+      await deleteOauthConnection(connection.id)
+      setOauthConnections(items => items.filter(item => item.id !== connection.id))
+      setMessage('App connection removed.')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setOauthBusy('')
+    }
+  }
 
   const create = async event => {
     event.preventDefault()
@@ -117,6 +166,60 @@ export default function Credentials() {
 
       {error && <div style={errorBox}>{error}</div>}
       {message && <div style={successBox}>{message}</div>}
+
+      <section style={{ ...panel, marginBottom:18 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:4 }}>
+          <Link2 size={19} color="#34D399" />
+          <h2 style={{ fontSize:15 }}>Connected apps</h2>
+        </div>
+        <p style={{ color:'#8B8FA3', fontSize:12, marginBottom:14 }}>
+          Connect with provider consent instead of copying long-lived tokens into workflows.
+        </p>
+        {oauthProviders.length === 0 ? (
+          <p style={{ color:'#6B7280', fontSize:12 }}>OAuth providers will appear when the cloud connection layer is available.</p>
+        ) : (
+          <div style={grid}>
+            {oauthProviders.map(provider => {
+              const connections = oauthConnections.filter(item => item.provider === provider.provider)
+              return (
+                <div key={provider.provider} style={oauthCard}>
+                  <div style={{ display:'flex', justifyContent:'space-between', gap:10 }}>
+                    <div>
+                      <strong style={{ fontSize:13 }}>{provider.label}</strong>
+                      <div style={{ color:provider.configured ? '#6EE7B7' : '#FCD34D', fontSize:10, marginTop:4 }}>
+                        {provider.configured ? 'Ready to connect' : 'Provider setup required'}
+                      </div>
+                    </div>
+                    {connections.length > 0 && <CheckCircle2 size={17} color="#34D399" />}
+                  </div>
+                  {connections.map(connection => (
+                    <div key={connection.id} style={oauthConnection}>
+                      <span>{connection.provider_account_name || 'Connected account'}</span>
+                      <button
+                        type="button"
+                        disabled={oauthBusy === connection.id}
+                        onClick={() => disconnectOauth(connection)}
+                        style={iconButton}
+                        aria-label={`Disconnect ${connection.provider_account_name || provider.label}`}
+                      >
+                        <Unplug size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    disabled={!provider.configured || oauthBusy === provider.provider}
+                    onClick={() => connectOauth(provider.provider)}
+                    style={{ ...secondaryButton, width:'100%', justifyContent:'center', marginTop:10, opacity:provider.configured ? 1 : .5 }}
+                  >
+                    <Link2 size={12} /> {connections.length ? 'Connect another' : 'Connect'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       <form onSubmit={create} style={panel}>
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:14 }}>
@@ -227,5 +330,8 @@ const dangerButton = { ...secondaryButton, color:'#FCA5A5' }
 const actions = { display:'flex', gap:7, marginTop:14, paddingTop:12, borderTop:'1px solid #292D3D' }
 const errorBox = { background:'#2D1515', border:'1px solid #EF4444', borderRadius:9, padding:11, color:'#FCA5A5', fontSize:12, marginBottom:14 }
 const successBox = { background:'#0B2A20', border:'1px solid #059669', borderRadius:9, padding:11, color:'#6EE7B7', fontSize:12, marginBottom:14 }
+const oauthCard = { background:'#101219', border:'1px solid #2D3142', borderRadius:10, padding:13 }
+const oauthConnection = { display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginTop:9, color:'#C7CAD4', fontSize:11 }
+const iconButton = { display:'grid', placeItems:'center', border:'1px solid #3B4158', borderRadius:6, padding:5, color:'#FCA5A5', background:'#202431', cursor:'pointer' }
 const th = { textAlign:'left', color:'#8B8FA3', borderBottom:'1px solid #303447', padding:'8px 6px' }
 const td = { color:'#C7CAD4', borderBottom:'1px solid #222637', padding:'9px 6px' }

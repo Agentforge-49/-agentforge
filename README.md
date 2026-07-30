@@ -95,11 +95,18 @@ hour.
 
 Required API variables include `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
 `FRONTEND_URL`, `AGENT_ENGINE_URL`, `ENGINE_API_KEY`,
-`CREDENTIAL_ENCRYPTION_KEY`, and `DEVELOPER_WEBHOOK_SIGNING_KEY`.
+`CREDENTIAL_ENCRYPTION_KEY`, `DEVELOPER_WEBHOOK_SIGNING_KEY`, and
+`OAUTH_STATE_SECRET`.
 
-Required engine variables include `ANTHROPIC_API_KEY` and `ENGINE_API_KEY`.
+The engine requires `ENGINE_API_KEY` and at least one of
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`.
 `ENGINE_MAX_CONCURRENCY` defaults to 4. Frontend public variables are
 `VITE_API_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`.
+
+Google, Slack, and GitHub consent-based connections additionally require the
+matching OAuth client ID and client secret variables shown in
+`backend/.env.example`. The credentials page shows these providers as setup
+required until both values are configured.
 
 Apply Supabase migrations in filename order before deploying API code that
 depends on them. Use the launch-readiness page and recovery snapshots before a
@@ -107,8 +114,9 @@ release.
 
 ## Known provider dependencies
 
-Real model execution consumes Anthropic API credit. Live billing, provider OAuth,
-enterprise SSO/SCIM, transactional email, and third-party connector calls require
-the corresponding provider accounts and credentials. Without them, those paths
-remain unavailable or fail closed; the rest of the platform can still be
-developed and tested locally.
+Real model execution consumes credit from the configured Anthropic, OpenAI, or
+Google provider. Live billing, provider OAuth, enterprise SSO/SCIM,
+transactional email, and third-party connector calls require the corresponding
+provider accounts and credentials. Without them, those paths remain unavailable
+or fail closed; the rest of the platform can still be developed and tested
+locally.

@@ -15,13 +15,18 @@ import {
 import {
   createAgent,
   getAgent,
+  getModels,
   publishAgent,
   updateAgent,
 } from '../lib/api'
 
 const MODEL_MAP = {
-  'Claude Sonnet 4': 'claude-sonnet-4-6',
-  'Claude Opus 4': 'claude-opus-4-6',
+  'Claude Sonnet 4.6 · Anthropic': 'claude-sonnet-4-6',
+  'Claude Opus 4.6 · Anthropic': 'claude-opus-4-6',
+  'GPT-5.6 Sol · OpenAI': 'gpt-5.6-sol',
+  'GPT-5.6 Terra · OpenAI': 'gpt-5.6-terra',
+  'GPT-5.6 Luna · OpenAI': 'gpt-5.6-luna',
+  'Gemini 3.5 Flash · Google': 'gemini-3.5-flash',
 }
 
 const MODEL_LABELS = Object.fromEntries(
@@ -72,7 +77,7 @@ const EMPTY_FORM = {
   systemPrompt: '',
   personality: 'Professional',
   tools: ['Web Search'],
-  model: 'Claude Sonnet 4',
+  model: 'Claude Sonnet 4.6 · Anthropic',
   temperature: 0.7,
   maxTokens: 1000,
 }
@@ -114,7 +119,7 @@ function fromAgent(agent) {
       ? `${agent.personality[0].toUpperCase()}${agent.personality.slice(1)}`
       : 'Professional',
     tools: (agent.tools || []).map(tool => TOOL_LABELS[tool.slug]).filter(Boolean),
-    model: MODEL_LABELS[agent.model] || 'Claude Sonnet 4',
+    model: MODEL_LABELS[agent.model] || 'Claude Sonnet 4.6 · Anthropic',
     temperature: agent.temperature ?? 0.7,
     maxTokens: agent.max_tokens || 1000,
   }
@@ -133,6 +138,17 @@ export default function CreateAgent() {
   const [notice, setNotice] = useState('')
   const [changeSummary, setChangeSummary] = useState('')
   const [formData, setFormData] = useState(EMPTY_FORM)
+  const [modelAvailability, setModelAvailability] = useState({})
+
+  useEffect(() => {
+    getModels()
+      .then(({ models }) => {
+        setModelAvailability(Object.fromEntries(
+          (models || []).map(model => [model.id, Boolean(model.available)]),
+        ))
+      })
+      .catch(() => setModelAvailability({}))
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -434,8 +450,20 @@ export default function CreateAgent() {
                 onChange={event => update('model', event.target.value)}
                 style={{ ...inputStyle, cursor: 'pointer' }}
               >
-                {Object.keys(MODEL_MAP).map(model => <option key={model}>{model}</option>)}
+                {Object.entries(MODEL_MAP).map(([label, id]) => {
+                  const availabilityKnown = Object.keys(modelAvailability).length > 0
+                  const unavailable = availabilityKnown && !modelAvailability[id]
+                  const selected = formData.model === label
+                  return (
+                    <option key={id} value={label} disabled={unavailable && !selected}>
+                      {label}{unavailable ? ' — provider key required' : ''}
+                    </option>
+                  )
+                })}
               </select>
+              <p style={{ color:'#6B7280', fontSize:11, marginTop:7 }}>
+                Availability reflects the model providers configured for this deployment.
+              </p>
             </div>
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9CA3AF', marginBottom: 6 }}>

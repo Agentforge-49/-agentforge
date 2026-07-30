@@ -5,6 +5,9 @@ import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Landing from './pages/Landing'
+import Pricing from './pages/Pricing'
+import Integrations from './pages/Integrations'
+import TemplatesShowcase from './pages/TemplatesShowcase'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const CreateAgent = lazy(() => import('./pages/CreateAgent'))
@@ -77,6 +80,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/"                  element={<Landing />} />
+        <Route path="/pricing"           element={<Pricing />} />
+        <Route path="/integrations"      element={<Integrations />} />
+        <Route path="/templates"         element={<TemplatesShowcase />} />
         <Route path="/login"             element={<Login    setUser={setUser} />} />
         <Route path="/signup"            element={<Signup   setUser={setUser} />} />
         <Route path="/dashboard"         element={protect(Dashboard)} />

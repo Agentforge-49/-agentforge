@@ -110,6 +110,17 @@ export const rotateCredential = (id, secret) =>
 export const testCredential = (id) => request('POST', `/api/credentials/${id}/test`)
 export const deleteCredential = (id) => request('DELETE', `/api/credentials/${id}`)
 export const getCredentialAccessLogs = () => request('GET', '/api/credentials/access/logs')
+export const getModels = () => request('GET', '/api/models')
+
+// Consent-based app connections
+export const getOauthProviders = () => request('GET', '/api/oauth/providers')
+export const getOauthConnections = () => request('GET', '/api/oauth/connections')
+export const startOauthConnection = provider =>
+  request('POST', `/api/oauth/${encodeURIComponent(provider)}/start`, {
+    redirect_path:'/credentials',
+  })
+export const deleteOauthConnection = id =>
+  request('DELETE', `/api/oauth/connections/${id}`)
 
 // Connectors and approvals
 export const getConnectors = () => request('GET', '/api/connectors')

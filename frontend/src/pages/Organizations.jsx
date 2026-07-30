@@ -857,7 +857,14 @@ export default function Organizations() {
                         <div>
                           <Label>Allowed models</Label>
                           <div style={{ display:'flex', gap:9, minHeight:38, alignItems:'center' }}>
-                            {['claude-sonnet-4-6', 'claude-opus-4-6'].map(model => (
+                            {[
+                              'claude-sonnet-4-6',
+                              'claude-opus-4-6',
+                              'gpt-5.6-sol',
+                              'gpt-5.6-terra',
+                              'gpt-5.6-luna',
+                              'gemini-3.5-flash',
+                            ].map(model => (
                               <label key={model} style={{ fontSize:10, color:'#A1A1AA' }}>
                                 <input
                                   type="checkbox"
@@ -868,7 +875,7 @@ export default function Organizations() {
                                       ? [...new Set([...policyForm.allowed_models, model])]
                                       : policyForm.allowed_models.filter(item => item !== model),
                                   })}
-                                /> {model.replace('claude-', '')}
+                                /> {model}
                               </label>
                             ))}
                           </div>

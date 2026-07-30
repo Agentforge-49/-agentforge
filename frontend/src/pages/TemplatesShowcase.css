@@ -1,0 +1,2 @@
+.template-card__tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 20px; }
+.template-card__tags span { border: 1px solid var(--af-line); border-radius: 999px; padding: 6px 9px; color: #40534a; background: #fbfefc; font-size: 11px; font-weight: 700; }

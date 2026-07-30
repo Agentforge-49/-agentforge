@@ -24,9 +24,27 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
       - key: ENGINE_API_KEY
         generateValue: true
       - key: CREDENTIAL_ENCRYPTION_KEY
         generateValue: true
       - key: CREDENTIAL_ENCRYPTION_KEY_VERSION
         value: v1
+      - key: OAUTH_STATE_SECRET
+        generateValue: true
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: SLACK_OAUTH_CLIENT_ID
+        sync: false
+      - key: SLACK_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_OAUTH_CLIENT_ID
+        sync: false
+      - key: GITHUB_OAUTH_CLIENT_SECRET
+        sync: false
