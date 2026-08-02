@@ -85,6 +85,11 @@ export const runWorkflow = (id, input, idempotencyKey) =>
     idempotency_key: idempotencyKey
   })
 export const getWorkflowRuns = (id) => request('GET', `/api/workflows/${id}/runs`)
+export const generateWorkflowDraft = (workflowRequest, model) =>
+  request('POST', '/api/workflow-copilot/draft', {
+    request:workflowRequest,
+    model,
+  })
 
 // Triggers
 export const getTriggers = () => request('GET', '/api/triggers')

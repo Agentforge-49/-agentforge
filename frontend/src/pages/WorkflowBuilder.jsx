@@ -1,14 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Bot, GitBranch, Play, Plug, Save, ShieldCheck, Square, Type, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bot,
+  CheckCircle2,
+  GitBranch,
+  Play,
+  Plug,
+  Redo2,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Square,
+  Type,
+  Undo2,
+  X,
+} from 'lucide-react'
 import { useNavigate, useParams } from '../lib/router.jsx'
 
 import {
   activateWorkflow,
   createWorkflow,
+  generateWorkflowDraft,
   getAgents,
   getConnectors,
   getCredentials,
   getJob,
+  getModels,
   getWorkflow,
   pauseWorkflow,
   runWorkflow,
@@ -74,6 +92,42 @@ function graphFromNodes(nodes) {
   return { nodes:positioned, edges }
 }
 
+function workflowIssues(nodes, credentials, connectors) {
+  const issues = []
+  const credentialMap = new Map(credentials.map(item => [item.id, item]))
+  const connectorMap = new Map(connectors.map(item => [item.action, item]))
+  for (const node of nodes) {
+    if (!node.label?.trim()) issues.push(`${node.type} node needs a label`)
+    if (node.type === 'agent' && !node.config.agent_id) {
+      issues.push(`${node.label || 'Agent'} needs a published agent`)
+    }
+    if (node.type === 'connector') {
+      const definition = connectorMap.get(node.config.action)
+      const credential = credentialMap.get(node.config.credential_id)
+      if (!definition) issues.push(`${node.label || 'Connector'} needs a supported action`)
+      else if (
+        !definition.credential_optional
+        && (!credential || !definition.providers?.includes(credential.provider))
+      ) {
+        issues.push(`${node.label || definition.name} needs a compatible credential`)
+      }
+    }
+    if (node.type === 'condition') {
+      if (!node.config.value?.trim()) issues.push(`${node.label || 'Condition'} needs a comparison value`)
+      if (!node.config.true_target || !node.config.false_target) {
+        issues.push(`${node.label || 'Condition'} needs explicit true and false paths`)
+      }
+    }
+    if (node.type === 'approval') {
+      const timeout = Number(node.config.timeout_minutes)
+      if (!Number.isInteger(timeout) || timeout < 5 || timeout > 10080) {
+        issues.push(`${node.label || 'Approval'} needs a valid timeout`)
+      }
+    }
+  }
+  return [...new Set(issues)]
+}
+
 export default function WorkflowBuilder() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -91,6 +145,14 @@ export default function WorkflowBuilder() {
   const [runInput, setRunInput] = useState('')
   const [job, setJob] = useState(null)
   const [runResult, setRunResult] = useState(null)
+  const [history, setHistory] = useState([])
+  const [future, setFuture] = useState([])
+  const [draggedId, setDraggedId] = useState('')
+  const [copilotRequest, setCopilotRequest] = useState('')
+  const [copilotModel, setCopilotModel] = useState('claude-sonnet-4-6')
+  const [copilotBusy, setCopilotBusy] = useState(false)
+  const [copilotResult, setCopilotResult] = useState(null)
+  const [modelOptions, setModelOptions] = useState([])
 
   useEffect(() => {
     Promise.all([
@@ -98,10 +160,17 @@ export default function WorkflowBuilder() {
       getConnectors(),
       getCredentials(),
       editing ? getWorkflow(id) : Promise.resolve(null),
-    ]).then(([agentData, connectorData, credentialData, workflowData]) => {
+      getModels().catch(() => ({ models:[] })),
+    ]).then(([agentData, connectorData, credentialData, workflowData, modelData]) => {
       setAgents(agentData.filter(agent => agent.status === 'active' && agent.published_version_id))
       setConnectors(connectorData)
       setCredentials(credentialData)
+      const availableModels = (modelData.models || []).filter(model => model.available)
+      setModelOptions(availableModels)
+      if (availableModels.length) {
+        setCopilotModel(current => availableModels.some(model => model.id === current)
+          ? current : availableModels[0].id)
+      }
       if (workflowData) {
         setWorkflow(workflowData)
         setName(workflowData.name)
@@ -113,20 +182,93 @@ export default function WorkflowBuilder() {
 
   const graph = useMemo(() => graphFromNodes(nodes), [nodes])
   const selected = nodes.find(node => node.id === selectedId)
+  const issues = useMemo(
+    () => workflowIssues(nodes, credentials, connectors),
+    [nodes, credentials, connectors],
+  )
+
+  const changeNodes = updater => {
+    const next = typeof updater === 'function' ? updater(nodes) : updater
+    if (next === nodes) return
+    setHistory(items => [...items, nodes].slice(-30))
+    setFuture([])
+    setNodes(next)
+  }
 
   const addNode = type => {
     const next = makeNode(type)
-    setNodes(items => [...items.slice(0, -1), next, items[items.length - 1]])
+    changeNodes(items => [...items.slice(0, -1), next, items[items.length - 1]])
     setSelectedId(next.id)
   }
   const updateSelected = patch => {
-    setNodes(items => items.map(node => node.id === selectedId ? { ...node, ...patch } : node))
+    changeNodes(items => items.map(node => node.id === selectedId ? { ...node, ...patch } : node))
   }
   const updateConfig = patch => updateSelected({ config:{ ...selected.config, ...patch } })
   const removeSelected = () => {
     if (!selected || ['input', 'output'].includes(selected.type)) return
-    setNodes(items => items.filter(node => node.id !== selected.id))
+    changeNodes(items => items.filter(node => node.id !== selected.id))
     setSelectedId(null)
+  }
+
+  const undo = () => {
+    if (!history.length) return
+    const previous = history[history.length - 1]
+    setFuture(items => [nodes, ...items].slice(0, 30))
+    setHistory(items => items.slice(0, -1))
+    setNodes(previous)
+    setSelectedId(null)
+  }
+
+  const redo = () => {
+    if (!future.length) return
+    const next = future[0]
+    setHistory(items => [...items, nodes].slice(-30))
+    setFuture(items => items.slice(1))
+    setNodes(next)
+    setSelectedId(null)
+  }
+
+  const moveNode = (sourceId, targetId) => {
+    if (!sourceId || sourceId === targetId) return
+    const source = nodes.find(node => node.id === sourceId)
+    const target = nodes.find(node => node.id === targetId)
+    if (!source || !target || ['input', 'output'].includes(source.type) || target.type === 'input') return
+    const without = nodes.filter(node => node.id !== sourceId)
+    const targetIndex = without.findIndex(node => node.id === targetId)
+    const next = [...without]
+    next.splice(targetIndex, 0, source)
+    changeNodes(next)
+  }
+
+  const moveSelected = direction => {
+    if (!selected || ['input', 'output'].includes(selected.type)) return
+    const index = nodes.findIndex(node => node.id === selected.id)
+    const targetIndex = direction < 0 ? index - 1 : index + 1
+    if (targetIndex <= 0 || targetIndex >= nodes.length - 1) return
+    const next = [...nodes]
+    ;[next[index], next[targetIndex]] = [next[targetIndex], next[index]]
+    changeNodes(next)
+  }
+
+  const generateDraft = async () => {
+    if (copilotRequest.trim().length < 10) {
+      setError('Describe the workflow in at least 10 characters')
+      return
+    }
+    setCopilotBusy(true)
+    setError('')
+    try {
+      const draft = await generateWorkflowDraft(copilotRequest.trim(), copilotModel)
+      changeNodes(draft.nodes)
+      setName(draft.name)
+      setDescription(draft.description || '')
+      setCopilotResult(draft)
+      setSelectedId(draft.nodes.find(node => !['input', 'output'].includes(node.type))?.id || null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCopilotBusy(false)
+    }
   }
 
   const save = async () => {
@@ -201,7 +343,58 @@ export default function WorkflowBuilder() {
 
       {error && <div style={errorBox}>{error}</div>}
 
-      <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+      <section style={copilotPanel}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16 }}>
+          <div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={copilotIcon}><Sparkles size={16} /></span>
+              <h2 style={{ fontSize:15 }}>Workflow Copilot</h2>
+              <span style={aiBadge}>AI draft</span>
+            </div>
+            <p style={{ color:'#8B8FA3', fontSize:12, marginTop:6 }}>
+              Describe the outcome. Copilot assembles a safe draft from your published agents and configured connections.
+            </p>
+          </div>
+          <select
+            value={copilotModel}
+            onChange={event => setCopilotModel(event.target.value)}
+            style={{ ...inputStyle, width:220, margin:0 }}
+            aria-label="Copilot model"
+          >
+            {modelOptions.length
+              ? modelOptions.map(model => <option key={model.id} value={model.id}>{model.label}</option>)
+              : <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>}
+          </select>
+        </div>
+        <div style={{ display:'flex', alignItems:'stretch', gap:10, marginTop:14 }}>
+          <textarea
+            value={copilotRequest}
+            onChange={event => setCopilotRequest(event.target.value)}
+            placeholder="Example: Research a customer request, format a concise recommendation, require manager approval, then send it to Slack."
+            maxLength={2000}
+            style={{ ...inputStyle, minHeight:76, margin:0, resize:'vertical' }}
+          />
+          <button
+            type="button"
+            onClick={generateDraft}
+            disabled={copilotBusy || copilotRequest.trim().length < 10}
+            style={{ ...primaryButton, minWidth:142, justifyContent:'center', opacity:copilotBusy ? .7 : 1 }}
+          >
+            <Sparkles size={14} /> {copilotBusy ? 'Drafting…' : 'Generate draft'}
+          </button>
+        </div>
+        {copilotResult && (
+          <div style={copilotSummary}>
+            <CheckCircle2 size={15} color="#34D399" />
+            <span>
+              Drafted {copilotResult.nodes.length} nodes with {copilotResult.generation.model}.
+              {copilotResult.rationale ? ` ${copilotResult.rationale}` : ''}
+            </span>
+          </div>
+        )}
+      </section>
+
+      <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:12 }}>
         <span style={{ color:'#6B7280', fontSize:12, padding:'8px 0' }}>Add node:</span>
         {['agent', 'connector', 'transform', 'condition', 'approval'].map(type => {
           const MetaIcon = NODE_META[type].icon
@@ -209,7 +402,25 @@ export default function WorkflowBuilder() {
             <MetaIcon size={13} /> {NODE_META[type].label}
           </button>
         })}
+        <span style={{ width:1, background:'#2A2D3E', margin:'3px 2px' }} />
+        <button type="button" onClick={undo} disabled={!history.length} style={{ ...toolButton, opacity:history.length ? 1 : .45 }}>
+          <Undo2 size={13} /> Undo
+        </button>
+        <button type="button" onClick={redo} disabled={!future.length} style={{ ...toolButton, opacity:future.length ? 1 : .45 }}>
+          <Redo2 size={13} /> Redo
+        </button>
         {workflow && <span style={{ marginLeft:'auto', ...statusPill }}>{workflow.status} · v{workflow.version}</span>}
+      </div>
+
+      <div style={issues.length ? readinessWarning : readinessReady}>
+        {issues.length ? (
+          <>
+            <ShieldCheck size={16} />
+            <span><strong>{issues.length} item{issues.length === 1 ? '' : 's'} need attention.</strong> {issues.slice(0, 2).join(' · ')}</span>
+          </>
+        ) : (
+          <><CheckCircle2 size={16} /><span><strong>Ready to save.</strong> Every node has the required configuration.</span></>
+        )}
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:selected ? '1fr 300px' : '1fr', gap:14 }}>
@@ -221,11 +432,25 @@ export default function WorkflowBuilder() {
               const outgoing = graph.edges.filter(edge => edge.source === node.id)
               return (
                 <div key={node.id} style={{ display:'flex', alignItems:'center', gap:16 }}>
-                  <button onClick={() => setSelectedId(node.id)} style={{
-                    ...nodeCard,
-                    borderColor:selectedId === node.id ? meta.color : '#2A2D3E',
-                    boxShadow:selectedId === node.id ? `0 0 0 2px ${meta.color}33` : 'none',
-                  }}>
+                  <button
+                    onClick={() => setSelectedId(node.id)}
+                    draggable={!['input', 'output'].includes(node.type)}
+                    onDragStart={() => setDraggedId(node.id)}
+                    onDragEnd={() => setDraggedId('')}
+                    onDragOver={event => event.preventDefault()}
+                    onDrop={event => {
+                      event.preventDefault()
+                      moveNode(draggedId, node.id)
+                      setDraggedId('')
+                    }}
+                    title={!['input', 'output'].includes(node.type) ? 'Drag to reorder' : undefined}
+                    style={{
+                      ...nodeCard,
+                      borderColor:selectedId === node.id ? meta.color : '#2A2D3E',
+                      boxShadow:selectedId === node.id ? `0 0 0 2px ${meta.color}33` : 'none',
+                      opacity:draggedId === node.id ? .55 : 1,
+                    }}
+                  >
                     <span style={{ width:30, height:30, borderRadius:9, display:'grid', placeItems:'center', background:`${meta.color}33`, color:meta.color }}>
                       <Icon size={15} />
                     </span>
@@ -256,6 +481,17 @@ export default function WorkflowBuilder() {
             </div>
             <label style={labelStyle}>Label</label>
             <input value={selected.label} onChange={event => updateSelected({ label:event.target.value })} style={inputStyle} />
+
+            {!['input', 'output'].includes(selected.type) && (
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+                <button type="button" onClick={() => moveSelected(-1)} style={secondaryButton}>
+                  <ArrowLeft size={13} /> Move earlier
+                </button>
+                <button type="button" onClick={() => moveSelected(1)} style={secondaryButton}>
+                  Move later <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
 
             {selected.type === 'agent' && <>
               <label style={labelStyle}>Published agent</label>
@@ -429,3 +665,9 @@ const iconButton = { background:'transparent', border:'none', color:'#9CA3AF', c
 const errorBox = { background:'#2D1515', border:'1px solid #EF4444', color:'#FCA5A5', padding:11, borderRadius:9, marginBottom:12, fontSize:12 }
 const statusPill = { color:'#C4B5FD', background:'#4C1D9555', border:'1px solid #6D28D955', padding:'6px 10px', borderRadius:999, fontSize:11, textTransform:'uppercase' }
 const resultBox = { marginTop:12, background:'#0F1117', border:'1px solid #2A2D3E', borderRadius:9, padding:12, color:'#D1D5DB', fontSize:11, overflow:'auto' }
+const copilotPanel = { background:'linear-gradient(135deg,#151C22,#14261F)', border:'1px solid #24533D', borderRadius:16, padding:18, marginBottom:16 }
+const copilotIcon = { width:32, height:32, display:'grid', placeItems:'center', borderRadius:9, color:'#6EE7B7', background:'#064E3B' }
+const aiBadge = { color:'#A7F3D0', background:'#065F4655', border:'1px solid #05966966', borderRadius:999, padding:'4px 7px', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }
+const copilotSummary = { display:'flex', alignItems:'flex-start', gap:8, marginTop:12, paddingTop:12, borderTop:'1px solid #24533D', color:'#B6CFC2', fontSize:11, lineHeight:1.5 }
+const readinessReady = { display:'flex', alignItems:'center', gap:8, color:'#A7F3D0', background:'#052E2455', border:'1px solid #065F46', borderRadius:9, padding:'9px 11px', marginBottom:12, fontSize:11 }
+const readinessWarning = { ...readinessReady, color:'#FDE68A', background:'#42200655', borderColor:'#92400E' }
