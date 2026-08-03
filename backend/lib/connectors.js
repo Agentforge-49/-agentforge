@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
-import { decryptSecret } from './credential-vault.js';
+import { decryptSecret, encryptSecret } from './credential-vault.js';
+import { refreshOauthAccessToken } from './oauth.js';
 import { parsePublicResponse, requestPublicUrl, resolvePublicUrl } from './safe-http.js';
 import { supabase } from './supabase.js';
 
@@ -76,8 +77,9 @@ async function loadCredential(credentialId, userId, definition) {
     .select('*')
     .eq('id', credentialId)
     .eq('user_id', userId)
-    .single();
-  if (error || !credential) throw new Error('Connector credential is unavailable');
+    .maybeSingle();
+  if (error) throw error;
+  if (!credential) return loadOauthCredential(credentialId, userId, definition);
   if (definition.providers && !definition.providers.includes(credential.provider)) {
     throw new Error(`${definition.name} cannot use a ${credential.provider} credential`);
   }
@@ -93,7 +95,91 @@ async function loadCredential(credentialId, userId, definition) {
     version,
     `credential:${userId}:${credential.id}:${credential.current_version}`,
   );
-  return { credential, secret };
+  return { credential, secret, source:'vault' };
+}
+
+function oauthContext(userId, connectionId, tokenType) {
+  return `oauth:${userId}:${connectionId}:${tokenType}`;
+}
+
+function oauthTokenIsExpiring(connection) {
+  if (!connection.access_token_expires_at) return false;
+  const expiresAt = Date.parse(connection.access_token_expires_at);
+  return !Number.isFinite(expiresAt) || expiresAt <= Date.now() + 60_000;
+}
+
+async function loadOauthCredential(credentialId, userId, definition) {
+  const { data:connection, error } = await supabase
+    .from('oauth_connections')
+    .select('*')
+    .eq('id', credentialId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!connection || connection.status !== 'active') {
+    throw new Error('Connector credential is unavailable');
+  }
+  if (definition.providers && !definition.providers.includes(connection.provider)) {
+    throw new Error(`${definition.name} cannot use a ${connection.provider} connection`);
+  }
+
+  let secret = decryptSecret(
+    connection.encrypted_access_token,
+    oauthContext(userId, connection.id, 'access'),
+  );
+  if (oauthTokenIsExpiring(connection)) {
+    if (!connection.encrypted_refresh_token) {
+      await supabase.from('oauth_connections')
+        .update({ status:'expired' })
+        .eq('id', connection.id)
+        .eq('user_id', userId);
+      throw new Error(`${connection.provider} connection has expired; reconnect it`);
+    }
+    const refreshToken = decryptSecret(
+      connection.encrypted_refresh_token,
+      oauthContext(userId, connection.id, 'refresh'),
+    );
+    let refreshed;
+    try {
+      refreshed = await refreshOauthAccessToken(connection.provider, refreshToken);
+    } catch (error) {
+      await supabase.from('oauth_connections')
+        .update({ status:'expired' })
+        .eq('id', connection.id)
+        .eq('user_id', userId);
+      throw error;
+    }
+    secret = refreshed.access_token;
+    const expiresIn = Number(refreshed.expires_in);
+    const updates = {
+      encrypted_access_token:encryptSecret(
+        secret,
+        oauthContext(userId, connection.id, 'access'),
+      ),
+      access_token_expires_at:Number.isFinite(expiresIn) && expiresIn > 0
+        ? new Date(Date.now() + expiresIn * 1000).toISOString()
+        : null,
+      status:'active',
+    };
+    if (refreshed.refresh_token) {
+      updates.encrypted_refresh_token = encryptSecret(
+        refreshed.refresh_token,
+        oauthContext(userId, connection.id, 'refresh'),
+      );
+    }
+    await supabase.from('oauth_connections')
+      .update(updates)
+      .eq('id', connection.id)
+      .eq('user_id', userId);
+  }
+  return {
+    credential:{
+      ...connection,
+      name:connection.provider_account_name || `${connection.provider} account`,
+    },
+    secret,
+    source:'oauth',
+  };
 }
 
 function redact(value, secret) {
@@ -258,5 +344,11 @@ export async function executeConnector(config, input, userId) {
   else if (action === 'google_drive.create_file') output = await executeDrive(parameters, credential);
   else if (action.startsWith('database.')) output = await executeDatabase(action, parameters, credential);
   else throw new Error('Connector action is unsupported');
+  if (credential?.source === 'oauth') {
+    await supabase.from('oauth_connections')
+      .update({ last_used_at:new Date().toISOString() })
+      .eq('id', credential.credential.id)
+      .eq('user_id', userId);
+  }
   return redact(output, credential?.secret);
 }

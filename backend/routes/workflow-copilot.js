@@ -26,7 +26,7 @@ router.post('/draft', async (req, res, next) => {
     const model = String(req.body?.model || 'claude-sonnet-4-6');
     if (!MODEL_CATALOG[model]) return res.status(400).json({ error:'Model is not supported' });
 
-    const [agentsResult, credentialsResult] = await Promise.all([
+    const [agentsResult, credentialsResult, connectionsResult] = await Promise.all([
       supabase.from('agents')
         .select('id, name, description, model, status, published_version_id')
         .eq('user_id', req.userId)
@@ -39,11 +39,27 @@ router.post('/draft', async (req, res, next) => {
         .eq('user_id', req.userId)
         .order('created_at', { ascending:false })
         .limit(100),
+      supabase.from('oauth_connections')
+        .select('id, provider, provider_account_name, status')
+        .eq('user_id', req.userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending:false })
+        .limit(100),
     ]);
     if (agentsResult.error) throw agentsResult.error;
     if (credentialsResult.error) throw credentialsResult.error;
+    if (connectionsResult.error) throw connectionsResult.error;
     const agents = agentsResult.data || [];
-    const credentials = credentialsResult.data || [];
+    const credentials = [
+      ...(credentialsResult.data || []),
+      ...(connectionsResult.data || []).map(connection => ({
+        id:connection.id,
+        name:connection.provider_account_name || `${connection.provider} account`,
+        provider:connection.provider,
+        last_test_status:'passed',
+        source:'oauth',
+      })),
+    ];
     await assertUsageAllowance(req.userId, 1);
 
     const result = await executeAgent({

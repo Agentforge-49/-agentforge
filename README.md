@@ -106,7 +106,9 @@ The engine requires `ENGINE_API_KEY` and at least one of
 Google, Slack, and GitHub consent-based connections additionally require the
 matching OAuth client ID and client secret variables shown in
 `backend/.env.example`. The credentials page shows these providers as setup
-required until both values are configured.
+required until both values are configured. Active Google and Slack connections
+can be selected directly in workflow connector nodes; expiring access tokens
+are refreshed server-side and remain encrypted at rest.
 
 Apply Supabase migrations in filename order before deploying API code that
 depends on them. Use the launch-readiness page and recovery snapshots before a

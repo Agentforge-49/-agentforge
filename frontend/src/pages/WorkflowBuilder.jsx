@@ -27,6 +27,7 @@ import {
   getCredentials,
   getJob,
   getModels,
+  getOauthConnections,
   getWorkflow,
   pauseWorkflow,
   runWorkflow,
@@ -159,12 +160,24 @@ export default function WorkflowBuilder() {
       getAgents(),
       getConnectors(),
       getCredentials(),
+      getOauthConnections(),
       editing ? getWorkflow(id) : Promise.resolve(null),
       getModels().catch(() => ({ models:[] })),
-    ]).then(([agentData, connectorData, credentialData, workflowData, modelData]) => {
+    ]).then(([agentData, connectorData, credentialData, connectionData, workflowData, modelData]) => {
       setAgents(agentData.filter(agent => agent.status === 'active' && agent.published_version_id))
       setConnectors(connectorData)
-      setCredentials(credentialData)
+      setCredentials([
+        ...credentialData.map(credential => ({ ...credential, source:'vault' })),
+        ...connectionData
+          .filter(connection => connection.status === 'active')
+          .map(connection => ({
+            id:connection.id,
+            name:connection.provider_account_name || `${connection.provider} account`,
+            provider:connection.provider,
+            last_test_status:'passed',
+            source:'oauth',
+          })),
+      ])
       const availableModels = (modelData.models || []).filter(model => model.available)
       setModelOptions(availableModels)
       if (availableModels.length) {
@@ -512,7 +525,16 @@ export default function WorkflowBuilder() {
               <label style={labelStyle}>Vault credential</label>
               <select value={selected.config.credential_id || ''} onChange={event => updateConfig({ credential_id:event.target.value || null })} style={inputStyle}>
                 <option value="">{selected.config.action === 'http.request' ? 'No authentication' : 'Select credential'}</option>
-                {credentials.map(credential => <option key={credential.id} value={credential.id}>{credential.name} · {credential.provider}</option>)}
+                {credentials
+                  .filter(credential => {
+                    const definition = connectors.find(item => item.action === selected.config.action)
+                    return !definition?.providers || definition.providers.includes(credential.provider)
+                  })
+                  .map(credential => (
+                    <option key={credential.id} value={credential.id}>
+                      {credential.name} · {credential.provider}{credential.source === 'oauth' ? ' · connected app' : ''}
+                    </option>
+                  ))}
               </select>
               <ConnectorFields node={selected} updateConfig={updateConfig} />
               <small style={{ color:'#6B7280' }}>Use {'{{input}}'} to insert the previous node&apos;s value.</small>

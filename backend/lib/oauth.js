@@ -201,6 +201,40 @@ export async function exchangeAuthorizationCode(provider, code, redirectUri) {
   return payload;
 }
 
+export async function refreshOauthAccessToken(provider, refreshToken) {
+  const definition = oauthProvider(provider);
+  const clientId = process.env[definition.clientIdEnv];
+  const clientSecret = process.env[definition.clientSecretEnv];
+  if (!clientId || !clientSecret) {
+    throw configurationError(`${definition.label} OAuth is not configured`);
+  }
+  if (!refreshToken) {
+    const error = new Error(`${definition.label} must be reconnected`);
+    error.status = 401;
+    throw error;
+  }
+  const response = await providerFetch(definition.tokenUrl, {
+    method:'POST',
+    headers:{
+      Accept:'application/json',
+      'Content-Type':'application/x-www-form-urlencoded',
+    },
+    body:new URLSearchParams({
+      client_id:clientId,
+      client_secret:clientSecret,
+      grant_type:'refresh_token',
+      refresh_token:refreshToken,
+    }),
+  }, provider);
+  const payload = await response.json().catch(() => ({}));
+  if (payload.ok === false || payload.error || !payload.access_token) {
+    const error = new Error(`${definition.label} must be reconnected`);
+    error.status = 401;
+    throw error;
+  }
+  return payload;
+}
+
 export async function fetchOauthProfile(provider, accessToken) {
   const definition = oauthProvider(provider);
   const response = await providerFetch(definition.profileUrl, {

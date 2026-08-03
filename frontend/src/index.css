@@ -1,1 +1,101 @@
 @import "tailwindcss";
+
+.workspace-shell {
+  display: flex;
+  height: 100vh;
+  background: #0b0d12;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.workspace-sidebar {
+  width: 224px;
+  background: #13151c;
+  border-right: 1px solid #1f2230;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 40;
+}
+
+.workspace-main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 28px;
+}
+
+.workspace-mobile-header,
+.workspace-close-button,
+.workspace-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .workspace-shell {
+    padding-top: 58px;
+  }
+
+  .workspace-mobile-header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 58px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: rgba(19, 21, 28, 0.96);
+    border-bottom: 1px solid #1f2230;
+    backdrop-filter: blur(14px);
+    z-index: 30;
+  }
+
+  .workspace-menu-button,
+  .workspace-close-button {
+    border: 1px solid #2e3142;
+    border-radius: 9px;
+    background: #1a1d27;
+    color: #e5e7eb;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .workspace-menu-button {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+  }
+
+  .workspace-close-button {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    margin-left: auto;
+  }
+
+  .workspace-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    box-shadow: 24px 0 55px rgba(0, 0, 0, 0.45);
+  }
+
+  .workspace-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .workspace-overlay {
+    position: fixed;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: rgba(3, 5, 9, 0.68);
+    z-index: 35;
+  }
+
+  .workspace-main {
+    padding: 20px 16px 28px;
+  }
+}

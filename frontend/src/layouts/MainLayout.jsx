@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from '../lib/router.jsx'
-import { Activity, BookOpen, Building2, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Settings, Store, Link2, LogOut, Network, Workflow, Zap, KeyRound, ShieldCheck } from 'lucide-react'
+import { Activity, BookOpen, Building2, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Settings, Store, Link2, LogOut, Menu, Network, Workflow, X, Zap, KeyRound, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import BrandLogo from '../components/BrandLogo'
 
@@ -27,6 +28,7 @@ const NAV = [
 
 export default function MainLayout({ children, user }) {
   const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const logout = async () => {
     await supabase.auth.signOut()
@@ -36,29 +38,39 @@ export default function MainLayout({ children, user }) {
   const initials = (user?.email || 'U').slice(0, 2).toUpperCase()
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0B0D12', color: 'white', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="workspace-shell">
 
-      <aside style={{ width: 224, background: '#13151C', borderRight: '1px solid #1F2230', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <header className="workspace-mobile-header">
+        <button className="workspace-menu-button" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+          <Menu size={20} />
+        </button>
+        <BrandLogo size={29} wordmarkColor="#F8FAFC" />
+      </header>
+
+      {mobileOpen && <button className="workspace-overlay" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
+
+      <aside className={`workspace-sidebar${mobileOpen ? ' workspace-sidebar-open' : ''}`}>
 
         <div style={{ padding: '20px 18px', borderBottom: '1px solid #1F2230', display: 'flex', alignItems: 'center', gap: 11 }}>
           <BrandLogo size={32} wordmarkColor="#F8FAFC" />
+          <button className="workspace-close-button" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={18} /></button>
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', overflowY:'auto' }}>
           {NAV.map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} style={({ isActive }) => ({
+            <NavLink key={to} to={to} onClick={() => setMobileOpen(false)} style={({ isActive }) => ({
               position: 'relative',
               display: 'flex', alignItems: 'center', gap: 11,
               padding: '10px 12px', borderRadius: 9, marginBottom: 3,
               textDecoration: 'none', fontSize: 13.5, fontWeight: isActive ? 500 : 400,
-              background: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
-              color:      isActive ? '#C4B5FD' : '#8B8FA3',
+              background: isActive ? 'rgba(16,185,129,0.12)' : 'transparent',
+              color:      isActive ? '#6EE7B7' : '#8B8FA3',
               transition: 'all 0.15s ease',
             })}>
               {({ isActive }) => (
                 <>
                   {isActive && (
-                    <span style={{ position:'absolute', left:-10, top:'18%', bottom:'18%', width:3, borderRadius:3, background:'#7C3AED', boxShadow:'0 0 8px rgba(124,58,237,0.7)' }} />
+                    <span style={{ position:'absolute', left:-10, top:'18%', bottom:'18%', width:3, borderRadius:3, background:'#10B981', boxShadow:'0 0 8px rgba(16,185,129,0.55)' }} />
                   )}
                   <Icon size={16.5} />
                   {label}
@@ -74,7 +86,7 @@ export default function MainLayout({ children, user }) {
               width: 30, height: 30, borderRadius: '50%',
               background: '#1F2230', border: '1px solid #2E3142',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 600, color: '#A78BFA'
+              fontSize: 11, fontWeight: 600, color: '#6EE7B7'
             }}>{initials}</div>
             <span style={{ fontSize: 12, color: '#8B8FA3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{user?.email}</span>
           </div>
@@ -93,7 +105,7 @@ export default function MainLayout({ children, user }) {
         </div>
       </aside>
 
-      <main style={{ flex: 1, overflow: 'auto', padding: 28 }}>
+      <main className="workspace-main">
         {children}
       </main>
     </div>

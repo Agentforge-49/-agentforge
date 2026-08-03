@@ -12,6 +12,7 @@ import {
   createOauthState,
   hashOauthNonce,
   oauthProviderStatus,
+  refreshOauthAccessToken,
   verifyOauthState,
 } from '../lib/oauth.js';
 
@@ -80,6 +81,39 @@ test('Google authorization URL includes safe OAuth parameters', () => {
     assert.match(url.searchParams.get('scope'), /spreadsheets/);
     assert.equal(oauthProviderStatus('google').configured, true);
   } finally {
+    if (previousId === undefined) delete process.env.GOOGLE_OAUTH_CLIENT_ID;
+    else process.env.GOOGLE_OAUTH_CLIENT_ID = previousId;
+    if (previousSecret === undefined) delete process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    else process.env.GOOGLE_OAUTH_CLIENT_SECRET = previousSecret;
+  }
+});
+
+test('OAuth refresh exchanges a refresh token without exposing it in the URL', async () => {
+  const previousId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const previousSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const previousFetch = globalThis.fetch;
+  process.env.GOOGLE_OAUTH_CLIENT_ID = 'google-client-id';
+  process.env.GOOGLE_OAUTH_CLIENT_SECRET = 'google-client-secret';
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url:String(url), options };
+    return new Response(JSON.stringify({
+      access_token:'fresh-access-token',
+      expires_in:3600,
+      token_type:'Bearer',
+    }), { status:200, headers:{ 'Content-Type':'application/json' } });
+  };
+  try {
+    const result = await refreshOauthAccessToken('google', 'stored-refresh-token');
+    assert.equal(result.access_token, 'fresh-access-token');
+    assert.equal(request.url, 'https://oauth2.googleapis.com/token');
+    assert.doesNotMatch(request.url, /stored-refresh-token/);
+    const body = new URLSearchParams(String(request.options.body));
+    assert.equal(body.get('grant_type'), 'refresh_token');
+    assert.equal(body.get('refresh_token'), 'stored-refresh-token');
+    assert.equal(request.options.redirect, 'manual');
+  } finally {
+    globalThis.fetch = previousFetch;
     if (previousId === undefined) delete process.env.GOOGLE_OAUTH_CLIENT_ID;
     else process.env.GOOGLE_OAUTH_CLIENT_ID = previousId;
     if (previousSecret === undefined) delete process.env.GOOGLE_OAUTH_CLIENT_SECRET;
