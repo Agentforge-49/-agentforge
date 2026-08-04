@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from './lib/router.jsx'
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import MainLayout from './layouts/MainLayout'
+import WorkspaceErrorBoundary from './components/WorkspaceErrorBoundary'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Landing from './pages/Landing'
@@ -46,10 +47,10 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => setUser(session?.user ?? null))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
     })
@@ -57,21 +58,23 @@ export default function App() {
   }, [])
 
   if (loading) return (
-    <div style={{ background: '#0F1117', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '16px' }}>
-      Loading...
+    <div className="workspace-loading">
+      <div className="workspace-loading-card"><span className="workspace-spinner" /> Loading AgentForge…</div>
     </div>
   )
 
   const protect = (Component) => (
     <ProtectedRoute user={user}>
       <MainLayout user={user}>
-        <Suspense fallback={(
-          <div style={{ color:'#8B8FA3', padding:24, textAlign:'center' }}>
-            Loading workspace…
-          </div>
-        )}>
-          <Component />
-        </Suspense>
+        <WorkspaceErrorBoundary>
+          <Suspense fallback={(
+            <div className="workspace-loading">
+              <div className="workspace-loading-card"><span className="workspace-spinner" /> Loading workspace…</div>
+            </div>
+          )}>
+            <Component />
+          </Suspense>
+        </WorkspaceErrorBoundary>
       </MainLayout>
     </ProtectedRoute>
   )

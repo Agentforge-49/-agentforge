@@ -43,7 +43,7 @@ export default function Skeleton({
         height,
         borderRadius,
         background:
-          "linear-gradient(90deg, #1A1D27 0%, #2A2D3E 35%, #363A4D 50%, #2A2D3E 65%, #1A1D27 100%)",
+          "linear-gradient(90deg, #EDF3EF 0%, #DCE8E1 35%, #F8FBF9 50%, #DCE8E1 65%, #EDF3EF 100%)",
         backgroundSize: "200% 100%",
         animation: `${SKELETON_ANIMATION_NAME} 1.5s linear infinite`,
         ...style,
@@ -58,8 +58,8 @@ export function SkeletonCard() {
       style={{
         width: "100%",
         minHeight: "200px",
-        backgroundColor: "#1A1D27",
-        border: "1px solid #2A2D3E",
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #DCE7DF",
         borderRadius: "14px",
         padding: "18px",
         display: "flex",

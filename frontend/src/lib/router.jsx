@@ -9,7 +9,7 @@ import {
   useLocation,
   useParams,
 } from 'wouter'
-import { renderNavLinkChildren } from './nav-link.js'
+import { renderNavLinkChildren, renderNavLinkProp } from './nav-link.js'
 
 export const BrowserRouter = Router
 export const Routes = Switch
@@ -36,6 +36,7 @@ export const NavLink = forwardRef(function NavLink({
   to,
   end = false,
   style,
+  className,
   children,
   ...props
 }, ref) {
@@ -45,7 +46,8 @@ export const NavLink = forwardRef(function NavLink({
     <WouterLink
       ref={ref}
       to={to}
-      style={typeof style === 'function' ? style({ isActive }) : style}
+      style={renderNavLinkProp(style, isActive)}
+      className={renderNavLinkProp(className, isActive)}
       {...props}
     >
       {renderNavLinkChildren(children, isActive)}

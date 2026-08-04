@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { renderNavLinkChildren } from '../src/lib/nav-link.js'
+import { renderNavLinkChildren, renderNavLinkProp } from '../src/lib/nav-link.js'
 
 test('navigation render functions receive active state and produce visible content', () => {
   const result = renderNavLinkChildren(
@@ -13,4 +13,9 @@ test('navigation render functions receive active state and produce visible conte
 
 test('navigation accepts ordinary children', () => {
   assert.equal(renderNavLinkChildren('Settings', false), 'Settings')
+})
+
+test('navigation resolves active class names and preserves ordinary values', () => {
+  assert.equal(renderNavLinkProp(({ isActive }) => isActive ? 'active' : 'idle', true), 'active')
+  assert.equal(renderNavLinkProp('nav-link', false), 'nav-link')
 })

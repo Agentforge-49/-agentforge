@@ -1,113 +1,124 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from '../lib/router.jsx'
-import { Plus } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  Activity, ArrowRight, Bot, KeyRound, Link2, Plus, Sparkles, Workflow,
+} from 'lucide-react'
+
 import AgentCard from '../components/AgentCard'
 import { getAgents, getDashboardStats } from '../lib/api'
+import { useNavigate } from '../lib/router.jsx'
+
+const QUICK_ACTIONS = [
+  { title:'Build an AI agent', detail:'Define its role, model, tools, and production guardrails.', to:'/agents/new', icon:Bot },
+  { title:'Design a workflow', detail:'Combine agents, logic, approvals, and connected apps.', to:'/workflows/new', icon:Workflow },
+  { title:'Connect your tools', detail:'Add encrypted credentials or consent-based accounts.', to:'/credentials', icon:KeyRound },
+]
 
 export default function Dashboard() {
-  const navigate  = useNavigate()
-  const [agents,  setAgents]  = useState([])
-  const [stats,   setStats]   = useState(null)
+  const navigate = useNavigate()
+  const [agents, setAgents] = useState([])
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true)
-        setError('')
-        const [agentsData, statsData] = await Promise.all([
-          getAgents(),
-          getDashboardStats()
-        ])
-        setAgents(agentsData)
-        setStats(statsData)
-      } catch (err) {
-        setError(err.message || 'Failed to load dashboard data')
-      } finally {
-        setLoading(false)
-      }
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const [agentsData, statsData] = await Promise.all([getAgents(), getDashboardStats()])
+      setAgents(agentsData)
+      setStats(statsData)
+    } catch (err) {
+      setError(err.message || 'Failed to load dashboard data')
+    } finally {
+      setLoading(false)
     }
-    loadData()
   }, [])
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(loadData, 0)
+    return () => clearTimeout(timer)
+  }, [loadData])
+
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: 14 }}>
-      <div style={{ width: 36, height: 36, border: '3px solid #2A2D3E', borderTop: '3px solid #7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <p style={{ color: '#9CA3AF', fontSize: 14 }}>Loading your agents...</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    <div className="workspace-loading">
+      <div className="workspace-loading-card"><span className="workspace-spinner" /> Preparing your command center…</div>
     </div>
   )
 
-  // ── Error state ────────────────────────────────────────────────────────────
   if (error) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div style={{ background: '#2D1515', border: '1px solid #EF4444', borderRadius: 12, padding: '20px 28px', textAlign: 'center', maxWidth: 400 }}>
-        <p style={{ color: '#FCA5A5', fontSize: 15, marginBottom: 14 }}>⚠️ {error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          style={{ background: '#7C3AED', color: 'white', border: 'none', padding: '9px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
-          Try again
-        </button>
+    <div className="dashboard-error">
+      <div className="dashboard-error-card">
+        <strong>We could not load the dashboard</strong>
+        <p>{error}</p>
+        <button onClick={loadData}>Try again</button>
       </div>
     </div>
   )
 
-  const statCards = stats ? [
-    { label: 'Total Agents',   value: stats.total_agents },
-    { label: 'Active Agents',  value: stats.active_agents },
-    { label: 'Total Runs',     value: stats.total_runs },
-    { label: 'API Calls Used', value: `${stats.api_calls_used} / ${stats.api_calls_limit}` },
-  ] : []
+  const statCards = [
+    { label:'Total agents', value:stats?.total_agents ?? 0, icon:Bot, tone:'green' },
+    { label:'Active agents', value:stats?.active_agents ?? 0, icon:Sparkles, tone:'mint' },
+    { label:'Total runs', value:stats?.total_runs ?? 0, icon:Activity, tone:'blue' },
+    { label:'API calls used', value:`${stats?.api_calls_used ?? 0} / ${stats?.api_calls_limit ?? 0}`, icon:Link2, tone:'amber' },
+  ]
 
   return (
-    <div>
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div className="dashboard-page">
+      <section className="dashboard-hero">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>Dashboard</h1>
-          <p style={{ color: '#9CA3AF', fontSize: 14 }}>Welcome back. Here are your agents.</p>
+          <div className="dashboard-eyebrow"><Sparkles size={13} /> Agent operations workspace</div>
+          <h1>Good to see you. Let’s build something useful.</h1>
+          <p>Design, launch, and monitor dependable AI automation from one command center.</p>
         </div>
-        <button
-          onClick={() => navigate('/agents/new')}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#7C3AED', color: 'white', border: 'none', padding: '10px 18px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
-          <Plus size={15} /> Create Agent
+        <button className="dashboard-primary" onClick={() => navigate('/agents/new')}>
+          <Plus size={16} /> Create agent
         </button>
-      </div>
+      </section>
 
-      {/* ── Stats row ── */}
-      {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 28 }}>
-          {statCards.map(s => (
-            <div key={s.label} style={{ background: '#1A1D27', border: '1px solid #2A2D3E', borderRadius: 12, padding: 16 }}>
-              <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 6 }}>{s.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 600 }}>{s.value}</div>
-            </div>
+      <section className="dashboard-stats" aria-label="Workspace statistics">
+        {statCards.map(({ label, value, icon:Icon, tone }) => (
+          <article className="dashboard-stat" key={label}>
+            <span className={`dashboard-stat-icon dashboard-stat-icon-${tone}`}><Icon size={17} /></span>
+            <div><small>{label}</small><strong>{value}</strong></div>
+          </article>
+        ))}
+      </section>
+
+      <section className="dashboard-section">
+        <div className="dashboard-section-heading">
+          <div><span>Start here</span><h2>Move from idea to production</h2></div>
+        </div>
+        <div className="dashboard-actions">
+          {QUICK_ACTIONS.map(({ title, detail, to, icon:Icon }, index) => (
+            <button key={title} className="dashboard-action" onClick={() => navigate(to)}>
+              <span className="dashboard-action-number">0{index + 1}</span>
+              <span className="dashboard-action-icon"><Icon size={19} /></span>
+              <strong>{title}</strong>
+              <span>{detail}</span>
+              <span className="dashboard-action-link">Open workspace <ArrowRight size={14} /></span>
+            </button>
           ))}
         </div>
-      )}
+      </section>
 
-      {/* ── Agent grid ── */}
-      <h2 style={{ fontSize: 15, fontWeight: 500, marginBottom: 14 }}>My Agents</h2>
-
-      {agents.length === 0 ? (
-        // ── Empty state ──
-        <div style={{ background: '#1A1D27', border: '1px dashed #2A2D3E', borderRadius: 16, padding: '60px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🤖</div>
-          <h3 style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>No agents yet</h3>
-          <p style={{ color: '#9CA3AF', fontSize: 14, marginBottom: 24 }}>Create your first AI agent to get started</p>
-          <button
-            onClick={() => navigate('/agents/new')}
-            style={{ background: '#7C3AED', color: 'white', border: 'none', padding: '11px 24px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
-            Create your first agent
-          </button>
+      <section className="dashboard-section">
+        <div className="dashboard-section-heading dashboard-section-heading-row">
+          <div><span>Your workforce</span><h2>Agents</h2></div>
+          {agents.length > 0 && <button className="dashboard-secondary" onClick={() => navigate('/agents/new')}><Plus size={14} /> New agent</button>}
         </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 14 }}>
-          {agents.map(agent => <AgentCard key={agent.id} agent={agent} />)}
-        </div>
-      )}
+        {agents.length === 0 ? (
+          <div className="dashboard-empty">
+            <div className="dashboard-empty-visual"><Bot size={28} /></div>
+            <h3>Your first agent starts here</h3>
+            <p>Create a focused AI worker, give it tools and knowledge, test its output, then publish it when you are ready.</p>
+            <button className="dashboard-primary" onClick={() => navigate('/agents/new')}>Create your first agent <ArrowRight size={15} /></button>
+          </div>
+        ) : (
+          <div className="dashboard-agent-grid">
+            {agents.map(agent => <AgentCard key={agent.id} agent={agent} />)}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
