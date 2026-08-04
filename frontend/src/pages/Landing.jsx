@@ -136,14 +136,14 @@ export default function Landing() {
             <div className="hero-copy">
               <div className="eyebrow-pill">
                 <Sparkles size={14} />
-                The operating system for agentic work
+                Governed AI automation for support and operations
               </div>
               <h1>
-                Build AI agents that do more than <span>just talk.</span>
+                Turn repetitive operations into <span>controlled AI workflows.</span>
               </h1>
               <p className="hero-lede">
-                Design, connect, test, and govern reliable AI workflows from one
-                workspace—then deploy them wherever work happens.
+                Start from a real support, lead, or research workflow. Connect your tools,
+                require human approval, and inspect every decision from one workspace.
               </p>
               <div className="hero-actions">
                 <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>

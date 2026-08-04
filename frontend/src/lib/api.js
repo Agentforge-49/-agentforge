@@ -59,6 +59,9 @@ export const cancelJob    = (id)  => request('POST', `/api/jobs/${id}/cancel`)
 // ── Templates ────────────────────────────────────────────────────────────────
 export const getTemplates  = ()   => request('GET',  '/api/templates')
 export const useTemplate   = (id) => request('POST', `/api/templates/${id}/use`)
+export const getStarterKits = () => request('GET', '/api/starter-kits')
+export const installStarterKit = (slug, data) =>
+  request('POST', `/api/starter-kits/${encodeURIComponent(slug)}/install`, data)
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 export const getDashboardStats = () => request('GET', '/api/dashboard/stats')

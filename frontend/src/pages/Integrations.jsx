@@ -5,8 +5,8 @@ import { useNavigate } from '../lib/router.jsx'
 const INTEGRATIONS = [
   { icon: Braces, name: 'HTTP & webhooks', text: 'Call public APIs and start workflows from signed webhook events.', status: 'Live' },
   { icon: Database, name: 'Supabase', text: 'Use AgentForge’s production data, authentication, and durable run records.', status: 'Live' },
-  { icon: Sheet, name: 'Google Sheets', text: 'Read, append, update, and create spreadsheet data using secured credentials.', status: 'Live' },
-  { icon: Database, name: 'Google Drive', text: 'Create and retrieve files for document-based workflows.', status: 'Live' },
+  { icon: Sheet, name: 'Google Sheets', text: 'Append approved workflow results to a selected spreadsheet using secured credentials.', status: 'Live with credential' },
+  { icon: Database, name: 'Google Drive', text: 'Create report files from approved workflow output.', status: 'Live with credential' },
   { icon: Mail, name: 'Resend', text: 'Send transactional email steps from governed workflows.', status: 'Live' },
   { icon: MessageSquare, name: 'Slack', text: 'Message actions are live; workspace OAuth is ready for provider configuration.', status: 'Setup required' },
   { icon: GitBranch, name: 'GitHub', text: 'Least-privilege account OAuth is ready; repository permissions can be added per workflow later.', status: 'Setup required' },
@@ -43,7 +43,7 @@ export default function Integrations() {
           <div className="marketing-grid">
             {INTEGRATIONS.map(({ icon: Icon, name, text, status }) => (
               <article className="marketing-card" key={name}>
-                <div className="marketing-card__topline"><div className="marketing-card__icon"><Icon size={21} /></div><span className={`marketing-badge${status === 'Live' ? '' : ' marketing-badge--setup'}`}>{status}</span></div>
+                <div className="marketing-card__topline"><div className="marketing-card__icon"><Icon size={21} /></div><span className={`marketing-badge${status.startsWith('Live') ? '' : ' marketing-badge--setup'}`}>{status}</span></div>
                 <h3>{name}</h3><p>{text}</p>
               </article>
             ))}

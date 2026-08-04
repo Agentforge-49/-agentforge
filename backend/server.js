@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import agentsRouter from './routes/agents.js';
 import runsRouter from './routes/runs.js';
 import templatesRouter from './routes/templates.js';
+import starterKitsRouter from './routes/starter-kits.js';
 import dashboardRouter from './routes/dashboard.js';
 import chainsRouter from './routes/chains.js';
 import jobsRouter from './routes/jobs.js';
@@ -82,6 +83,7 @@ app.use(cors({
 app.use('/api/agents', agentsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/templates', templatesRouter);
+app.use('/api/starter-kits', starterKitsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/chains', chainsRouter);
 app.use('/api/jobs', jobsRouter);

@@ -1,15 +1,12 @@
-import { ArrowRight, Bot, Headphones, MailCheck, Search, ShieldCheck, ShoppingBag, Sparkles } from 'lucide-react'
+import { ArrowRight, Bot, Headphones, MailCheck, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import MarketingLayout from '../components/MarketingLayout'
 import { useNavigate } from '../lib/router.jsx'
 import './TemplatesShowcase.css'
 
 const TEMPLATES = [
-  { icon: Headphones, category: 'Customer operations', title: 'Support request triage', text: 'Classify an incoming request, ground the response, route risk, and request approval before sensitive actions.', capabilities: ['Webhook', 'Knowledge', 'Approval'] },
-  { icon: Search, category: 'Research', title: 'Cited research brief', text: 'Collect public evidence, synthesize findings, preserve sources, and deliver a structured decision brief.', capabilities: ['Web research', 'Multi-agent', 'Evaluation'] },
-  { icon: MailCheck, category: 'Revenue', title: 'Lead qualification', text: 'Enrich a new lead, apply deterministic qualification rules, draft outreach, and wait for human approval.', capabilities: ['HTTP', 'Condition', 'Email'] },
-  { icon: ShoppingBag, category: 'Commerce', title: 'Order exception resolver', text: 'Inspect order context, identify the exception path, coordinate systems, and escalate uncertain cases.', capabilities: ['Connector', 'Routing', 'Audit'] },
-  { icon: ShieldCheck, category: 'IT & security', title: 'Access request review', text: 'Validate policy, collect missing context, route privileged access for approval, and record the decision.', capabilities: ['Policy', 'Approval', 'Audit'] },
-  { icon: Bot, category: 'Agent operations', title: 'Specialist agent team', text: 'Route tasks to research, analysis, and writing specialists, then aggregate the strongest result.', capabilities: ['Supervisor', 'Parallel agents', 'Trace'] },
+  { icon: Headphones, category: 'Customer support', title: 'Support triage to Slack', text: 'Classify urgency and risk, draft a safe response, request approval, and post the approved handoff to Slack.', capabilities: ['Published agent', 'Approval', 'Slack'] },
+  { icon: MailCheck, category: 'Revenue operations', title: 'Lead qualification to Sheets', text: 'Score a lead using explicit evidence, approve the recommendation, and append the result to Google Sheets.', capabilities: ['Lead score', 'Approval', 'Sheets'] },
+  { icon: Search, category: 'Operations research', title: 'Approved research delivery', text: 'Create an evidence-conscious decision brief, approve it, save it to Drive, and deliver it by email.', capabilities: ['Research brief', 'Drive', 'Email'] },
 ]
 
 export default function TemplatesShowcase() {
@@ -20,7 +17,7 @@ export default function TemplatesShowcase() {
         <div className="landing-container">
           <span className="section-kicker">Production-minded starting points</span>
           <h1>Start from a proven pattern. <span>Make it yours.</span></h1>
-          <p>Explore practical automation blueprints designed around clear inputs, controlled decisions, measurable outputs, and human oversight.</p>
+          <p>Install one of three complete flagship workflows with a focused agent, human approval, real delivery connection, and ready-to-use test input.</p>
           <div className="marketing-hero__actions"><button className="button button--primary button--large" type="button" onClick={() => navigate('/signup')}>Open the template marketplace <ArrowRight size={17} /></button></div>
         </div>
       </section>

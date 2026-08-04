@@ -110,6 +110,22 @@ required until both values are configured. Active Google and Slack connections
 can be selected directly in workflow connector nodes; expiring access tokens
 are refreshed server-side and remain encrypted at rest.
 
+## Flagship starter kits
+
+The authenticated marketplace includes three guided, production-minded starter
+kits for the initial support and operations launch audience:
+
+- Support triage with human approval and Slack delivery.
+- Lead qualification with human approval and Google Sheets delivery.
+- Approved research reporting with parallel Google Drive and Resend delivery.
+
+Installing a kit validates resource limits, verifies that every selected
+credential belongs to the current user and matches the required provider,
+creates and publishes the focused agent, validates the workflow graph, and
+activates the approval-gated workflow. A failed installation removes any agent
+or workflow resources created during that attempt. External actions still need
+the corresponding user connection and provider account.
+
 Apply Supabase migrations in filename order before deploying API code that
 depends on them. Use the launch-readiness page and recovery snapshots before a
 release.

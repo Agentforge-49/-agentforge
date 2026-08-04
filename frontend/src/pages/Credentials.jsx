@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, KeyRound, Link2, RefreshCw, ShieldCheck, Trash2, Unplug, XCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle2, KeyRound, Link2, Mail, RefreshCw, ShieldCheck, Trash2, Unplug, XCircle } from 'lucide-react'
 
 import {
   createCredential,
@@ -49,6 +49,35 @@ export default function Credentials() {
   const [oauthProviders, setOauthProviders] = useState([])
   const [oauthConnections, setOauthConnections] = useState([])
   const [oauthBusy, setOauthBusy] = useState('')
+
+  const launchConnections = [
+    {
+      key:'slack',
+      label:'Slack delivery',
+      provider:'slack',
+      detail:'Send approved support handoffs to a team channel.',
+      ready:oauthConnections.some(item => item.provider === 'slack' && item.status === 'active')
+        || credentials.some(item => item.provider === 'slack'),
+      oauth:true,
+    },
+    {
+      key:'google',
+      label:'Google Workspace',
+      provider:'google',
+      detail:'Append lead results to Sheets and archive reports in Drive.',
+      ready:oauthConnections.some(item => item.provider === 'google' && item.status === 'active')
+        || credentials.some(item => item.provider === 'google'),
+      oauth:true,
+    },
+    {
+      key:'resend',
+      label:'Email delivery',
+      provider:'resend',
+      detail:'Deliver approved reports from a verified sender through Resend.',
+      ready:credentials.some(item => item.provider === 'resend'),
+      oauth:false,
+    },
+  ]
 
   const load = () => getCredentials().then(setCredentials)
   useEffect(() => {
@@ -154,6 +183,16 @@ export default function Credentials() {
     }
   }
 
+  const prepareManual = connection => {
+    setForm(current => ({
+      ...current,
+      name:connection.key === 'resend' ? 'Resend production key' : `${connection.label} token`,
+      provider:connection.provider,
+      secret:'',
+    }))
+    document.getElementById('store-credential')?.scrollIntoView({ behavior:'smooth', block:'start' })
+  }
+
   return (
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'start', marginBottom:22 }}>
@@ -166,6 +205,42 @@ export default function Credentials() {
 
       {error && <div style={errorBox}>{error}</div>}
       {message && <div style={successBox}>{message}</div>}
+
+      <section className="connection-launch-center">
+        <div className="connection-launch-heading">
+          <div><span>Launch connections</span><h2>Connect the three tools used by flagship workflows.</h2></div>
+          <p>Start with one connection. You do not need every provider to install your first workflow.</p>
+        </div>
+        <div className="connection-launch-grid">
+          {launchConnections.map(connection => {
+            const provider = oauthProviders.find(item => item.provider === connection.provider)
+            return (
+              <article key={connection.key}>
+                <div className="connection-launch-card-top">
+                  <span>{connection.key === 'resend' ? <Mail size={18} /> : <Link2 size={18} />}</span>
+                  <strong className={connection.ready ? 'ready' : ''}>
+                    {connection.ready ? <><CheckCircle2 size={12} /> Ready</> : 'Setup needed'}
+                  </strong>
+                </div>
+                <h3>{connection.label}</h3>
+                <p>{connection.detail}</p>
+                {!connection.ready && connection.oauth && provider?.configured && (
+                  <button type="button" disabled={oauthBusy === connection.provider}
+                    onClick={() => connectOauth(connection.provider)}>
+                    Connect with consent <ArrowRight size={13} />
+                  </button>
+                )}
+                {!connection.ready && (!connection.oauth || !provider?.configured) && (
+                  <button type="button" onClick={() => prepareManual(connection)}>
+                    Store secure credential <ArrowRight size={13} />
+                  </button>
+                )}
+                {connection.ready && <small>Available in the starter-kit installer and workflow builder.</small>}
+              </article>
+            )
+          })}
+        </div>
+      </section>
 
       <section style={{ ...panel, marginBottom:18 }}>
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:4 }}>
@@ -221,7 +296,7 @@ export default function Credentials() {
         )}
       </section>
 
-      <form onSubmit={create} style={panel}>
+      <form id="store-credential" onSubmit={create} style={panel}>
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:14 }}>
           <ShieldCheck size={19} color="#A78BFA" />
           <h2 style={{ fontSize:15 }}>Store a credential</h2>

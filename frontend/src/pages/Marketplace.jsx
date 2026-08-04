@@ -4,6 +4,7 @@ import {
   Search, ShieldCheck, Star, Upload, X,
 } from 'lucide-react'
 import { useNavigate } from '../lib/router.jsx'
+import FlagshipStarterKits from '../components/FlagshipStarterKits'
 
 import {
   getAgents,
@@ -196,6 +197,8 @@ export default function Marketplace() {
           {notice}<button onClick={() => setNotice('')} style={{ background:'none', border:0, color:'#86EFAC' }}><X size={15} /></button>
         </div>
       )}
+
+      <FlagshipStarterKits onInstalled={() => load()} />
 
       <div style={{ ...panel, display:'grid', gridTemplateColumns:'minmax(250px,1fr) repeat(3,auto)', gap:9, marginBottom:15 }}>
         <div style={{ position:'relative' }}>

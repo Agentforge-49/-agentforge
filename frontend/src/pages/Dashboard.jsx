@@ -8,8 +8,8 @@ import { getAgents, getDashboardStats } from '../lib/api'
 import { useNavigate } from '../lib/router.jsx'
 
 const QUICK_ACTIONS = [
-  { title:'Build an AI agent', detail:'Define its role, model, tools, and production guardrails.', to:'/agents/new', icon:Bot },
-  { title:'Design a workflow', detail:'Combine agents, logic, approvals, and connected apps.', to:'/workflows/new', icon:Workflow },
+  { title:'Install a starter workflow', detail:'Launch support, lead, or research automation from a guided production pattern.', to:'/marketplace', icon:Sparkles },
+  { title:'Build from scratch', detail:'Combine your own agents, logic, approvals, and connected apps.', to:'/workflows/new', icon:Workflow },
   { title:'Connect your tools', detail:'Add encrypted credentials or consent-based accounts.', to:'/credentials', icon:KeyRound },
 ]
 
@@ -67,8 +67,8 @@ export default function Dashboard() {
       <section className="dashboard-hero">
         <div>
           <div className="dashboard-eyebrow"><Sparkles size={13} /> Agent operations workspace</div>
-          <h1>Good to see you. Let’s build something useful.</h1>
-          <p>Design, launch, and monitor dependable AI automation from one command center.</p>
+          <h1>Turn one support or operations process into dependable automation.</h1>
+          <p>Start from an approval-gated workflow, connect the tools your team already uses, and inspect every run.</p>
         </div>
         <button className="dashboard-primary" onClick={() => navigate('/agents/new')}>
           <Plus size={16} /> Create agent
@@ -109,9 +109,9 @@ export default function Dashboard() {
         {agents.length === 0 ? (
           <div className="dashboard-empty">
             <div className="dashboard-empty-visual"><Bot size={28} /></div>
-            <h3>Your first agent starts here</h3>
-            <p>Create a focused AI worker, give it tools and knowledge, test its output, then publish it when you are ready.</p>
-            <button className="dashboard-primary" onClick={() => navigate('/agents/new')}>Create your first agent <ArrowRight size={15} /></button>
+            <h3>Start with a working business outcome</h3>
+            <p>Install a complete support, lead, or research workflow with a published agent, human approval, real delivery connection, and test input.</p>
+            <button className="dashboard-primary" onClick={() => navigate('/marketplace')}>Choose a starter workflow <ArrowRight size={15} /></button>
           </div>
         ) : (
           <div className="dashboard-agent-grid">
