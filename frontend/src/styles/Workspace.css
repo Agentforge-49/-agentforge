@@ -249,7 +249,10 @@
 }
 
 .workspace-main [style*="background: rgb(31, 34, 48)"],
+.workspace-main [style*="background: rgb(31, 41, 55)"],
 .workspace-main [style*="background: rgb(37, 40, 55)"],
+.workspace-main [style*="background: rgb(39, 39, 42)"],
+.workspace-main [style*="background: rgb(40, 43, 56)"],
 .workspace-main [style*="background: rgb(32, 35, 47)"],
 .workspace-main [style*="background: rgb(32, 36, 49)"],
 .workspace-main [style*="background: rgb(34, 37, 49)"],
@@ -270,6 +273,7 @@
 }
 
 .workspace-main [style*="border: 1px solid rgb(31, 34, 48)"],
+.workspace-main [style*="border: 1px solid rgb(31, 41, 55)"],
 .workspace-main [style*="border: 1px solid rgb(37, 40, 55)"],
 .workspace-main [style*="border: 1px solid rgb(32, 35, 47)"],
 .workspace-main [style*="border: 1px solid rgb(32, 36, 49)"],
@@ -283,6 +287,10 @@
 .workspace-main [style*="border: 1px solid rgb(46, 49, 66)"],
 .workspace-main [style*="border: 1px solid rgb(48, 52, 71)"] {
   border-color: var(--workspace-border) !important;
+}
+
+.workspace-main [style*="border: 1px solid rgb(55, 65, 81)"] {
+  border-color: var(--workspace-border-strong) !important;
 }
 
 .workspace-main [style*="border: 1px dashed rgb(42, 45, 62)"],
@@ -344,7 +352,10 @@
 }
 
 .workspace-main [style*="background: rgb(45, 21, 21)"],
-.workspace-main [style*="background: rgb(127, 29, 29)"] {
+.workspace-main [style*="background: rgb(127, 29, 29)"],
+.workspace-main [style*="background: rgb(63, 21, 24)"],
+.workspace-main [style*="background: rgb(63, 23, 23)"],
+.workspace-main [style*="background: rgb(63, 29, 43)"] {
   background: #fef3f2 !important;
 }
 
@@ -359,8 +370,14 @@
   border-color: #fda29b !important;
 }
 
+.workspace-main [style*="background: rgb(220, 38, 38)"] {
+  background: #d92d20 !important;
+  color: #fff !important;
+}
+
 .workspace-main [style*="background: rgb(20, 83, 45)"],
 .workspace-main [style*="background: rgb(6, 78, 59)"],
+.workspace-main [style*="background: rgb(6, 95, 70)"],
 .workspace-main [style*="background: rgb(16, 35, 27)"],
 .workspace-main [style*="background: rgb(11, 42, 32)"],
 .workspace-main [style*="background: rgb(5, 46, 36)"],
@@ -380,8 +397,14 @@
 }
 
 .workspace-main [style*="background: rgb(120, 53, 15)"],
-.workspace-main [style*="background: rgb(69, 26, 3)"] {
+.workspace-main [style*="background: rgb(69, 26, 3)"],
+.workspace-main [style*="background: rgb(66, 32, 6)"],
+.workspace-main [style*="background: rgb(42, 28, 13)"] {
   background: #fffaeb !important;
+}
+
+.workspace-main [style*="background: rgb(31, 22, 54)"] {
+  background: #f0f7f3 !important;
 }
 
 .workspace-main [style*="color: rgb(251, 191, 36)"],

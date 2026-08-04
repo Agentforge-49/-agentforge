@@ -6,16 +6,16 @@ import { ArrowLeft, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import { getChain, getChainRuns } from "../lib/api";
 
 const COLORS = {
-  background: "#0F1117",
-  card: "#1A1D27",
-  border: "#2A2D3E",
-  purple: "#7C3AED",
-  text: "#F9FAFB",
-  muted: "#9CA3AF",
-  greenBg: "#065F46",
-  greenText: "#34D399",
-  redBg: "#7F1D1D",
-  redText: "#FCA5A5",
+  background: "#F4F7F4",
+  card: "#FFFFFF",
+  border: "#DCE7DF",
+  purple: "#0B7A53",
+  text: "#143024",
+  muted: "#607268",
+  greenBg: "#ECFDF3",
+  greenText: "#067647",
+  redBg: "#FEF3F2",
+  redText: "#B42318",
 };
 
 function formatRelativeTime(dateString) {
@@ -107,7 +107,7 @@ function StepCard({ step, index, isLast }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div
         style={{
-          backgroundColor: "#141824",
+          backgroundColor: "#F7FAF7",
           border: `1px solid ${COLORS.border}`,
           borderRadius: 14,
           padding: 16,
@@ -397,7 +397,7 @@ export default function ChainRunHistory() {
 
           <div
             style={{
-              backgroundColor: "#2A1115",
+              backgroundColor: "#FEF3F2",
               border: "1px solid #7F1D1D",
               color: COLORS.redText,
               borderRadius: 14,
@@ -562,7 +562,7 @@ export default function ChainRunHistory() {
                       style={{
                         padding: "8px 12px",
                         borderRadius: 999,
-                        backgroundColor: "#141824",
+                        backgroundColor: "#F7FAF7",
                         border: `1px solid ${COLORS.border}`,
                         color: COLORS.text,
                         fontSize: 12,
@@ -768,7 +768,7 @@ export default function ChainRunHistory() {
                       <div
                         style={{
                           marginBottom: 20,
-                          backgroundColor: "#141824",
+                          backgroundColor: "#F7FAF7",
                           border: `1px solid ${COLORS.border}`,
                           borderRadius: 14,
                           padding: 16,
@@ -803,7 +803,7 @@ export default function ChainRunHistory() {
                         <div
                           style={{
                             marginBottom: 20,
-                            backgroundColor: "#2A1115",
+                            backgroundColor: "#FEF3F2",
                             border: "1px solid #7F1D1D",
                             borderRadius: 14,
                             padding: 16,
@@ -874,7 +874,7 @@ export default function ChainRunHistory() {
                       >
                         <div
                           style={{
-                            backgroundColor: "#141824",
+                            backgroundColor: "#F7FAF7",
                             border: `1px solid ${COLORS.border}`,
                             borderRadius: 12,
                             padding: "12px 14px",
@@ -888,7 +888,7 @@ export default function ChainRunHistory() {
 
                         <div
                           style={{
-                            backgroundColor: "#141824",
+                            backgroundColor: "#F7FAF7",
                             border: `1px solid ${COLORS.border}`,
                             borderRadius: 12,
                             padding: "12px 14px",
@@ -902,7 +902,7 @@ export default function ChainRunHistory() {
 
                         <div
                           style={{
-                            backgroundColor: "#141824",
+                            backgroundColor: "#F7FAF7",
                             border: `1px solid ${COLORS.border}`,
                             borderRadius: 12,
                             padding: "12px 14px",
