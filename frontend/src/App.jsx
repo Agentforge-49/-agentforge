@@ -3,6 +3,7 @@ import { lazy, Suspense, useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import MainLayout from './layouts/MainLayout'
 import WorkspaceErrorBoundary from './components/WorkspaceErrorBoundary'
+import SiteAssistant from './components/SiteAssistant'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Landing from './pages/Landing'
@@ -119,6 +120,7 @@ export default function App() {
         <Route path="/settings"          element={protect(Settings)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
+      <SiteAssistant user={user} />
     </BrowserRouter>
   )
 }

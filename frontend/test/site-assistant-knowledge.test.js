@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { answerSiteQuestion, contextSuggestions } from '../src/lib/site-assistant-knowledge.js'
+
+test('site guide recommends the support starter for a support request', () => {
+  const answer = answerSiteQuestion('I need to triage customer support tickets into Slack')
+  assert.equal(answer.id, 'support')
+  assert.match(answer.text, /approve/i)
+})
+
+test('site guide gives accurate free launch limits', () => {
+  const answer = answerSiteQuestion('Can I start free without a credit card?')
+  assert.equal(answer.id, 'pricing')
+  assert.match(answer.text, /50 model calls/)
+  assert.match(answer.text, /100K tokens/)
+})
+
+test('site guide hides protected actions from visitors', () => {
+  const visitor = answerSiteQuestion('How do I connect Slack?', { signedIn:false })
+  const member = answerSiteQuestion('How do I connect Slack?', { signedIn:true })
+  assert(!visitor.actions.some(action => action.path === '/credentials'))
+  assert(member.actions.some(action => action.path === '/credentials'))
+})
+
+test('site guide falls back to page-aware help', () => {
+  const answer = answerSiteQuestion('xyzzy', { path:'/marketplace', signedIn:true })
+  assert.equal(answer.id, 'starter-kit')
+  assert(contextSuggestions('/credentials', true).some(item => /connect/i.test(item)))
+})

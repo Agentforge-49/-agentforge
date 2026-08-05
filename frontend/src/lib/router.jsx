@@ -13,7 +13,7 @@ import { renderNavLinkChildren, renderNavLinkProp } from './nav-link.js'
 
 export const BrowserRouter = Router
 export const Routes = Switch
-export { useParams }
+export { useLocation, useParams }
 
 export function Route({ element, ...props }) {
   return <WouterRoute {...props}>{element}</WouterRoute>
