@@ -78,7 +78,7 @@
 .site-assistant-answer { display:grid; grid-template-columns:auto 1fr; gap:9px; margin-bottom:16px; }
 .site-assistant-answer-icon { display:grid; place-items:center; width:27px; height:27px; border-radius:9px; background:#eaf8f0; color:var(--guide-green); }
 .site-assistant-answer strong { display:block; margin:2px 0 5px; color:var(--guide-ink); font-size:12px; line-height:1.4; }
-.site-assistant-answer p { margin:0; color:#52675c; font-size:10.5px; line-height:1.58; }
+.site-assistant-answer p { margin:0; color:#52675c; font-size:10.5px; line-height:1.58; white-space:pre-line; }
 .site-assistant-answer ul { display:grid; gap:6px; margin:10px 0 0; padding:0; list-style:none; }
 .site-assistant-answer li { display:flex; align-items:flex-start; gap:6px; color:#52675c; font-size:9.5px; line-height:1.45; }
 .site-assistant-answer li svg { flex:none; margin-top:1px; color:var(--guide-green); }

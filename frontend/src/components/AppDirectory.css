@@ -1,0 +1,46 @@
+.app-directory { margin-top:28px; }
+.apps-hub-feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+.app-directory-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+.app-directory-summary > div { padding:15px; border:1px solid #d9e8df; border-radius:13px; background:rgba(255,255,255,.88); box-shadow:0 10px 30px rgba(20,48,36,.05); }
+.app-directory-summary strong { display:block; color:#0b6b3e; font-size:21px; line-height:1; }
+.app-directory-summary span { display:block; margin-top:6px; color:#667b6e; font-size:9px; text-transform:uppercase; letter-spacing:.06em; }
+.app-directory-summary .is-ready { border-color:#75c497; background:#effbf4; }
+.app-directory-toolbar { display:grid; grid-template-columns:minmax(280px,1fr) auto; align-items:center; gap:12px; padding:12px; border:1px solid #d9e8df; border-radius:14px; background:#fff; }
+.app-directory-search { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; min-width:0; border:1px solid #c9ddd1; border-radius:10px; padding:0 10px; background:#f9fcfa; color:#658074; }
+.app-directory-search input { min-width:0; height:39px; border:0; outline:0; background:transparent; color:#153326; font-size:11px; }
+.app-directory-search span { font-size:9px; white-space:nowrap; }
+.app-directory-modes { display:flex; gap:5px; flex-wrap:wrap; }
+.app-directory-modes button,.app-directory-categories button { border:1px solid #d7e6dd; border-radius:999px; padding:7px 10px; background:#fff; color:#587063; cursor:pointer; font-size:9px; font-weight:700; }
+.app-directory-modes button.active,.app-directory-categories button.active { border-color:#178551; background:#eaf8f0; color:#08653a; }
+.app-directory-categories { display:flex; gap:6px; overflow:auto; padding:11px 1px 14px; scrollbar-width:thin; }
+.app-directory-categories button { flex:none; }
+.app-directory-notice { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; margin-bottom:13px; padding:11px 12px; border:1px solid #e8c46c; border-radius:10px; background:#fff9e9; color:#72520d; font-size:10px; }
+.app-directory-notice button { border:0; border-radius:7px; padding:7px 9px; background:#7a5809; color:#fff; cursor:pointer; font-size:9px; font-weight:800; }
+.app-directory-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.app-directory-card { display:flex; flex-direction:column; min-height:224px; padding:15px; border:1px solid #d9e8df; border-radius:14px; background:#fff; box-shadow:0 10px 28px rgba(20,48,36,.05); transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.app-directory-card:hover { transform:translateY(-3px); border-color:#9bc8af; box-shadow:0 16px 35px rgba(20,48,36,.1); }
+.app-directory-card-top { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; }
+.app-directory-monogram { display:grid; place-items:center; width:39px; height:39px; border-radius:11px; background:linear-gradient(145deg,#0c814b,#075b35); color:#fff; font-size:11px; font-weight:850; box-shadow:0 8px 16px rgba(7,91,53,.16); }
+.app-directory-monogram--oauth { background:linear-gradient(145deg,#15856c,#0b5d54); }
+.app-directory-monogram--bridge { background:linear-gradient(145deg,#31594a,#173b2e); }
+.app-directory-status { display:inline-flex; align-items:center; gap:4px; padding:5px 7px; border-radius:999px; background:#eaf8f0; color:#087044; font-size:8px; font-weight:800; }
+.app-directory-status--oauth { background:#eaf7f7; color:#0b6860; }
+.app-directory-status--bridge { background:#f1f4f2; color:#52665b; }
+.app-directory-card > small { color:#13814c; font-size:8px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
+.app-directory-card h3 { margin:5px 0 6px; color:#153326; font-size:14px; }
+.app-directory-card p { margin:0 0 13px; color:#65796e; font-size:9.5px; line-height:1.55; }
+.app-directory-card-actions { display:flex; gap:6px; margin-top:auto; }
+.app-directory-card-actions button { display:inline-flex; align-items:center; justify-content:center; gap:5px; border:0; border-radius:8px; padding:8px 10px; background:#0d7c48; color:#fff; cursor:pointer; font-size:9px; font-weight:800; }
+.app-directory-card-actions button.secondary { width:33px; padding:0; border:1px solid #c9ddd1; background:#fff; color:#236b48; }
+.app-directory-card-actions button:disabled { opacity:.55; cursor:wait; }
+.app-directory-more { display:flex; align-items:center; gap:6px; margin:16px auto 0; border:1px solid #8fbea4; border-radius:9px; padding:9px 13px; background:#effaf4; color:#09683d; cursor:pointer; font-size:10px; font-weight:800; }
+.app-directory-empty { padding:34px; border:1px dashed #aac9b7; border-radius:14px; color:#65796e; text-align:center; }
+.app-directory-empty h3 { margin:8px 0 4px; color:#153326; }
+.app-directory-empty p { margin:0; font-size:10px; }
+.app-directory-contract { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; margin-top:18px; padding:14px; border:1px solid #cce0d4; border-radius:13px; background:linear-gradient(135deg,#edf9f2,#fff); color:#397055; }
+.app-directory-contract strong { display:block; color:#153326; font-size:11px; }
+.app-directory-contract span { display:block; margin-top:3px; color:#65796e; font-size:9px; line-height:1.45; }
+.app-directory-contract a { display:flex; align-items:center; gap:4px; color:#0b7544; font-size:9px; font-weight:800; text-decoration:none; }
+.app-directory--workspace { margin-top:0; }
+@media (max-width:960px) { .app-directory-summary,.app-directory-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .app-directory-toolbar { grid-template-columns:1fr; } }
+@media (max-width:620px) { .apps-hub-feature-grid,.app-directory-summary,.app-directory-grid { grid-template-columns:1fr; } .app-directory-search { grid-template-columns:auto 1fr; } .app-directory-search span { display:none; } .app-directory-contract { grid-template-columns:auto 1fr; } .app-directory-contract a { grid-column:2; } .app-directory-notice { grid-template-columns:auto 1fr; } .app-directory-notice button { grid-column:2; justify-self:start; } }

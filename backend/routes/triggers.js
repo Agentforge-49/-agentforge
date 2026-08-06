@@ -188,6 +188,30 @@ router.post('/:id/fire', async (req, res, next) => {
   }
 });
 
+router.post('/bulk/:action(pause|resume)', async (req, res, next) => {
+  try {
+    const status = req.params.action === 'pause' ? 'paused' : 'active';
+    const { error } = await supabase
+      .from('workflow_triggers')
+      .update({ status })
+      .eq('user_id', req.userId)
+      .neq('trigger_type', 'manual');
+    if (error) throw error;
+    const { data, error:listError } = await supabase
+      .from('workflow_triggers')
+      .select('*, workflows(name, status)')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending:false });
+    if (listError) throw listError;
+    res.json((data || []).map(trigger => ({
+      ...trigger,
+      webhook_url:trigger.webhook_path ? publicWebhookUrl(req, trigger.webhook_path) : null,
+    })));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/:id/:action(pause|resume)', async (req, res, next) => {
   try {
     const status = req.params.action === 'pause' ? 'paused' : 'active';

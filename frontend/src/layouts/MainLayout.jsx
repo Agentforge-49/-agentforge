@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from '../lib/router.jsx'
-import { Activity, BookOpen, Building2, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Settings, Store, Link2, LogOut, Menu, Network, Workflow, X, Zap, KeyRound, ShieldCheck, Sparkles } from 'lucide-react'
+import { Activity, BookOpen, Building2, Cable, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Settings, Store, Link2, LogOut, Menu, Network, Workflow, X, Zap, KeyRound, ShieldCheck, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import BrandLogo from '../components/BrandLogo'
 import '../styles/Workspace.css'
@@ -9,6 +9,7 @@ const NAV_GROUPS = [
   { label:'Workspace', items:[
     { to:'/dashboard', icon:LayoutDashboard, label:'Dashboard' },
     { to:'/marketplace', icon:Store, label:'Marketplace' },
+    { to:'/apps', icon:Cable, label:'Apps' },
   ] },
   { label:'Build', items:[
     { to:'/agents/new', icon:Bot, label:'New Agent' },

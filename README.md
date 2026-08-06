@@ -126,6 +126,27 @@ activates the approval-gated workflow. A failed installation removes any agent
 or workflow resources created during that attempt. External actions still need
 the corresponding user connection and provider account.
 
+## App ecosystem and product guide
+
+The Apps workspace exposes a searchable compatibility catalog of more than
+1,000 applications. Catalog entries are explicitly labeled as native,
+OAuth-ready, or external bridge integrations. Native AgentForge actions remain
+the source of truth for built-in execution. Any public API can also be called
+through the allowlisted HTTP connector, and signed inbound webhooks can start
+workflows from external automation systems.
+
+Broad managed authentication uses the optional Pipedream Connect bridge. Create
+a Pipedream development project and configure `PIPEDREAM_CLIENT_ID`,
+`PIPEDREAM_CLIENT_SECRET`, `PIPEDREAM_PROJECT_ID`, and
+`PIPEDREAM_ENVIRONMENT` to enable hosted connection links. Catalog discovery
+does not depend on these values and never implies that an app is native.
+
+The site guide is zero-cost and locally grounded for public visitors. Signed-in
+users receive account-aware model guidance when a provider is configured and
+their usage allowance permits it. Only counts, statuses, and provider names are
+passed to the guide; credentials and workflow inputs are excluded. If model
+guidance is unavailable, the interface falls back to the grounded local guide.
+
 Apply Supabase migrations in filename order before deploying API code that
 depends on them. Use the launch-readiness page and recovery snapshots before a
 release.

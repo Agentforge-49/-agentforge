@@ -1,7 +1,12 @@
-import { useEffect, useState } from 'react'
-import { Clock3, Copy, History, Pause, Play, Plus, RefreshCw, Trash2, Webhook } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  Activity, CalendarClock, CheckCircle2, Clock3, Copy, History, Pause,
+  Play, Plus, Radio, RefreshCw, ShieldCheck, Sparkles, Trash2, Webhook,
+  X,
+} from 'lucide-react'
 
 import {
+  bulkTriggerStatus,
   createTrigger,
   deleteTrigger,
   fireTrigger,
@@ -12,113 +17,125 @@ import {
   resumeTrigger,
   rotateTriggerSecret,
 } from '../lib/api'
+import './Triggers.css'
 
 const TYPES = {
-  manual: { label:'Manual', icon:Play, color:'#60A5FA' },
-  webhook: { label:'Webhook', icon:Webhook, color:'#A78BFA' },
-  schedule: { label:'Schedule', icon:Clock3, color:'#34D399' },
+  manual:{ label:'Manual', icon:Play, description:'Start a controlled run with an operator-provided input.' },
+  webhook:{ label:'Signed webhook', icon:Webhook, description:'React to any app through an authenticated, deduplicated event endpoint.' },
+  schedule:{ label:'Schedule', icon:Clock3, description:'Run reliably on an interval without keeping a browser open.' },
 }
+
+const PRESETS = [
+  { name:'Manual test console', trigger_type:'manual', icon:Play, detail:'Best for testing and operator-run workflows.' },
+  { name:'External app event', trigger_type:'webhook', icon:Webhook, detail:'Works with Zapier, Make, Pipedream, custom apps, and server events.' },
+  { name:'Hourly operations check', trigger_type:'schedule', interval_minutes:60, icon:Clock3, detail:'Run a workflow every hour.' },
+  { name:'Daily report', trigger_type:'schedule', interval_minutes:1440, icon:CalendarClock, detail:'Run once every 24 hours.' },
+]
 
 export default function Triggers() {
   const [triggers, setTriggers] = useState([])
   const [workflows, setWorkflows] = useState([])
-  const [form, setForm] = useState({ name:'', workflow_id:'', trigger_type:'manual', interval_minutes:60 })
+  const [form, setForm] = useState({ name:'', workflow_id:'', trigger_type:'webhook', interval_minutes:60 })
   const [revealed, setRevealed] = useState(null)
-  const [events, setEvents] = useState([])
-  const [eventTitle, setEventTitle] = useState('')
+  const [historyState, setHistoryState] = useState(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState('')
 
   const load = async () => {
     const [triggerData, workflowData] = await Promise.all([getTriggers(), getWorkflows()])
+    const activeWorkflows = workflowData.filter(item => item.status === 'active')
     setTriggers(triggerData)
-    setWorkflows(workflowData.filter(item => item.status === 'active'))
-    setForm(current => ({
-      ...current,
-      workflow_id: current.workflow_id || workflowData.find(item => item.status === 'active')?.id || '',
-    }))
+    setWorkflows(activeWorkflows)
+    setForm(current => ({ ...current, workflow_id:current.workflow_id || activeWorkflows[0]?.id || '' }))
   }
 
   useEffect(() => {
     Promise.all([getTriggers(), getWorkflows()])
       .then(([triggerData, workflowData]) => {
+        const activeWorkflows = workflowData.filter(item => item.status === 'active')
         setTriggers(triggerData)
-        setWorkflows(workflowData.filter(item => item.status === 'active'))
-        setForm(current => ({
-          ...current,
-          workflow_id: current.workflow_id
-            || workflowData.find(item => item.status === 'active')?.id
-            || '',
-        }))
+        setWorkflows(activeWorkflows)
+        setForm(current => ({ ...current, workflow_id:current.workflow_id || activeWorkflows[0]?.id || '' }))
       })
       .catch(err => setError(err.message))
   }, [])
 
+  const stats = useMemo(() => ({
+    active:triggers.filter(item => item.status === 'active').length,
+    paused:triggers.filter(item => item.status === 'paused').length,
+    webhooks:triggers.filter(item => item.trigger_type === 'webhook').length,
+    scheduled:triggers.filter(item => item.trigger_type === 'schedule').length,
+    automaticActive:triggers.filter(item => item.trigger_type !== 'manual' && item.status === 'active').length,
+    automaticPaused:triggers.filter(item => item.trigger_type !== 'manual' && item.status === 'paused').length,
+  }), [triggers])
+
+  const choosePreset = preset => {
+    setForm(current => ({
+      ...current,
+      name:preset.name,
+      trigger_type:preset.trigger_type,
+      interval_minutes:preset.interval_minutes || current.interval_minutes,
+    }))
+    document.getElementById('trigger-builder')?.scrollIntoView({ behavior:'smooth', block:'start' })
+  }
+
   const create = async event => {
     event.preventDefault()
-    setBusy(true)
+    setBusy('create')
     setError('')
     setMessage('')
     try {
       const created = await createTrigger(form)
-      const { signing_secret: signingSecret, ...safeTrigger } = created
+      const { signing_secret:signingSecret, ...safeTrigger } = created
       setTriggers(items => [safeTrigger, ...items])
       setForm(current => ({ ...current, name:'' }))
-      if (signingSecret) {
-        setRevealed({
-          secret: signingSecret,
-          url: created.webhook_url,
-          title: created.name,
-        })
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+      setMessage(`${created.name} is active.`)
+      if (signingSecret) setRevealed({ secret:signingSecret, url:created.webhook_url, title:created.name })
+    } catch (err) { setError(err.message) } finally { setBusy('') }
   }
 
   const toggle = async trigger => {
+    setBusy(trigger.id)
     try {
-      const updated = trigger.status === 'active'
-        ? await pauseTrigger(trigger.id)
-        : await resumeTrigger(trigger.id)
+      const updated = trigger.status === 'active' ? await pauseTrigger(trigger.id) : await resumeTrigger(trigger.id)
       setTriggers(items => items.map(item => item.id === updated.id ? updated : item))
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) } finally { setBusy('') }
+  }
+
+  const bulk = async action => {
+    setBusy(`bulk-${action}`)
+    setError('')
+    try {
+      const updated = await bulkTriggerStatus(action)
+      setTriggers(updated)
+      setMessage(action === 'pause' ? 'All automatic triggers are paused.' : 'All triggers are active.')
+    } catch (err) { setError(err.message) } finally { setBusy('') }
   }
 
   const fire = async trigger => {
     const input = window.prompt('Input for this workflow run:')
     if (!input?.trim()) return
+    setBusy(trigger.id)
     try {
       const result = await fireTrigger(trigger.id, input.trim(), crypto.randomUUID())
-      setMessage(`Trigger accepted. Job ${result.job?.id || result.event?.execution_job_id || ''}`)
+      setMessage(`Run accepted. Job ${result.job?.id || result.event?.execution_job_id || ''}`)
       await load()
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) } finally { setBusy('') }
   }
 
   const rotate = async trigger => {
-    if (!window.confirm('Rotate this webhook signing secret? The old secret will stop working immediately.')) return
+    if (!window.confirm('Rotate this signing secret? The old secret stops working immediately.')) return
     try {
       const result = await rotateTriggerSecret(trigger.id)
       setRevealed({ secret:result.signing_secret, url:trigger.webhook_url, title:trigger.name })
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) }
   }
 
-  const history = async trigger => {
-    try {
-      setEvents(await getTriggerEvents(trigger.id))
-      setEventTitle(trigger.name)
-    } catch (err) {
-      setError(err.message)
-    }
+  const showHistory = async trigger => {
+    setBusy(trigger.id)
+    try { setHistoryState({ title:trigger.name, events:await getTriggerEvents(trigger.id) }) }
+    catch (err) { setError(err.message) } finally { setBusy('') }
   }
 
   const remove = async trigger => {
@@ -126,148 +143,105 @@ export default function Triggers() {
     try {
       await deleteTrigger(trigger.id)
       setTriggers(items => items.filter(item => item.id !== trigger.id))
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) }
   }
 
   const copy = async value => {
     await navigator.clipboard.writeText(value)
-    setMessage('Copied to clipboard')
+    setMessage('Copied securely to clipboard.')
   }
 
   return (
-    <div>
-      <div style={{ marginBottom:22 }}>
-        <h1 style={{ fontSize:24, fontWeight:600, marginBottom:5 }}>Workflow Triggers</h1>
-        <p style={{ color:'#9CA3AF', fontSize:13 }}>Start workflows manually, through signed webhooks, or on a reliable schedule.</p>
-      </div>
-
-      {error && <div style={errorBox}>{error}</div>}
-      {message && <div style={successBox}>{message}</div>}
-
-      <form onSubmit={create} style={panel}>
-        <div style={grid}>
-          <div>
-            <label style={label}>Trigger name</label>
-            <input required value={form.name} onChange={e => setForm({ ...form, name:e.target.value })}
-              placeholder="Daily lead enrichment" style={input} />
-          </div>
-          <div>
-            <label style={label}>Active workflow</label>
-            <select required value={form.workflow_id} onChange={e => setForm({ ...form, workflow_id:e.target.value })} style={input}>
-              <option value="">Select workflow</option>
-              {workflows.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={label}>Trigger type</label>
-            <select value={form.trigger_type} onChange={e => setForm({ ...form, trigger_type:e.target.value })} style={input}>
-              <option value="manual">Manual</option>
-              <option value="webhook">Signed webhook</option>
-              <option value="schedule">Schedule</option>
-            </select>
-          </div>
-          {form.trigger_type === 'schedule' && <div>
-            <label style={label}>Run every (minutes)</label>
-            <input type="number" min="5" max="43200" value={form.interval_minutes}
-              onChange={e => setForm({ ...form, interval_minutes:Number(e.target.value) })} style={input} />
-          </div>}
+    <div className="trigger-console">
+      <header className="trigger-hero">
+        <div>
+          <span><Radio size={13} /> Event operations</span>
+          <h1>Start the right workflow at the right moment.</h1>
+          <p>Use manual runs, signed app events, or durable schedules. Every delivery is traceable, deduplicated, pausable, and connected to an active workflow.</p>
         </div>
-        {!workflows.length && <p style={{ color:'#FCD34D', fontSize:12, marginTop:12 }}>Activate a workflow before creating a trigger.</p>}
-        <button disabled={busy || !workflows.length} style={primaryButton}><Plus size={14} /> Create trigger</button>
-      </form>
-
-      {revealed && <div style={{ ...panel, borderColor:'#7C3AED', marginTop:16 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', gap:12 }}>
-          <div>
-            <h3 style={{ fontSize:15, marginBottom:5 }}>{revealed.title}: signing secret</h3>
-            <p style={{ color:'#FCD34D', fontSize:12 }}>Copy this now. AgentForge will never display it again.</p>
-          </div>
-          <button onClick={() => setRevealed(null)} style={secondaryButton}>Done</button>
+        <div className="trigger-hero-actions">
+          <button type="button" onClick={() => bulk('pause')} disabled={!stats.automaticActive || busy}><Pause size={14} /> Pause automation</button>
+          <button className="primary" type="button" onClick={() => bulk('resume')} disabled={!stats.automaticPaused || busy}><Play size={14} /> Resume automation</button>
         </div>
+      </header>
+
+      <section className="trigger-stats">
+        <div><Activity size={18} /><strong>{stats.active}</strong><span>Active</span></div>
+        <div><Pause size={18} /><strong>{stats.paused}</strong><span>Paused</span></div>
+        <div><Webhook size={18} /><strong>{stats.webhooks}</strong><span>Signed endpoints</span></div>
+        <div><Clock3 size={18} /><strong>{stats.scheduled}</strong><span>Schedules</span></div>
+      </section>
+
+      {error && <div className="trigger-alert trigger-alert--error">{error}<button onClick={() => setError('')}><X size={14} /></button></div>}
+      {message && <div className="trigger-alert trigger-alert--success"><CheckCircle2 size={15} /> {message}<button onClick={() => setMessage('')}><X size={14} /></button></div>}
+
+      <section className="trigger-presets">
+        <div className="trigger-section-heading"><span>Fast setup</span><h2>Choose an event pattern.</h2></div>
+        <div className="trigger-preset-grid">
+          {PRESETS.map(preset => {
+            const Icon = preset.icon
+            return <button type="button" key={preset.name} onClick={() => choosePreset(preset)}><Icon size={19} /><strong>{preset.name}</strong><span>{preset.detail}</span><Plus size={14} /></button>
+          })}
+        </div>
+      </section>
+
+      <section className="trigger-builder" id="trigger-builder">
+        <div className="trigger-builder-copy">
+          <span><Sparkles size={13} /> Trigger builder</span>
+          <h2>Configure one dependable entry point.</h2>
+          <p>Multiple triggers can target the same workflow independently. Pause one without deleting its configuration.</p>
+          <div className="trigger-safety-note"><ShieldCheck size={17} /><div><strong>Secure by default</strong><span>Webhook secrets are shown once, signatures expire, repeat deliveries deduplicate, and endpoints are rate limited.</span></div></div>
+        </div>
+        <form onSubmit={create}>
+          <label>Trigger name<input required maxLength="100" value={form.name} onChange={event => setForm({ ...form, name:event.target.value })} placeholder="New support request" /></label>
+          <label>Active workflow<select required value={form.workflow_id} onChange={event => setForm({ ...form, workflow_id:event.target.value })}><option value="">Select workflow</option>{workflows.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label>Event type<select value={form.trigger_type} onChange={event => setForm({ ...form, trigger_type:event.target.value })}>{Object.entries(TYPES).map(([value,item]) => <option value={value} key={value}>{item.label}</option>)}</select></label>
+          {form.trigger_type === 'schedule' && <label>Repeat every<select value={form.interval_minutes} onChange={event => setForm({ ...form, interval_minutes:Number(event.target.value) })}><option value="15">15 minutes</option><option value="60">1 hour</option><option value="360">6 hours</option><option value="1440">1 day</option><option value="10080">1 week</option><option value="43200">30 days</option></select></label>}
+          <p className="trigger-type-help">{TYPES[form.trigger_type].description}</p>
+          {!workflows.length && <p className="trigger-no-workflows">Activate a workflow before creating a trigger.</p>}
+          <button className="trigger-create" disabled={busy === 'create' || !workflows.length}><Plus size={14} /> {busy === 'create' ? 'Creating...' : 'Create active trigger'}</button>
+        </form>
+      </section>
+
+      {revealed && <section className="trigger-secret">
+        <div><span><ShieldCheck size={14} /> One-time secret</span><h2>{revealed.title}</h2><p>Copy this signing secret now. AgentForge stores only an encrypted version and will not display it again.</p></div>
         <SecretRow label="Webhook URL" value={revealed.url} onCopy={copy} />
         <SecretRow label="Signing secret" value={revealed.secret} onCopy={copy} />
-        <p style={{ color:'#9CA3AF', fontSize:11, marginTop:12 }}>
-          Sign the exact body as HMAC-SHA256 of timestamp + &quot;.&quot; + body. Send X-AgentForge-Timestamp,
-          X-AgentForge-Signature: sha256=..., and a unique X-AgentForge-Delivery header.
-        </p>
-      </div>}
+        <code>HMAC-SHA256(timestamp + "." + rawBody)</code>
+        <button type="button" onClick={() => setRevealed(null)}>I saved it</button>
+      </section>}
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(330px,1fr))', gap:14, marginTop:18 }}>
-        {triggers.map(trigger => {
-          const meta = TYPES[trigger.trigger_type]
-          const Icon = meta.icon
-          return <div key={trigger.id} style={panel}>
-            <div style={{ display:'flex', justifyContent:'space-between', gap:10 }}>
-              <div style={{ display:'flex', gap:10 }}>
-                <div style={{ ...iconBox, color:meta.color }}><Icon size={17} /></div>
-                <div>
-                  <h3 style={{ fontSize:15 }}>{trigger.name}</h3>
-                  <p style={{ color:'#8B8FA3', fontSize:11, marginTop:3 }}>{trigger.workflows?.name}</p>
-                </div>
+      <section className="trigger-list-section">
+        <div className="trigger-section-heading"><span>Live control</span><h2>Your workflow entry points.</h2></div>
+        {!triggers.length ? <div className="trigger-empty"><Radio size={27} /><h3>No triggers yet</h3><p>Choose a preset above to add the first entry point to an active workflow.</p></div> : (
+          <div className="trigger-grid">{triggers.map(trigger => {
+            const meta = TYPES[trigger.trigger_type]
+            const Icon = meta.icon
+            return <article key={trigger.id} className={trigger.status === 'paused' ? 'is-paused' : ''}>
+              <div className="trigger-card-top"><span className="trigger-type-icon"><Icon size={17} /></span><div><small>{meta.label}</small><h3>{trigger.name}</h3><p>{trigger.workflows?.name}</p></div><span className={`trigger-state trigger-state--${trigger.status}`}>{trigger.status}</span></div>
+              <div className="trigger-card-meta">
+                {trigger.interval_minutes && <span><Clock3 size={12} /> Every {trigger.interval_minutes >= 1440 ? `${trigger.interval_minutes / 1440} day` : `${trigger.interval_minutes} min`}{trigger.interval_minutes > 1440 ? 's' : ''}</span>}
+                {trigger.next_run_at && <span>Next {new Date(trigger.next_run_at).toLocaleString()}</span>}
+                {trigger.last_fired_at && <span>Last {new Date(trigger.last_fired_at).toLocaleString()}</span>}
+                {trigger.webhook_url && <button type="button" onClick={() => copy(trigger.webhook_url)}><Copy size={12} /> Copy endpoint</button>}
               </div>
-              <span style={{ color:trigger.status === 'active' ? '#34D399' : '#FCD34D', fontSize:10, textTransform:'uppercase' }}>{trigger.status}</span>
-            </div>
-            <div style={{ color:'#9CA3AF', fontSize:12, marginTop:14, lineHeight:1.7 }}>
-              <div>{meta.label}{trigger.interval_minutes ? ` · every ${trigger.interval_minutes} min` : ''}</div>
-              {trigger.next_run_at && <div>Next: {new Date(trigger.next_run_at).toLocaleString()}</div>}
-              {trigger.last_fired_at && <div>Last fired: {new Date(trigger.last_fired_at).toLocaleString()}</div>}
-              {trigger.webhook_url && <button onClick={() => copy(trigger.webhook_url)} style={linkButton}><Copy size={12} /> Copy webhook URL</button>}
-            </div>
-            <div style={actions}>
-              {trigger.trigger_type === 'manual' && <button onClick={() => fire(trigger)} style={secondaryButton}><Play size={12} /> Run</button>}
-              {trigger.trigger_type === 'webhook' && <button onClick={() => rotate(trigger)} style={secondaryButton}><RefreshCw size={12} /> Rotate secret</button>}
-              <button onClick={() => history(trigger)} style={secondaryButton}><History size={12} /> History</button>
-              <button onClick={() => toggle(trigger)} style={secondaryButton}>{trigger.status === 'active' ? <Pause size={12} /> : <Play size={12} />}</button>
-              <button onClick={() => remove(trigger)} style={dangerButton}><Trash2 size={12} /></button>
-            </div>
-          </div>
-        })}
-      </div>
+              <div className="trigger-card-actions">
+                {trigger.trigger_type === 'manual' && <button type="button" onClick={() => fire(trigger)} disabled={busy === trigger.id}><Play size={12} /> Run</button>}
+                {trigger.trigger_type === 'webhook' && <button type="button" onClick={() => rotate(trigger)}><RefreshCw size={12} /> Rotate</button>}
+                <button type="button" onClick={() => showHistory(trigger)} disabled={busy === trigger.id}><History size={12} /> History</button>
+                <button type="button" onClick={() => toggle(trigger)} disabled={busy === trigger.id}>{trigger.status === 'active' ? <><Pause size={12} /> Pause</> : <><Play size={12} /> Resume</>}</button>
+                <button className="danger" type="button" onClick={() => remove(trigger)} aria-label={`Delete ${trigger.name}`}><Trash2 size={12} /></button>
+              </div>
+            </article>
+          })}</div>
+        )}
+      </section>
 
-      {eventTitle && <div style={{ ...panel, marginTop:18 }}>
-        <div style={{ display:'flex', justifyContent:'space-between' }}>
-          <h3 style={{ fontSize:15 }}>{eventTitle} history</h3>
-          <button onClick={() => setEventTitle('')} style={secondaryButton}>Close</button>
-        </div>
-        <div style={{ overflowX:'auto', marginTop:12 }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-            <thead><tr>{['Time','Source','Status','Job'].map(item => <th key={item} style={th}>{item}</th>)}</tr></thead>
-            <tbody>{events.map(event => <tr key={event.id}>
-              <td style={td}>{new Date(event.created_at).toLocaleString()}</td>
-              <td style={td}>{event.event_source}</td>
-              <td style={td}>{event.status}</td>
-              <td style={td}>{event.execution_job_id || '—'}</td>
-            </tr>)}</tbody>
-          </table>
-        </div>
-      </div>}
+      {historyState && <div className="trigger-history-backdrop"><section className="trigger-history" role="dialog" aria-label={`${historyState.title} history`}><header><div><span>Delivery history</span><h2>{historyState.title}</h2></div><button onClick={() => setHistoryState(null)}><X size={18} /></button></header><div className="trigger-history-table"><table><thead><tr><th>Time</th><th>Source</th><th>Status</th><th>Job</th></tr></thead><tbody>{historyState.events.map(event => <tr key={event.id}><td>{new Date(event.created_at).toLocaleString()}</td><td>{event.event_source}</td><td>{event.status}</td><td><code>{event.execution_job_id || 'Not queued'}</code></td></tr>)}</tbody></table>{!historyState.events.length && <p>No deliveries recorded yet.</p>}</div></section></div>}
     </div>
   )
 }
 
-function SecretRow({ label: rowLabel, value, onCopy }) {
-  return <div style={{ marginTop:12 }}>
-    <label style={label}>{rowLabel}</label>
-    <div style={{ display:'flex', gap:8 }}>
-      <code style={{ ...input, flex:1, overflow:'auto', whiteSpace:'nowrap' }}>{value}</code>
-      <button onClick={() => onCopy(value)} style={secondaryButton}><Copy size={13} /></button>
-    </div>
-  </div>
+function SecretRow({ label, value, onCopy }) {
+  return <div className="trigger-secret-row"><label>{label}</label><div><code>{value}</code><button type="button" onClick={() => onCopy(value)}><Copy size={13} /> Copy</button></div></div>
 }
-
-const panel = { background:'#171A23', border:'1px solid #292D3D', borderRadius:14, padding:18 }
-const grid = { display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))', gap:12 }
-const label = { display:'block', color:'#9CA3AF', fontSize:11, marginBottom:6 }
-const input = { boxSizing:'border-box', width:'100%', background:'#101219', border:'1px solid #303447', borderRadius:8, color:'#E5E7EB', padding:'9px 10px', fontSize:12 }
-const primaryButton = { display:'inline-flex', alignItems:'center', gap:6, background:'#7C3AED', color:'white', border:0, borderRadius:8, padding:'9px 13px', cursor:'pointer', marginTop:14 }
-const secondaryButton = { display:'inline-flex', alignItems:'center', gap:5, background:'#202431', color:'#C7CAD4', border:'1px solid #34394D', borderRadius:7, padding:'7px 9px', cursor:'pointer', fontSize:11 }
-const dangerButton = { ...secondaryButton, color:'#FCA5A5' }
-const linkButton = { display:'inline-flex', alignItems:'center', gap:5, background:'transparent', border:0, color:'#A78BFA', padding:0, marginTop:4, cursor:'pointer', fontSize:11 }
-const actions = { display:'flex', flexWrap:'wrap', gap:7, marginTop:14, paddingTop:12, borderTop:'1px solid #292D3D' }
-const iconBox = { width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:9, background:'#222637' }
-const errorBox = { background:'#2D1515', border:'1px solid #EF4444', borderRadius:9, padding:11, color:'#FCA5A5', fontSize:12, marginBottom:14 }
-const successBox = { background:'#0B2A20', border:'1px solid #059669', borderRadius:9, padding:11, color:'#6EE7B7', fontSize:12, marginBottom:14 }
-const th = { textAlign:'left', color:'#8B8FA3', borderBottom:'1px solid #303447', padding:'8px 6px' }
-const td = { color:'#C7CAD4', borderBottom:'1px solid #222637', padding:'9px 6px' }

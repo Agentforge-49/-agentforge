@@ -36,6 +36,7 @@ const EnterpriseAccess = lazy(() => import('./pages/EnterpriseAccess'))
 const Billing = lazy(() => import('./pages/Billing'))
 const DeveloperPlatform = lazy(() => import('./pages/DeveloperPlatform'))
 const LaunchReadiness = lazy(() => import('./pages/LaunchReadiness'))
+const AppsHub = lazy(() => import('./pages/AppsHub'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function ProtectedRoute({ children, user }) {
@@ -96,6 +97,7 @@ export default function App() {
         <Route path="/agents/:id/run"    element={protect(AgentRun)} />
         <Route path="/agents/:id/runs"   element={protect(AgentRunHistory)} />
         <Route path="/marketplace"       element={protect(Marketplace)} />
+        <Route path="/apps"              element={protect(AppsHub)} />
         {/* NEW — Day 7 — Agent Chains */}
         <Route path="/chains"            element={protect(Chains)} />
         <Route path="/chains/new"        element={protect(CreateChain)} />

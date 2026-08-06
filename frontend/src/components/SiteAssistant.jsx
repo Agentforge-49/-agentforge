@@ -6,6 +6,7 @@ import {
 
 import { useLocation, useNavigate } from '../lib/router.jsx'
 import { answerSiteQuestion, contextSuggestions } from '../lib/site-assistant-knowledge.js'
+import { askWorkspaceGuide } from '../lib/api'
 import './SiteAssistant.css'
 
 const INITIAL_MESSAGE = {
@@ -57,19 +58,46 @@ export default function SiteAssistant({ user }) {
 
   useEffect(() => () => window.clearTimeout(replyTimer.current), [])
 
-  const ask = question => {
+  const ask = async question => {
     const clean = String(question || '').trim().slice(0, 500)
     if (!clean || thinking) return
     setMessages(current => [...current, { role:'user', text:clean }])
     setInput('')
     setThinking(true)
-    replyTimer.current = window.setTimeout(() => {
+    const localAnswer = answerSiteQuestion(clean, { path:location, signedIn })
+    if (!signedIn) {
+      replyTimer.current = window.setTimeout(() => {
+        setMessages(current => [...current, { role:'assistant', answer:localAnswer }])
+        setThinking(false)
+      }, 380)
+      return
+    }
+    try {
+      const history = messages.slice(-6).map(item => ({
+        role:item.role,
+        text:item.role === 'user' ? item.text : `${item.answer.title}. ${item.answer.text}`,
+      }))
+      const result = await askWorkspaceGuide(clean, history)
+      const contextBits = [
+        `${result.context.active_agents} active agents`,
+        `${result.context.active_workflows} active workflows`,
+        `${result.context.active_triggers} active triggers`,
+      ]
       setMessages(current => [...current, {
         role:'assistant',
-        answer:answerSiteQuestion(clean, { path:location, signedIn }),
+        answer:{
+          title:'Account-aware recommendation',
+          text:result.answer,
+          bullets:[`Workspace context: ${contextBits.join(', ')}.`],
+          actions:[{ label:'Open recommended page', path:result.suggested_path }, ...localAnswer.actions].filter((item, index, all) => all.findIndex(candidate => candidate.path === item.path) === index),
+          followUps:localAnswer.followUps,
+        },
       }])
+    } catch {
+      setMessages(current => [...current, { role:'assistant', answer:{ ...localAnswer, title:`${localAnswer.title} (safe fallback)` } }])
+    } finally {
       setThinking(false)
-    }, 380)
+    }
   }
 
   const followAction = action => {

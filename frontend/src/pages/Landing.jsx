@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Bot,
   Braces,
+  Cable,
   Check,
   ChevronRight,
   CircleCheck,
@@ -14,12 +15,14 @@ import {
   Play,
   ShieldCheck,
   Sparkles,
+  MessageCircleMore,
+  Radio,
   Users,
   Workflow,
   X,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import BrandLogo from '../components/BrandLogo'
 import { useNavigate } from '../lib/router.jsx'
 import './Landing.css'
@@ -71,14 +74,38 @@ const USE_CASES = [
   'Research and reporting',
 ]
 
+const PLATFORM_MODULES = [
+  { icon:Cable, label:'App ecosystem', metric:'1,000+', title:'Connect the stack around your team', text:'Choose native actions, managed connections, or universal APIs and signed webhooks.', action:'Explore apps', path:'/integrations', size:'wide' },
+  { icon:Radio, label:'Event operations', metric:'3 paths', title:'Start work from any moment', text:'Manual, signed webhook, and durable schedule triggers with independent controls.', action:'See triggers', path:'/signup' },
+  { icon:MessageCircleMore, label:'Account-aware guide', metric:'Live', title:'Know the next useful move', text:'Get grounded product answers and signed-in recommendations from safe workspace counts.', action:'Ask the guide', guide:true },
+  { icon:Network, label:'AI workforce', metric:'Parallel', title:'Coordinate specialist agents', text:'Route work, preserve handoffs, add approvals, and trace every delegated task.', action:'Build a workforce', path:'/signup', size:'wide' },
+  { icon:ShieldCheck, label:'Production control', metric:'Always on', title:'Govern every external action', text:'Versioning, evaluations, budgets, approvals, audit, and recovery are built into operations.', action:'Review controls', path:'/#security' },
+]
+
 export default function Landing() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const sceneRef = useRef(null)
 
   const goTo = (path) => {
     setMobileOpen(false)
     navigate(path)
   }
+
+  const moveScene = event => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = (event.clientX - rect.left) / rect.width - .5
+    const y = (event.clientY - rect.top) / rect.height - .5
+    sceneRef.current?.style.setProperty('--scene-x', `${x * 7}deg`)
+    sceneRef.current?.style.setProperty('--scene-y', `${y * -6}deg`)
+  }
+
+  const resetScene = () => {
+    sceneRef.current?.style.setProperty('--scene-x', '-2deg')
+    sceneRef.current?.style.setProperty('--scene-y', '1deg')
+  }
+
+  const openGuide = () => window.dispatchEvent(new Event('agentforge:open-guide'))
 
   return (
     <div className="landing">
@@ -160,9 +187,18 @@ export default function Landing() {
                 <span><Check size={15} /> Human approval built in</span>
                 <span><Check size={15} /> Publish when you are ready</span>
               </div>
+              <button className="hero-guide-prompt" type="button" onClick={openGuide}>
+                <span><Sparkles size={16} /></span>
+                <div><strong>Describe what you want to automate</strong><small>AgentForge Guide will map your first workflow</small></div>
+                <kbd>Ask AI</kbd>
+              </button>
             </div>
 
-            <div className="product-preview" aria-label="AgentForge workflow preview">
+            <div className="hero-system-stage" ref={sceneRef} onPointerMove={moveScene} onPointerLeave={resetScene}>
+              <span className="hero-orbit hero-orbit--apps"><Cable size={13} /> 1,000+ apps</span>
+              <span className="hero-orbit hero-orbit--events"><Radio size={13} /> Live events</span>
+              <span className="hero-orbit hero-orbit--guard"><ShieldCheck size={13} /> Approval ready</span>
+              <div className="product-preview" aria-label="AgentForge workflow preview">
               <div className="product-preview__topbar">
                 <div className="preview-window-controls" aria-hidden="true">
                   <span /><span /><span />
@@ -220,6 +256,7 @@ export default function Landing() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
         </section>
 
@@ -231,6 +268,25 @@ export default function Landing() {
               <span><Activity size={17} /> Observable</span>
               <span><GitBranch size={17} /> Versioned</span>
               <span><Users size={17} /> Human-aware</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="section platform-map-section" id="platform-map">
+          <div className="landing-container">
+            <div className="section-heading">
+              <span className="section-kicker">A full operating layer</span>
+              <h2>More than an agent builder. A system for connected work.</h2>
+              <p>Every module has a clear job: connect, trigger, reason, approve, deliver, observe, and improve.</p>
+            </div>
+            <div className="platform-map-grid">
+              {PLATFORM_MODULES.map(({ icon:Icon, label, metric, title, text, action, path, guide, size }) => (
+                <article className={size === 'wide' ? 'platform-map-card platform-map-card--wide' : 'platform-map-card'} key={title}>
+                  <div><span><Icon size={18} /></span><small>{label}</small><b>{metric}</b></div>
+                  <h3>{title}</h3><p>{text}</p>
+                  <button type="button" onClick={() => guide ? openGuide() : goTo(path)}>{action} <ArrowRight size={14} /></button>
+                </article>
+              ))}
             </div>
           </div>
         </section>

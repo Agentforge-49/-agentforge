@@ -62,6 +62,11 @@ export const useTemplate   = (id) => request('POST', `/api/templates/${id}/use`)
 export const getStarterKits = () => request('GET', '/api/starter-kits')
 export const installStarterKit = (slug, data) =>
   request('POST', `/api/starter-kits/${encodeURIComponent(slug)}/install`, data)
+export const getIntegrationBridgeStatus = () => request('GET', '/api/integration-bridge/status')
+export const createIntegrationConnectLink = app =>
+  request('POST', '/api/integration-bridge/connect-link', { app })
+export const askWorkspaceGuide = (message, history = [], model = 'claude-sonnet-4-6') =>
+  request('POST', '/api/site-assistant/chat', { message, history, model })
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 export const getDashboardStats = () => request('GET', '/api/dashboard/stats')
@@ -108,6 +113,7 @@ export const fireTrigger = (id, input, idempotencyKey) =>
 export const rotateTriggerSecret = (id) =>
   request('POST', `/api/triggers/${id}/rotate-secret`)
 export const getTriggerEvents = (id) => request('GET', `/api/triggers/${id}/events`)
+export const bulkTriggerStatus = action => request('POST', `/api/triggers/bulk/${action}`)
 
 // Credential vault
 export const getCredentials = () => request('GET', '/api/credentials')

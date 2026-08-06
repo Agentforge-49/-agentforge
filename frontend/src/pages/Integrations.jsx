@@ -1,5 +1,6 @@
 import { ArrowRight, Bot, Braces, CalendarDays, Database, GitBranch, Mail, MessageSquare, Network, Sheet } from 'lucide-react'
 import MarketingLayout from '../components/MarketingLayout'
+import AppDirectory from '../components/AppDirectory'
 import { useNavigate } from '../lib/router.jsx'
 
 const INTEGRATIONS = [
@@ -52,6 +53,17 @@ export default function Integrations() {
       </section>
 
       <section className="marketing-section marketing-section--tint">
+        <div className="landing-container">
+          <div className="marketing-heading">
+            <span className="section-kicker">Expanded app ecosystem</span>
+            <h2>Find the app first. Then choose the right connection path.</h2>
+            <p>Search a catalog sourced from the public Pipedream component registry. Native, OAuth-ready, and external-bridge apps are labeled separately.</p>
+          </div>
+          <AppDirectory />
+        </div>
+      </section>
+
+      <section className="marketing-section">
         <div className="landing-container">
           <div className="marketing-heading"><span className="section-kicker">One controlled connection layer</span><h2>Integrations should be secure, observable, and reusable.</h2></div>
           <div className="marketing-grid">

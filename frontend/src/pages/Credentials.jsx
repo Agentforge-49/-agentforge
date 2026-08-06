@@ -35,12 +35,24 @@ function oauthNotice() {
   return { message:'', error:'' }
 }
 
+function requestedApp() {
+  const value = new URLSearchParams(window.location.search).get('app') || ''
+  return /^[a-z0-9][a-z0-9_-]{0,99}$/i.test(value) ? value.toLowerCase() : ''
+}
+
 export default function Credentials() {
   const initialNotice = oauthNotice()
+  const initialApp = requestedApp()
   const [credentials, setCredentials] = useState([])
   const [logs, setLogs] = useState([])
   const [showLogs, setShowLogs] = useState(false)
-  const [form, setForm] = useState({ name:'', provider:'generic', secret:'', project_url:'' })
+  const [form, setForm] = useState({
+    name:initialApp ? `${initialApp.replace(/[_-]+/g, ' ')} API credential` : '',
+    provider:'generic',
+    secret:'',
+    project_url:'',
+    app_slug:initialApp,
+  })
   const [error, setError] = useState(initialNotice.error)
   const [message, setMessage] = useState(initialNotice.message)
   const [busyId, setBusyId] = useState('')
@@ -123,10 +135,14 @@ export default function Credentials() {
         name:form.name,
         provider:form.provider,
         secret:form.secret,
-        metadata:form.provider === 'supabase' ? { project_url:form.project_url } : {},
+        metadata:form.provider === 'supabase'
+          ? { project_url:form.project_url }
+          : form.provider === 'generic' && form.app_slug
+            ? { app_slug:form.app_slug }
+            : {},
       })
       setCredentials(items => [created, ...items])
-      setForm(current => ({ ...current, name:'', secret:'', project_url:'' }))
+      setForm(current => ({ ...current, name:'', secret:'', project_url:'', app_slug:'' }))
       setMessage('Credential encrypted and stored. The plaintext was discarded.')
     } catch (err) {
       setError(err.message)
@@ -324,6 +340,11 @@ export default function Credentials() {
             <input required type="url" value={form.project_url}
               onChange={e => setForm({ ...form, project_url:e.target.value })}
               placeholder="https://project.supabase.co" style={input} />
+          </div>}
+          {form.provider === 'generic' && <div>
+            <label style={label}>App identifier</label>
+            <input value={form.app_slug} onChange={e => setForm({ ...form, app_slug:e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 100) })}
+              placeholder="hubspot" style={input} />
           </div>}
         </div>
         <p style={{ color:'#6B7280', fontSize:11, marginTop:10 }}>Secrets use authenticated AES-256-GCM encryption. Plaintext is never returned by the API.</p>
