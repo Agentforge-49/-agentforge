@@ -5,7 +5,7 @@ import { INTEGRATION_CATALOG, INTEGRATION_COUNTS } from '../src/lib/integration-
 
 test('integration catalog exceeds the 500-app launch target with honest modes', () => {
   assert(INTEGRATION_COUNTS.catalog > 1000)
-  assert(INTEGRATION_COUNTS.native >= 5)
+  assert(INTEGRATION_COUNTS.native >= 17)
   assert(INTEGRATION_COUNTS.bridge > 500)
   assert(INTEGRATION_CATALOG.every(app => ['native', 'oauth', 'bridge'].includes(app.mode)))
 })

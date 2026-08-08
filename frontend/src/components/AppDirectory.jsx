@@ -80,7 +80,7 @@ export default function AppDirectory({ workspace = false }) {
       <div className="app-directory-summary">
         <div><strong>{INTEGRATION_COUNTS.catalog.toLocaleString()}+</strong><span>discoverable apps</span></div>
         <div><strong>10,000+</strong><span>external actions and triggers</span></div>
-        <div><strong>3</strong><span>connection paths</span></div>
+        <div><strong>19</strong><span>typed workflow actions</span></div>
         <div className={bridge.configured ? 'is-ready' : ''}>
           <strong>{workspace && bridge.configured ? 'Ready' : 'Honest'}</strong>
           <span>{workspace && bridge.configured ? 'managed bridge configured' : 'readiness labels'}</span>
@@ -97,7 +97,7 @@ export default function AppDirectory({ workspace = false }) {
         <div className="app-directory-modes" aria-label="Connection types">
           {[
             ['all','All apps'],['native','Native'],['oauth','OAuth ready'],['bridge','External bridge'],
-          ].map(([value, label]) => (
+          ].filter(([value]) => value !== 'oauth' || INTEGRATION_COUNTS.oauthReady > 0).map(([value, label]) => (
             <button type="button" className={mode === value ? 'active' : ''} key={value} onClick={() => { setMode(value); setVisible(PAGE_SIZE) }}>{label}</button>
           ))}
         </div>

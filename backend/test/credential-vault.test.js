@@ -45,3 +45,22 @@ test('generic connection test verifies vault integrity without network access', 
   );
 });
 
+test('supported app credentials are verified against their fixed provider endpoint', async () => {
+  const originalFetch = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return { status:200, json:async () => ({ id:'user' }) };
+  };
+  try {
+    assert.deepEqual(
+      await testCredentialConnection('generic', 'notion-secret', { app_slug:'notion' }),
+      { passed:true, message:'Provider connection verified' },
+    );
+    assert.equal(request.url, 'https://api.notion.com/v1/users/me');
+    assert.equal(request.options.headers.Authorization, 'Bearer notion-secret');
+    assert.equal(request.options.redirect, 'manual');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

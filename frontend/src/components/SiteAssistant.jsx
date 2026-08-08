@@ -65,9 +65,13 @@ export default function SiteAssistant({ user }) {
     setInput('')
     setThinking(true)
     const localAnswer = answerSiteQuestion(clean, { path:location, signedIn })
+    const wantsWorkflow = signedIn && /(build|create|make|automate|automation|workflow)/i.test(clean)
+    const draftAction = wantsWorkflow
+      ? [{ label:'Generate this workflow draft', path:`/workflows/new?copilot=${encodeURIComponent(clean)}` }]
+      : []
     if (!signedIn) {
       replyTimer.current = window.setTimeout(() => {
-        setMessages(current => [...current, { role:'assistant', answer:localAnswer }])
+        setMessages(current => [...current, { role:'assistant', answer:{ ...localAnswer, actions:[...draftAction, ...(localAnswer.actions || [])] } }])
         setThinking(false)
       }, 380)
       return
@@ -89,12 +93,12 @@ export default function SiteAssistant({ user }) {
           title:'Account-aware recommendation',
           text:result.answer,
           bullets:[`Workspace context: ${contextBits.join(', ')}.`],
-          actions:[{ label:'Open recommended page', path:result.suggested_path }, ...localAnswer.actions].filter((item, index, all) => all.findIndex(candidate => candidate.path === item.path) === index),
+          actions:[...draftAction, { label:'Open recommended page', path:result.suggested_path }, ...localAnswer.actions].filter((item, index, all) => all.findIndex(candidate => candidate.path === item.path) === index),
           followUps:localAnswer.followUps,
         },
       }])
     } catch {
-      setMessages(current => [...current, { role:'assistant', answer:{ ...localAnswer, title:`${localAnswer.title} (safe fallback)` } }])
+      setMessages(current => [...current, { role:'assistant', answer:{ ...localAnswer, title:`${localAnswer.title} (safe fallback)`, actions:[...draftAction, ...(localAnswer.actions || [])] } }])
     } finally {
       setThinking(false)
     }
@@ -132,7 +136,7 @@ export default function SiteAssistant({ user }) {
           </header>
 
           <div className="site-assistant-context">
-            <ShieldCheck size={14} /> This guide explains the product. It cannot see your secrets or run workflows.
+            <ShieldCheck size={14} /> The guide can prepare workflow drafts. It cannot see secrets, publish, or run external actions.
           </div>
 
           <div className="site-assistant-messages" aria-live="polite">

@@ -167,7 +167,7 @@ router.post('/:id/test', async (req, res, next) => {
       version,
       `credential:${req.userId}:${credential.id}:${credential.current_version}`,
     );
-    const result = await testCredentialConnection(credential.provider, secret);
+    const result = await testCredentialConnection(credential.provider, secret, credential.metadata || {});
     const testedAt = new Date().toISOString();
     await Promise.all([
       supabase.from('vault_credentials').update({

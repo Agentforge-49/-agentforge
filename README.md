@@ -135,6 +135,12 @@ the source of truth for built-in execution. Any public API can also be called
 through the allowlisted HTTP connector, and signed inbound webhooks can start
 workflows from external automation systems.
 
+The launch action catalog contains 19 typed operations across HTTP, Resend,
+Slack, Google Sheets, Google Drive, Supabase, GitHub, Discord, Notion,
+Airtable, HubSpot, Salesforce, Stripe, Shopify, Jira, Linear, Twilio, and
+Zendesk. App-specific generic credentials must carry a matching `app_slug`, so
+a token stored for one provider cannot be accidentally selected for another.
+
 Broad managed authentication uses the optional Pipedream Connect bridge. Create
 a Pipedream development project and configure `PIPEDREAM_CLIENT_ID`,
 `PIPEDREAM_CLIENT_SECRET`, `PIPEDREAM_PROJECT_ID`, and
@@ -146,6 +152,8 @@ users receive account-aware model guidance when a provider is configured and
 their usage allowance permits it. Only counts, statuses, and provider names are
 passed to the guide; credentials and workflow inputs are excluded. If model
 guidance is unavailable, the interface falls back to the grounded local guide.
+Signed-in users can turn a chat request into a generated workflow draft, but
+publishing and external execution remain explicit user actions.
 
 Apply Supabase migrations in filename order before deploying API code that
 depends on them. Use the launch-readiness page and recovery snapshots before a

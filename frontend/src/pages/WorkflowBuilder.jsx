@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
@@ -52,6 +52,18 @@ function connectorParameters(action) {
   if (action === 'google_drive.create_file') return { name:'agentforge-output.txt', content:'{{input}}' }
   if (action === 'database.select') return { table:'', select:'*', limit:25 }
   if (action === 'database.insert') return { table:'', row:{ value:'{{input}}' } }
+  if (action === 'github.issue.create') return { owner:'', repository:'', title:'AgentForge workflow issue', body:'{{input}}', labels:[] }
+  if (action === 'discord.message') return { channel_id:'', content:'{{input}}' }
+  if (action === 'notion.page.create') return { parent_page_id:'', title:'AgentForge result', content:'{{input}}' }
+  if (action === 'airtable.record.create') return { base_id:'', table_id:'', fields:{ Name:'{{input}}' } }
+  if (action === 'hubspot.contact.create') return { properties:{ email:'', firstname:'{{input}}', lastname:'' } }
+  if (action === 'salesforce.record.create') return { instance:'', object:'Lead', fields:{ LastName:'{{input}}', Company:'AgentForge' } }
+  if (action === 'stripe.customer.create') return { email:'', name:'{{input}}', description:'Created by AgentForge' }
+  if (action === 'shopify.product.create') return { store:'', title:'{{input}}', description:'', vendor:'', product_type:'', tags:'' }
+  if (action === 'jira.issue.create') return { site:'', email:'', project_key:'', issue_type:'Task', summary:'AgentForge workflow task', description:'{{input}}' }
+  if (action === 'linear.issue.create') return { team_id:'', title:'AgentForge workflow task', description:'{{input}}' }
+  if (action === 'twilio.message.send') return { account_sid:'', to:'', from:'', body:'{{input}}' }
+  if (action === 'zendesk.ticket.create') return { subdomain:'', email:'', subject:'AgentForge workflow request', comment:'{{input}}' }
   return {}
 }
 
@@ -91,6 +103,11 @@ function graphFromNodes(nodes) {
     }
   })
   return { nodes:positioned, edges }
+}
+
+function requestedCopilotPrompt() {
+  const prompt = new URLSearchParams(window.location.search).get('copilot') || ''
+  return prompt.trim().slice(0, 1_200)
 }
 
 function workflowIssues(nodes, credentials, connectors) {
@@ -149,11 +166,12 @@ export default function WorkflowBuilder() {
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
   const [draggedId, setDraggedId] = useState('')
-  const [copilotRequest, setCopilotRequest] = useState('')
+  const [copilotRequest, setCopilotRequest] = useState(() => editing ? '' : requestedCopilotPrompt())
   const [copilotModel, setCopilotModel] = useState('claude-sonnet-4-6')
   const [copilotBusy, setCopilotBusy] = useState(false)
   const [copilotResult, setCopilotResult] = useState(null)
   const [modelOptions, setModelOptions] = useState([])
+  const [autoDraft, setAutoDraft] = useState(() => !editing && requestedCopilotPrompt().length >= 10)
 
   useEffect(() => {
     Promise.all([
@@ -263,7 +281,7 @@ export default function WorkflowBuilder() {
     changeNodes(next)
   }
 
-  const generateDraft = async () => {
+  const generateDraft = useCallback(async () => {
     if (copilotRequest.trim().length < 10) {
       setError('Describe the workflow in at least 10 characters')
       return
@@ -272,7 +290,9 @@ export default function WorkflowBuilder() {
     setError('')
     try {
       const draft = await generateWorkflowDraft(copilotRequest.trim(), copilotModel)
-      changeNodes(draft.nodes)
+      setHistory(items => [...items, nodes].slice(-30))
+      setFuture([])
+      setNodes(draft.nodes)
       setName(draft.name)
       setDescription(draft.description || '')
       setCopilotResult(draft)
@@ -282,7 +302,16 @@ export default function WorkflowBuilder() {
     } finally {
       setCopilotBusy(false)
     }
-  }
+  }, [copilotModel, copilotRequest, nodes])
+
+  useEffect(() => {
+    if (!autoDraft || !modelOptions.length || copilotBusy) return
+    const timer = window.setTimeout(() => {
+      setAutoDraft(false)
+      generateDraft()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [autoDraft, copilotBusy, generateDraft, modelOptions.length])
 
   const save = async () => {
     setBusy(true)
@@ -528,7 +557,11 @@ export default function WorkflowBuilder() {
                 {credentials
                   .filter(credential => {
                     const definition = connectors.find(item => item.action === selected.config.action)
-                    return !definition?.providers || definition.providers.includes(credential.provider)
+                    if (definition?.providers && !definition.providers.includes(credential.provider)) return false
+                    if (credential.provider === 'generic' && definition?.app_slugs?.length) {
+                      return definition.app_slugs.includes(credential.metadata?.app_slug)
+                    }
+                    return true
                   })
                   .map(credential => (
                     <option key={credential.id} value={credential.id}>
@@ -650,6 +683,75 @@ function ConnectorFields({ node, updateConfig }) {
     <Field label="Select columns" value={parameters.select || '*'} onChange={value => updateParameters({ select:value })} />
     <Field label="Limit" type="number" value={parameters.limit || 25} onChange={value => updateParameters({ limit:Number(value) })} />
   </>
+  if (action === 'github.issue.create') return <>
+    <Field label="Repository owner" value={parameters.owner || ''} onChange={value => updateParameters({ owner:value })} />
+    <Field label="Repository name" value={parameters.repository || ''} onChange={value => updateParameters({ repository:value })} />
+    <Field label="Issue title" value={parameters.title || ''} onChange={value => updateParameters({ title:value })} />
+    <Field label="Issue body" value={parameters.body || ''} onChange={value => updateParameters({ body:value })} multiline />
+    <Field label="Labels (comma separated)" value={(parameters.labels || []).join(', ')} onChange={value => updateParameters({ labels:value.split(',').map(item => item.trim()).filter(Boolean) })} />
+  </>
+  if (action === 'discord.message') return <>
+    <Field label="Channel ID" value={parameters.channel_id || ''} onChange={value => updateParameters({ channel_id:value })} />
+    <Field label="Message" value={parameters.content || ''} onChange={value => updateParameters({ content:value })} multiline />
+  </>
+  if (action === 'notion.page.create') return <>
+    <Field label="Parent page ID" value={parameters.parent_page_id || ''} onChange={value => updateParameters({ parent_page_id:value })} />
+    <Field label="Page title" value={parameters.title || ''} onChange={value => updateParameters({ title:value })} />
+    <Field label="Page content" value={parameters.content || ''} onChange={value => updateParameters({ content:value })} multiline />
+  </>
+  if (action === 'airtable.record.create') return <>
+    <Field label="Base ID" value={parameters.base_id || ''} onChange={value => updateParameters({ base_id:value })} />
+    <Field label="Table ID or name" value={parameters.table_id || ''} onChange={value => updateParameters({ table_id:value })} />
+    <ObjectField label="Record field" object={parameters.fields} onChange={fields => updateParameters({ fields })} />
+  </>
+  if (action === 'hubspot.contact.create') return <>
+    <Field label="Email" value={parameters.properties?.email || ''} onChange={value => updateParameters({ properties:{ ...parameters.properties, email:value } })} />
+    <Field label="First name" value={parameters.properties?.firstname || ''} onChange={value => updateParameters({ properties:{ ...parameters.properties, firstname:value } })} />
+    <Field label="Last name" value={parameters.properties?.lastname || ''} onChange={value => updateParameters({ properties:{ ...parameters.properties, lastname:value } })} />
+  </>
+  if (action === 'salesforce.record.create') return <>
+    <Field label="Instance (before .my.salesforce.com)" value={parameters.instance || ''} onChange={value => updateParameters({ instance:value })} />
+    <Field label="Object API name" value={parameters.object || ''} onChange={value => updateParameters({ object:value })} />
+    <ObjectField label="Record field" object={parameters.fields} onChange={fields => updateParameters({ fields })} />
+  </>
+  if (action === 'stripe.customer.create') return <>
+    <Field label="Customer email" value={parameters.email || ''} onChange={value => updateParameters({ email:value })} />
+    <Field label="Customer name" value={parameters.name || ''} onChange={value => updateParameters({ name:value })} />
+    <Field label="Description" value={parameters.description || ''} onChange={value => updateParameters({ description:value })} multiline />
+  </>
+  if (action === 'shopify.product.create') return <>
+    <Field label="Store (before .myshopify.com)" value={parameters.store || ''} onChange={value => updateParameters({ store:value })} />
+    <Field label="Product title" value={parameters.title || ''} onChange={value => updateParameters({ title:value })} />
+    <Field label="Description" value={parameters.description || ''} onChange={value => updateParameters({ description:value })} multiline />
+    <Field label="Vendor" value={parameters.vendor || ''} onChange={value => updateParameters({ vendor:value })} />
+    <Field label="Product type" value={parameters.product_type || ''} onChange={value => updateParameters({ product_type:value })} />
+    <Field label="Tags" value={parameters.tags || ''} onChange={value => updateParameters({ tags:value })} />
+  </>
+  if (action === 'jira.issue.create') return <>
+    <Field label="Site (before .atlassian.net)" value={parameters.site || ''} onChange={value => updateParameters({ site:value })} />
+    <Field label="Account email" value={parameters.email || ''} onChange={value => updateParameters({ email:value })} />
+    <Field label="Project key" value={parameters.project_key || ''} onChange={value => updateParameters({ project_key:value.toUpperCase() })} />
+    <Field label="Issue type" value={parameters.issue_type || ''} onChange={value => updateParameters({ issue_type:value })} />
+    <Field label="Summary" value={parameters.summary || ''} onChange={value => updateParameters({ summary:value })} />
+    <Field label="Description" value={parameters.description || ''} onChange={value => updateParameters({ description:value })} multiline />
+  </>
+  if (action === 'linear.issue.create') return <>
+    <Field label="Team ID" value={parameters.team_id || ''} onChange={value => updateParameters({ team_id:value })} />
+    <Field label="Issue title" value={parameters.title || ''} onChange={value => updateParameters({ title:value })} />
+    <Field label="Description" value={parameters.description || ''} onChange={value => updateParameters({ description:value })} multiline />
+  </>
+  if (action === 'twilio.message.send') return <>
+    <Field label="Account SID" value={parameters.account_sid || ''} onChange={value => updateParameters({ account_sid:value })} />
+    <Field label="To number" value={parameters.to || ''} onChange={value => updateParameters({ to:value })} />
+    <Field label="From number" value={parameters.from || ''} onChange={value => updateParameters({ from:value })} />
+    <Field label="Message" value={parameters.body || ''} onChange={value => updateParameters({ body:value })} multiline />
+  </>
+  if (action === 'zendesk.ticket.create') return <>
+    <Field label="Subdomain" value={parameters.subdomain || ''} onChange={value => updateParameters({ subdomain:value })} />
+    <Field label="Account email" value={parameters.email || ''} onChange={value => updateParameters({ email:value })} />
+    <Field label="Ticket subject" value={parameters.subject || ''} onChange={value => updateParameters({ subject:value })} />
+    <Field label="Comment" value={parameters.comment || ''} onChange={value => updateParameters({ comment:value })} multiline />
+  </>
   return <>
     <Field label="Table" value={parameters.table || ''} onChange={value => updateParameters({ table:value })} />
     <Field label="Column name" value={Object.keys(parameters.row || {})[0] || 'value'} onChange={value => {
@@ -660,6 +762,15 @@ function ConnectorFields({ node, updateConfig }) {
       const column = Object.keys(parameters.row || {})[0] || 'value'
       updateParameters({ row:{ [column]:value } })
     }} />
+  </>
+}
+
+function ObjectField({ label, object = {}, onChange }) {
+  const key = Object.keys(object || {})[0] || 'value'
+  const value = Object.values(object || {})[0] || '{{input}}'
+  return <>
+    <Field label={`${label} name`} value={key} onChange={nextKey => onChange({ [nextKey]:value })} />
+    <Field label={`${label} value`} value={String(value)} onChange={nextValue => onChange({ [key]:nextValue })} />
   </>
 }
 

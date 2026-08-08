@@ -30,6 +30,21 @@ const TEST_TARGETS = {
     }),
   },
 };
+const GENERIC_TEST_TARGETS = {
+  discord:{ url:'https://discord.com/api/v10/users/@me', headers:secret => ({ Authorization:`Bot ${secret}` }) },
+  discord_bot:{ url:'https://discord.com/api/v10/users/@me', headers:secret => ({ Authorization:`Bot ${secret}` }) },
+  notion:{ url:'https://api.notion.com/v1/users/me', headers:secret => ({ Authorization:`Bearer ${secret}`, 'Notion-Version':'2026-03-11' }) },
+  airtable:{ url:'https://api.airtable.com/v0/meta/bases', headers:secret => ({ Authorization:`Bearer ${secret}` }) },
+  airtable_oauth:{ url:'https://api.airtable.com/v0/meta/bases', headers:secret => ({ Authorization:`Bearer ${secret}` }) },
+  hubspot:{ url:'https://api.hubapi.com/crm/v3/objects/contacts?limit=1', headers:secret => ({ Authorization:`Bearer ${secret}` }) },
+  stripe:{ url:'https://api.stripe.com/v1/account', headers:secret => ({ Authorization:`Bearer ${secret}` }) },
+  linear:{
+    url:'https://api.linear.app/graphql',
+    method:'POST',
+    headers:secret => ({ Authorization:secret, 'Content-Type':'application/json' }),
+    body:JSON.stringify({ query:'query Viewer { viewer { id } }' }),
+  },
+};
 
 function configurationError(message) {
   const error = new Error(message);
@@ -150,11 +165,12 @@ function formatLooksValid(provider, secret) {
   return secret.length >= 8;
 }
 
-export async function testCredentialConnection(provider, secret) {
+export async function testCredentialConnection(provider, secret, metadata = {}) {
   if (!formatLooksValid(provider, secret)) {
     return { passed: false, message: 'Credential format does not match the selected provider' };
   }
-  const target = TEST_TARGETS[provider];
+  const appSlug = typeof metadata?.app_slug === 'string' ? metadata.app_slug.trim().toLowerCase() : '';
+  const target = TEST_TARGETS[provider] || (provider === 'generic' ? GENERIC_TEST_TARGETS[appSlug] : null);
   if (!target) {
     return { passed: true, message: 'Encryption and decryption integrity verified' };
   }
@@ -162,6 +178,7 @@ export async function testCredentialConnection(provider, secret) {
     const response = await fetch(target.url, {
       method: target.method || 'GET',
       headers: target.headers(secret),
+      body:target.body,
       redirect: 'manual',
       signal: AbortSignal.timeout(10000),
     });

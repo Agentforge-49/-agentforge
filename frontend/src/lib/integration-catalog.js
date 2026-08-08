@@ -11,7 +11,18 @@ const NATIVE = new Map([
   ['google_drive',{ mode:'native', status:'Live with credential', category:'Storage' }],
   ['resend',{ mode:'native', status:'Live', category:'Email' }],
   ['supabase',{ mode:'native', status:'Live', category:'Database' }],
-  ['github',{ mode:'oauth', status:'OAuth ready', category:'Engineering' }],
+  ['github',{ mode:'native', status:'Live with credential', category:'Engineering' }],
+  ['discord',{ mode:'native', status:'Live with credential', category:'Communication' }],
+  ['notion',{ mode:'native', status:'Live with credential', category:'Productivity' }],
+  ['airtable',{ mode:'native', status:'Live with credential', category:'Database' }],
+  ['hubspot',{ mode:'native', status:'Live with credential', category:'CRM' }],
+  ['salesforce',{ mode:'native', status:'Live with credential', category:'CRM' }],
+  ['stripe',{ mode:'native', status:'Live with credential', category:'Commerce' }],
+  ['shopify',{ mode:'native', status:'Live with credential', category:'Commerce' }],
+  ['jira',{ mode:'native', status:'Live with credential', category:'Engineering' }],
+  ['linear',{ mode:'native', status:'Live with credential', category:'Engineering' }],
+  ['twilio',{ mode:'native', status:'Live with credential', category:'Communication' }],
+  ['zendesk',{ mode:'native', status:'Live with credential', category:'Support' }],
 ]);
 
 function humanize(slug) {

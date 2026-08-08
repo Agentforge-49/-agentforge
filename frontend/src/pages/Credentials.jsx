@@ -25,6 +25,15 @@ const PROVIDERS = [
   ['supabase', 'Supabase'],
 ]
 
+const APP_CREDENTIAL_PROVIDERS = {
+  slack:'slack',
+  google_sheets:'google',
+  google_drive:'google',
+  resend:'resend',
+  supabase:'supabase',
+  github:'github',
+}
+
 function oauthNotice() {
   const query = new URLSearchParams(window.location.search)
   const status = query.get('oauth')
@@ -43,12 +52,13 @@ function requestedApp() {
 export default function Credentials() {
   const initialNotice = oauthNotice()
   const initialApp = requestedApp()
+  const initialProvider = APP_CREDENTIAL_PROVIDERS[initialApp] || 'generic'
   const [credentials, setCredentials] = useState([])
   const [logs, setLogs] = useState([])
   const [showLogs, setShowLogs] = useState(false)
   const [form, setForm] = useState({
     name:initialApp ? `${initialApp.replace(/[_-]+/g, ' ')} API credential` : '',
-    provider:'generic',
+    provider:initialProvider,
     secret:'',
     project_url:'',
     app_slug:initialApp,
