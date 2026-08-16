@@ -1,43 +1,20 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from '../lib/router.jsx'
-import { Activity, BookOpen, Building2, Cable, Code2, Fingerprint, FlaskConical, Gauge, LayoutDashboard, Bot, ReceiptText, Rocket, Settings, Store, Link2, LogOut, Menu, Network, Workflow, X, Zap, KeyRound, ShieldCheck, Sparkles } from 'lucide-react'
+import { Link, useLocation, useNavigate } from '../lib/router.jsx'
+import { Activity, BookOpen, Building2, Cable, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Settings, ShieldCheck, Sparkles, Store, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { isWorkspaceNavActive, WORKSPACE_NAV_GROUPS } from '../lib/workspace-navigation.js'
 import BrandLogo from '../components/BrandLogo'
 import '../styles/Workspace.css'
 
-const NAV_GROUPS = [
-  { label:'Workspace', items:[
-    { to:'/dashboard', icon:LayoutDashboard, label:'Dashboard' },
-    { to:'/marketplace', icon:Store, label:'Marketplace' },
-    { to:'/apps', icon:Cable, label:'Apps' },
-  ] },
-  { label:'Build', items:[
-    { to:'/agents/new', icon:Bot, label:'New Agent' },
-    { to:'/workflows', icon:Workflow, label:'Workflows' },
-    { to:'/chains', icon:Link2, label:'Chains' },
-    { to:'/multi-agents', icon:Network, label:'Multi-Agent' },
-    { to:'/knowledge', icon:BookOpen, label:'Knowledge' },
-  ] },
-  { label:'Operate', items:[
-    { to:'/triggers', icon:Zap, label:'Triggers' },
-    { to:'/approvals', icon:ShieldCheck, label:'Approvals' },
-    { to:'/observability', icon:Activity, label:'Observability' },
-    { to:'/evaluations', icon:FlaskConical, label:'Evaluations' },
-    { to:'/credentials', icon:KeyRound, label:'Credentials' },
-  ] },
-  { label:'Scale', items:[
-    { to:'/organizations', icon:Building2, label:'Organizations' },
-    { to:'/enterprise-access', icon:Fingerprint, label:'Enterprise Access' },
-    { to:'/developer', icon:Code2, label:'Developer Platform' },
-    { to:'/usage', icon:Gauge, label:'Usage & Plans' },
-    { to:'/billing', icon:ReceiptText, label:'Billing' },
-    { to:'/launch', icon:Rocket, label:'Launch Readiness' },
-    { to:'/settings', icon:Settings, label:'Settings' },
-  ] },
-]
+const ICONS = {
+  apps:Cable, developer:Code2, home:LayoutDashboard, inbox:ShieldCheck,
+  knowledge:BookOpen, quality:FlaskConical, runs:Activity, settings:Settings,
+  studio:PanelsTopLeft, team:Building2, templates:Store,
+}
 
 export default function MainLayout({ children, user }) {
   const navigate = useNavigate()
+  const [location] = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const logout = async () => {
@@ -70,18 +47,21 @@ export default function MainLayout({ children, user }) {
         </div>
 
         <nav className="workspace-nav">
-          {NAV_GROUPS.map(group => (
+          {WORKSPACE_NAV_GROUPS.map(group => (
             <div className="workspace-nav-group" key={group.label}>
               <div className="workspace-nav-label">{group.label}</div>
-              {group.items.map(({ to, icon: Icon, label }) => (
-                <NavLink key={to} to={to} onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) => `workspace-nav-link${isActive ? ' workspace-nav-link-active' : ''}`}>
-                  {({ isActive }) => <>
+              {group.items.map(item => {
+                const Icon = ICONS[item.icon]
+                const isActive = isWorkspaceNavActive(location, item)
+                return (
+                  <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`workspace-nav-link${isActive ? ' workspace-nav-link-active' : ''}`}>
                     {isActive && <span className="workspace-nav-marker" />}
-                    <Icon size={16.5} /> {label}
-                  </>}
-                </NavLink>
-              ))}
+                    <Icon size={16.5} /> {item.label}
+                  </Link>
+                )
+              })}
             </div>
           ))}
         </nav>

@@ -9,8 +9,8 @@ import { useNavigate } from '../lib/router.jsx'
 
 const QUICK_ACTIONS = [
   { title:'Install a starter workflow', detail:'Launch support, lead, or research automation from a guided production pattern.', to:'/marketplace', icon:Sparkles },
-  { title:'Build from scratch', detail:'Combine your own agents, logic, approvals, and connected apps.', to:'/workflows/new', icon:Workflow },
-  { title:'Connect your tools', detail:'Add encrypted credentials or consent-based accounts.', to:'/credentials', icon:KeyRound },
+  { title:'Open the unified Studio', detail:'Combine agents, logic, approvals, and connected apps in one build workspace.', to:'/studio', icon:Workflow },
+  { title:'Connect your tools', detail:'Add encrypted credentials or consent-based accounts.', to:'/apps', icon:KeyRound },
 ]
 
 export default function Dashboard() {
@@ -70,8 +70,8 @@ export default function Dashboard() {
           <h1>Turn one support or operations process into dependable automation.</h1>
           <p>Start from an approval-gated workflow, connect the tools your team already uses, and inspect every run.</p>
         </div>
-        <button className="dashboard-primary" onClick={() => navigate('/agents/new')}>
-          <Plus size={16} /> Create agent
+        <button className="dashboard-primary" onClick={() => navigate('/studio')}>
+          <Plus size={16} /> Open Studio
         </button>
       </section>
 
@@ -104,7 +104,7 @@ export default function Dashboard() {
       <section className="dashboard-section">
         <div className="dashboard-section-heading dashboard-section-heading-row">
           <div><span>Your workforce</span><h2>Agents</h2></div>
-          {agents.length > 0 && <button className="dashboard-secondary" onClick={() => navigate('/agents/new')}><Plus size={14} /> New agent</button>}
+          {agents.length > 0 && <button className="dashboard-secondary" onClick={() => navigate('/studio')}><Plus size={14} /> Open Studio</button>}
         </div>
         {agents.length === 0 ? (
           <div className="dashboard-empty">

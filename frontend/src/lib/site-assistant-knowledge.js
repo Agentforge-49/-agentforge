@@ -95,7 +95,7 @@ const TOPICS = [
     title:'Use the simplest building block that fits',
     text:'An agent handles one focused reasoning task. A workflow combines agents with deterministic steps, conditions, approvals, and connectors. Chains sequence agent work, while multi-agent teams coordinate specialists.',
     bullets:['Start with one agent when the task has one clear input and output.', 'Use a workflow when an external action or approval must be controlled.', 'Add multiple agents only when distinct specialist roles improve the result.'],
-    actions:[{ label:'Create an agent', path:'/agents/new', auth:true }, { label:'Build a workflow', path:'/workflows/new', auth:true }],
+    actions:[{ label:'Open Studio', path:'/studio', auth:true }, { label:'Start from a template', path:'/marketplace', auth:true }],
     followUps:['Which starter kit fits me?', 'How do I test before publishing?'],
   },
   {
@@ -114,7 +114,7 @@ const TOPICS = [
     words:['launch', 'production', 'ready', 'checklist', 'deploy', 'recovery', 'metric', 'measure', 'outcome'],
     title:'Launch one controlled workflow first',
     text:'Before launch, verify provider connections, run representative tests, confirm approval ownership, inspect usage limits, test failure recovery, and define one measurable outcome.',
-    bullets:['Start with a reversible workflow and a small user group.', 'Keep external actions approval-gated until evidence supports more autonomy.', 'Use Launch Readiness for system, recovery, and acceptance checks.'],
+    bullets:['Start with a reversible workflow and a small user group.', 'Keep external actions approval-gated until evidence supports more autonomy.', 'Use Runs and Quality to verify behavior before increasing autonomy.'],
     actions:[{ label:'Open launch readiness', path:'/launch', auth:true }, { label:'Review usage limits', path:'/usage', auth:true }],
     followUps:['How do I test a workflow?', 'Which metric should I track?'],
   },
