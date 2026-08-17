@@ -14,6 +14,10 @@ const KITS = [
     estimated_setup_minutes:4,
     sample_input:'Customer: Mina Rahimi\nIssue: I was charged twice for order AF-1042 and need help today.\nAccount tier: Pro\nPrevious contact: none',
     capabilities:['AI classification', 'Human approval', 'Slack delivery', 'Full run trace'],
+    autonomy_modes:[
+      { key:'observe', label:'Observe', description:'Classify and draft without sending anything externally.' },
+      { key:'approval', label:'Approval required', description:'A person reviews every handoff before Slack delivery.' },
+    ],
     requirements:[
       { key:'slack', provider:'slack', label:'Slack connection', help:'Use Slack OAuth or a stored Slack bot token.' },
     ],
@@ -41,7 +45,31 @@ Treat payment disputes, account access, security, legal threats, self-harm, or d
         max_tokens:900,
       },
     ],
-    build({ agentIds, connectionIds, settings }) {
+    quality:{
+      name:'Support Triage Release Gate',
+      description:'Launch checks for urgency, category, risk, and safe customer commitments.',
+      gate_threshold:85,
+      cases:[
+        { name:'Billing dispute classification', input_text:'I was charged twice and need help today.', expected_output:'CATEGORY: billing', assertion_type:'contains', weight:2 },
+        { name:'Account access risk', input_text:'Someone changed my password and I cannot access my account.', expected_output:'RISK: high', assertion_type:'contains', weight:2 },
+        { name:'No invented refund completion', input_text:'Please refund the duplicate charge immediately.', expected_output:'refund has been issued', assertion_type:'not_contains', weight:3 },
+      ],
+    },
+    requirementsForMode(autonomyMode) {
+      return autonomyMode === 'observe' ? [] : this.requirements;
+    },
+    build({ agentIds, connectionIds, settings, autonomyMode }) {
+      if (autonomyMode === 'observe') {
+        return linearWorkflow({
+          name:'Support triage review workspace',
+          description:'Observe-only support triage that classifies and drafts without taking an external action.',
+          nodes:[
+            inputNode('request', 'Incoming support request'),
+            agentNode('triage', 'Classify and draft response', agentIds.triage),
+            outputNode('review', 'Review triage recommendation'),
+          ],
+        });
+      }
       return linearWorkflow({
         name:'Support triage and Slack escalation',
         description:'Classify a support request, approve the proposed handling, and send the approved handoff to Slack.',
@@ -57,7 +85,8 @@ Treat payment disputes, account access, security, legal threats, self-harm, or d
         ],
       });
     },
-    validateSettings(settings) {
+    validateSettings(settings, { autonomyMode } = {}) {
+      if (autonomyMode === 'observe') return { value:{} };
       const channel = clean(settings.slack_channel, 80);
       return channel && /^[#@A-Za-z0-9_-]+$/.test(channel)
         ? { value:{ slack_channel:channel } }
@@ -259,10 +288,11 @@ function linearWorkflow({ name, description, nodes }) {
 }
 
 export function listStarterKits() {
-  return KITS.map(({ agents, build, validateSettings, ...kit }) => ({
+  return KITS.map(({ agents, build, validateSettings, requirementsForMode, quality, ...kit }) => ({
     ...kit,
     agent_count:agents.length,
     workflow_count:1,
+    quality_case_count:quality?.cases?.length || 0,
   }));
 }
 
@@ -270,13 +300,18 @@ export function getStarterKit(slug) {
   return KITS.find(kit => kit.slug === slug) || null;
 }
 
-export function prepareStarterKit(slug, { connections = {}, settings = {}, agentIds = {} } = {}) {
+export function prepareStarterKit(slug, {
+  connections = {}, settings = {}, agentIds = {}, autonomyMode = 'approval',
+} = {}) {
   const kit = getStarterKit(slug);
   if (!kit) return { error:'Starter kit not found' };
-  const settingResult = kit.validateSettings(settings || {});
+  const supportedModes = (kit.autonomy_modes || [{ key:'approval' }]).map(item => item.key);
+  if (!supportedModes.includes(autonomyMode)) return { error:'Select a supported autonomy mode' };
+  const settingResult = kit.validateSettings(settings || {}, { autonomyMode });
   if (settingResult.error) return settingResult;
   const connectionIds = {};
-  for (const requirement of kit.requirements) {
+  const requirements = kit.requirementsForMode?.(autonomyMode) || kit.requirements;
+  for (const requirement of requirements) {
     const value = clean(connections?.[requirement.key], 80);
     if (!/^[0-9a-f-]{36}$/i.test(value)) {
       return { error:`Select ${requirement.label}` };
@@ -288,7 +323,9 @@ export function prepareStarterKit(slug, { connections = {}, settings = {}, agent
       return { error:`Starter kit agent ${agent.key} is unavailable` };
     }
   }
-  const workflow = kit.build({ agentIds, connectionIds, settings:settingResult.value });
+  const workflow = kit.build({
+    agentIds, connectionIds, settings:settingResult.value, autonomyMode,
+  });
   const graph = validateWorkflowGraph(workflow.nodes, workflow.edges);
   if (graph.errors.length) return { error:graph.errors[0], details:graph.errors };
   return {
@@ -302,6 +339,7 @@ export function prepareStarterKit(slug, { connections = {}, settings = {}, agent
       },
       connectionIds,
       settings:settingResult.value,
+      autonomyMode,
     },
   };
 }

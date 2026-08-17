@@ -21,7 +21,7 @@ test('unfinished and overlapping surfaces are not primary navigation', () => {
 
 test('legacy builders remain represented by Studio', () => {
   const studio = items.find(item => item.to === '/studio')
-  for (const path of ['/studio', '/agents/example/edit', '/workflows/example/edit', '/chains/example/run', '/multi-agents']) {
+  for (const path of ['/studio', '/support-operations', '/agents/example/edit', '/workflows/example/edit', '/chains/example/run', '/multi-agents']) {
     assert.equal(isWorkspaceNavActive(path, studio), true)
   }
   assert.equal(isWorkspaceNavActive('/approvals', studio), false)

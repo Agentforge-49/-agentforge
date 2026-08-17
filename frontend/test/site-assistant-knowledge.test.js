@@ -9,6 +9,15 @@ test('site guide recommends the support starter for a support request', () => {
   assert.match(answer.text, /approve/i)
 })
 
+test('signed-in support guidance opens the progressive launch cockpit', () => {
+  const answer = answerSiteQuestion('How do I start support triage safely?', {
+    signedIn:true,
+    path:'/support-operations',
+  })
+  assert.equal(answer.id, 'support')
+  assert.equal(answer.actions[0].path, '/support-operations')
+})
+
 test('site guide gives accurate free launch limits', () => {
   const answer = answerSiteQuestion('Can I start free without a credit card?')
   assert.equal(answer.id, 'pricing')

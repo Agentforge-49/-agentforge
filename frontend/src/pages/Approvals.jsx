@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, Clock3, Pencil, ShieldCheck, X } from 'lucide-react'
 
 import { decideApproval, getApprovals } from '../lib/api'
+import OperationsHeader from '../components/OperationsHeader'
 
 const STATUS = {
   pending:'#FCD34D',
@@ -55,12 +56,9 @@ export default function Approvals() {
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', gap:16, alignItems:'start', marginBottom:22 }}>
-        <div>
-          <h1 style={{ fontSize:24, fontWeight:600, marginBottom:5 }}>Approval Queue</h1>
-          <p style={{ color:'#9CA3AF', fontSize:13 }}>Review sensitive workflow steps, edit their payload, or stop the run.</p>
-        </div>
-        <select value={filter} onChange={event => setFilter(event.target.value)} style={inputStyle}>
+      <OperationsHeader area="inbox" title="Decision Inbox"
+        description="Review sensitive actions, edit their payload, or stop the run. Every decision becomes evidence for the next release."
+        actions={<select aria-label="Approval status" value={filter} onChange={event => setFilter(event.target.value)} style={inputStyle}>
           <option value="pending">Pending</option>
           <option value="">All decisions</option>
           <option value="approved">Approved</option>
@@ -68,15 +66,14 @@ export default function Approvals() {
           <option value="rejected">Rejected</option>
           <option value="expired">Expired</option>
           <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
+        </select>} />
 
       {error && <div style={errorBox}>{error}</div>}
 
       {!approvals.length ? <div style={emptyState}>
         <ShieldCheck size={42} color="#4B5563" />
-        <h2 style={{ fontSize:17, marginTop:12 }}>No {filter || 'recorded'} approvals</h2>
-        <p style={{ color:'#8B8FA3', fontSize:12, marginTop:6 }}>Workflow approval nodes will appear here.</p>
+        <h2 style={{ fontSize:17, marginTop:12 }}>No {filter || 'recorded'} decisions</h2>
+        <p style={{ color:'#8B8FA3', fontSize:12, marginTop:6 }}>Approval-gated workflow actions and human exceptions will appear here.</p>
       </div> : <div style={{ display:'grid', gap:14 }}>
         {approvals.map(approval => {
           const isPending = approval.status === 'pending'

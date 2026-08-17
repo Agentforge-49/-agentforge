@@ -3,7 +3,7 @@ export const WORKSPACE_NAV_GROUPS = [
     { to:'/dashboard', icon:'home', label:'Home', activePaths:['/dashboard'] },
   ] },
   { label:'Build', items:[
-    { to:'/studio', icon:'studio', label:'Studio', activePaths:['/studio', '/agents', '/workflows', '/chains', '/multi-agents'] },
+    { to:'/studio', icon:'studio', label:'Studio', activePaths:['/studio', '/support-operations', '/agents', '/workflows', '/chains', '/multi-agents'] },
     { to:'/marketplace', icon:'templates', label:'Templates', activePaths:['/marketplace'] },
     { to:'/knowledge', icon:'knowledge', label:'Knowledge', activePaths:['/knowledge'] },
     { to:'/apps', icon:'apps', label:'Apps', activePaths:['/apps', '/credentials', '/triggers'] },

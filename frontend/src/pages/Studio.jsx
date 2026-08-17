@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowRight, Bot, Boxes, GitBranch, LayoutGrid, List, Network, Plus,
+  ArrowRight, Bot, Boxes, GitBranch, Headphones, LayoutGrid, List, Network, Plus,
   Search, ShieldCheck, Sparkles, Workflow,
 } from 'lucide-react'
 
@@ -107,6 +107,12 @@ export default function Studio() {
         <ShieldCheck size={18} />
         <div><strong>Governed by default</strong><span>Add approval gates, publish versions, and inspect every production run before increasing autonomy.</span></div>
         <button type="button" onClick={() => navigate('/approvals')}>Open approval inbox <ArrowRight size={13} /></button>
+      </section>
+
+      <section className="studio-flagship">
+        <span className="studio-flagship-icon"><Headphones size={21} /></span>
+        <div><small>Flagship launch path</small><h2>Customer Support Operations</h2><p>Install a complete support system with progressive autonomy, Slack delivery, human approval, seeded quality checks, and production evidence.</p></div>
+        <button type="button" onClick={() => navigate('/support-operations')}>Open launch cockpit <ArrowRight size={14} /></button>
       </section>
 
       <section className="studio-section">

@@ -8,6 +8,7 @@ import {
   getObservedRun,
   replayObservedRun,
 } from '../lib/api'
+import OperationsHeader from '../components/OperationsHeader'
 
 const STATUS_COLOR = {
   queued:'#9CA3AF',
@@ -93,15 +94,11 @@ export default function Observability() {
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'start', gap:16, marginBottom:20 }}>
-        <div>
-          <h1 style={{ fontSize:24, fontWeight:600, marginBottom:5 }}>Observability</h1>
-          <p style={{ color:'#9CA3AF', fontSize:13 }}>Live timelines, structured failures, usage, cost estimates, replay, and export.</p>
-        </div>
-        <button onClick={() => downloadObservabilityCsv({ status, type, q:query }).catch(err => setError(err.message))} style={secondaryButton}>
+      <OperationsHeader area="runs" title="Runs"
+        description="Follow execution from trigger to outcome, inspect structured failures and costs, then move exceptions to Inbox and proven versions through Quality."
+        actions={<button onClick={() => downloadObservabilityCsv({ status, type, q:query }).catch(err => setError(err.message))} style={secondaryButton}>
           <Download size={14} /> Export CSV
-        </button>
-      </div>
+        </button>} />
 
       {error && <div style={errorBox}>{error}</div>}
 

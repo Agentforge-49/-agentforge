@@ -11,6 +11,7 @@ import {
   promoteEvaluationRun,
   runEvaluationSuite,
 } from '../lib/api'
+import OperationsHeader from '../components/OperationsHeader'
 
 const blankCase = () => ({
   name:'',
@@ -164,15 +165,11 @@ export default function Evaluations() {
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', gap:16, alignItems:'start', marginBottom:20 }}>
-        <div>
-          <h1 style={{ fontSize:24, fontWeight:600, marginBottom:5 }}>Evaluations</h1>
-          <p style={{ color:'#9CA3AF', fontSize:13 }}>Compare immutable agent versions against weighted datasets before promotion.</p>
-        </div>
-        <button onClick={() => setCreating(value => !value)} style={primaryButton}>
+      <OperationsHeader area="quality" title="Quality & Release"
+        description="Turn real run evidence and human corrections into repeatable checks. Compare immutable versions and promote only candidates that pass the release gate."
+        actions={<button onClick={() => setCreating(value => !value)} style={primaryButton}>
           <Plus size={14} /> New suite
-        </button>
-      </div>
+        </button>} />
 
       {error && <div style={errorBox}>{error}</div>}
 

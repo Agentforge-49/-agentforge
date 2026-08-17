@@ -1,0 +1,13 @@
+.operations-header { margin-bottom:18px; padding:22px; border:1px solid var(--workspace-border); border-radius:17px; background:linear-gradient(145deg,#f0faf4,#fff 67%); box-shadow:var(--workspace-shadow); }
+.operations-header-top { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.operations-header-top > div:first-child > span { color:var(--workspace-green); font-size:9px; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
+.operations-header h1 { margin:5px 0; font-size:25px !important; letter-spacing:-.02em; }
+.operations-header p { max-width:750px; margin:0; color:var(--workspace-muted) !important; font-size:11px !important; line-height:1.55; }
+.operations-header-actions { flex:none; }.operations-header-actions > * { min-height:36px; }
+.operations-loop { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:8px; margin-top:17px; padding-top:15px; border-top:1px solid #dce9e0; }
+.operations-loop-step { display:contents; }.operations-loop-step > svg { color:#9cad9f; }
+.operations-loop a { display:flex; align-items:center; gap:9px; padding:9px 10px; border:1px solid transparent; border-radius:10px; color:var(--workspace-muted); text-decoration:none; }
+.operations-loop a:hover { background:#f3f8f5; }.operations-loop a.active { border-color:#b7d8c5; background:var(--workspace-green-soft); color:var(--workspace-green-strong); }
+.operations-loop a > span { display:grid; place-items:center; width:29px; height:29px; border-radius:8px; background:#fff; color:var(--workspace-green); }
+.operations-loop a div { display:flex; min-width:0; flex-direction:column; gap:2px; }.operations-loop a strong { color:inherit; font-size:10px; }.operations-loop a small { color:var(--workspace-muted); font-size:8px; }
+@media (max-width:700px) { .operations-header-top { flex-direction:column; }.operations-header-actions { width:100%; }.operations-loop { display:flex; align-items:stretch; overflow-x:auto; }.operations-loop-step { display:flex; align-items:center; flex:1; min-width:120px; }.operations-loop-step > svg { flex:none; }.operations-loop a { flex:1; }.operations-loop a small { display:none; } }

@@ -13,6 +13,7 @@ import TemplatesShowcase from './pages/TemplatesShowcase'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Studio = lazy(() => import('./pages/Studio'))
+const SupportOperations = lazy(() => import('./pages/SupportOperations'))
 const CreateAgent = lazy(() => import('./pages/CreateAgent'))
 const AgentRun = lazy(() => import('./pages/AgentRun'))
 const AgentRunHistory = lazy(() => import('./pages/AgentRunHistory'))
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/signup"            element={<Signup   setUser={setUser} />} />
         <Route path="/dashboard"         element={protect(Dashboard)} />
         <Route path="/studio"            element={protect(Studio)} />
+        <Route path="/support-operations" element={protect(SupportOperations)} />
         <Route path="/agents/new"        element={protect(CreateAgent)} />
         <Route path="/agents/:id/edit"   element={protect(CreateAgent)} />
         <Route path="/agents/:id/versions" element={protect(AgentVersions)} />

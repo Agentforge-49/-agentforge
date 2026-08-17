@@ -21,6 +21,8 @@ test('flagship starter-kit catalog exposes three safe install contracts', () => 
   assert(kits.every(item => item.sample_input && item.requirements.length));
   assert(kits.every(item => !Object.hasOwn(item, 'agents')));
   assert(kits.every(item => !Object.hasOwn(item, 'build')));
+  assert.equal(kits[0].quality_case_count, 3);
+  assert.deepEqual(kits[0].autonomy_modes.map(item => item.key), ['observe', 'approval']);
 });
 test('support starter kit creates an approval-gated Slack workflow', () => {
   const result = prepareStarterKit('support-triage-slack', {
@@ -32,6 +34,28 @@ test('support starter kit creates an approval-gated Slack workflow', () => {
   assert.equal(result.value.workflow.nodes.find(item => item.type === 'approval').config.timeout_minutes, 1440);
   assert.equal(result.value.workflow.nodes.find(item => item.id === 'slack').config.credential_id, IDS.slack);
   assert.equal(result.value.workflow.nodes.at(-1).type, 'output');
+});
+
+test('support starter kit can begin in observe mode without external delivery', () => {
+  const result = prepareStarterKit('support-triage-slack', {
+    settings:{},
+    agentIds:{ triage:IDS.agent },
+    autonomyMode:'observe',
+  });
+  assert.equal(result.error, undefined);
+  assert.equal(result.value.autonomyMode, 'observe');
+  assert.equal(result.value.workflow.nodes.some(item => item.type === 'approval'), false);
+  assert.equal(result.value.workflow.nodes.some(item => item.type === 'connector'), false);
+  assert.match(result.value.workflow.description, /without taking an external action/i);
+});
+
+test('support starter kit rejects an unqualified autonomous mode', () => {
+  const result = prepareStarterKit('support-triage-slack', {
+    settings:{},
+    agentIds:{ triage:IDS.agent },
+    autonomyMode:'autonomous',
+  });
+  assert.match(result.error, /supported autonomy mode/i);
 });
 
 test('lead starter kit validates spreadsheet configuration', () => {

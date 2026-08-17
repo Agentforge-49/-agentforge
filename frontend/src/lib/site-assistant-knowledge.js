@@ -23,9 +23,9 @@ const TOPICS = [
     phrases:['support triage', 'customer support', 'support ticket', 'help desk', 'slack workflow'],
     words:['support', 'ticket', 'customer', 'triage', 'slack', 'escalation'],
     title:'Use the support triage starter kit',
-    text:'It turns an incoming customer request into a structured priority, category, risk level, recommended action, and response draft. A person must approve the result before Slack delivery.',
-    bullets:['Best first metric: time to first triage.', 'Keep refunds, account changes, and sensitive actions human-approved.', 'Connect Slack, install the kit, and test with a real but non-sensitive sample request.'],
-    actions:[{ label:'See the workflow', path:'/templates' }, { label:'Connect Slack', path:'/credentials', auth:true }],
+    text:'It turns an incoming customer request into a structured priority, category, risk level, recommended action, and response draft. Start observe-only, then have a person approve each Slack delivery.',
+    bullets:['Best first metric: time to first triage.', 'Every install includes three safety-oriented quality cases.', 'Fully autonomous delivery stays locked until production evidence supports it.'],
+    actions:[{ label:'Open support launch cockpit', path:'/support-operations', auth:true }, { label:'See the workflow', path:'/templates' }],
     followUps:['How is customer data protected?', 'How do I test a workflow?'],
   },
   {
@@ -142,6 +142,7 @@ function scoreTopic(topic, normalized, words) {
 }
 
 function fallbackFor(path, signedIn) {
+  if (path.startsWith('/support-operations')) return TOPICS.find(topic => topic.id === 'support');
   if (path.startsWith('/credentials')) return TOPICS.find(topic => topic.id === 'connections');
   if (path.startsWith('/marketplace') || path.startsWith('/templates')) return TOPICS.find(topic => topic.id === 'starter-kit');
   if (path.startsWith('/evaluations') || path.startsWith('/observability')) return TOPICS.find(topic => topic.id === 'testing');

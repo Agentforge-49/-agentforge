@@ -64,15 +64,24 @@ router.post('/:slug/install', async (req, res, next) => {
 
   const createdAgentIds = [];
   let createdWorkflowId = null;
+  let createdEvaluationSuiteId = null;
   try {
     await enforceInstallLimits(req.userId, kit);
-    const requestedConnections = kit.requirements.map(item => req.body?.connections?.[item.key]);
+    const autonomyMode = typeof req.body?.autonomy_mode === 'string'
+      ? req.body.autonomy_mode
+      : 'approval';
+    const supportedModes = (kit.autonomy_modes || [{ key:'approval' }]).map(item => item.key);
+    if (!supportedModes.includes(autonomyMode)) {
+      return res.status(400).json({ error:'Select a supported autonomy mode' });
+    }
+    const requirements = kit.requirementsForMode?.(autonomyMode) || kit.requirements;
+    const requestedConnections = requirements.map(item => req.body?.connections?.[item.key]);
     const connections = await loadConnections(
       req.userId,
       requestedConnections.filter(value => typeof value === 'string'),
     );
     const connectionMap = new Map(connections.map(item => [item.id, item]));
-    for (const requirement of kit.requirements) {
+    for (const requirement of requirements) {
       const selected = connectionMap.get(req.body?.connections?.[requirement.key]);
       if (!selected || selected.provider !== requirement.provider) {
         return res.status(400).json({ error:`Select a connected ${requirement.label}` });
@@ -104,6 +113,7 @@ router.post('/:slug/install', async (req, res, next) => {
       connections:req.body?.connections,
       settings:req.body?.settings,
       agentIds,
+      autonomyMode,
     });
     if (prepared.error) {
       const error = new Error(prepared.error);
@@ -118,12 +128,40 @@ router.post('/:slug/install', async (req, res, next) => {
     if (workflowError) throw workflowError;
     createdWorkflowId = workflow.id;
 
+    let quality = null;
+    if (kit.quality) {
+      const primaryAgentId = agentIds[kit.agents[0].key];
+      const { data:suite, error:suiteError } = await supabase.from('evaluation_suites').insert({
+        user_id:req.userId,
+        agent_id:primaryAgentId,
+        name:kit.quality.name,
+        description:kit.quality.description,
+        gate_threshold:kit.quality.gate_threshold,
+      }).select().single();
+      if (suiteError) throw suiteError;
+      createdEvaluationSuiteId = suite.id;
+      const { error:caseError } = await supabase.from('evaluation_cases').insert(
+        kit.quality.cases.map(item => ({ ...item, suite_id:suite.id, user_id:req.userId })),
+      );
+      if (caseError) throw caseError;
+      quality = {
+        suite_id:suite.id,
+        case_count:kit.quality.cases.length,
+        gate_threshold:kit.quality.gate_threshold,
+        next_path:'/evaluations',
+      };
+    }
+
     await recordUsage({
       userId:req.userId,
       resourceType:'marketplace',
       resourceId:workflow.id,
       idempotencyKey:`starter-kit-install:${crypto.randomUUID()}`,
-      metadata:{ starter_kit:kit.slug, agent_count:createdAgentIds.length },
+      metadata:{
+        starter_kit:kit.slug,
+        agent_count:createdAgentIds.length,
+        autonomy_mode:prepared.value.autonomyMode,
+      },
     });
 
     return res.status(201).json({
@@ -132,8 +170,14 @@ router.post('/:slug/install', async (req, res, next) => {
       agents:createdAgentIds.map((id, index) => ({ id, key:kit.agents[index].key })),
       sample_input:kit.sample_input,
       next_path:`/workflows/${workflow.id}/edit`,
+      autonomy_mode:prepared.value.autonomyMode,
+      quality,
     });
   } catch (error) {
+    if (createdEvaluationSuiteId) {
+      await supabase.from('evaluation_suites').delete()
+        .eq('id', createdEvaluationSuiteId).eq('user_id', req.userId);
+    }
     if (createdWorkflowId) {
       await supabase.from('workflows').delete().eq('id', createdWorkflowId).eq('user_id', req.userId);
     }
