@@ -115,7 +115,7 @@ const TOPICS = [
     title:'Launch one controlled workflow first',
     text:'Before launch, verify provider connections, run representative tests, confirm approval ownership, inspect usage limits, test failure recovery, and define one measurable outcome.',
     bullets:['Start with a reversible workflow and a small user group.', 'Keep external actions approval-gated until evidence supports more autonomy.', 'Use Runs and Quality to verify behavior before increasing autonomy.'],
-    actions:[{ label:'Open launch readiness', path:'/launch', auth:true }, { label:'Review usage limits', path:'/usage', auth:true }],
+    actions:[{ label:'Open Release Center', path:'/launch', auth:true }, { label:'Review usage limits', path:'/usage', auth:true }],
     followUps:['How do I test a workflow?', 'Which metric should I track?'],
   },
   {

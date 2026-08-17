@@ -26,6 +26,7 @@ export default function MainLayout({ children, user }) {
 
   return (
     <div className="workspace-shell">
+      <a className="workspace-skip-link" href="#workspace-content">Skip to workspace content</a>
 
       <header className="workspace-mobile-header">
         <button className="workspace-menu-button" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
@@ -77,7 +78,7 @@ export default function MainLayout({ children, user }) {
         </div>
       </aside>
 
-      <main className="workspace-main">
+      <main className="workspace-main" id="workspace-content" tabIndex="-1">
         {children}
       </main>
     </div>

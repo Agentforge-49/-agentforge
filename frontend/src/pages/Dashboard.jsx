@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Activity, ArrowRight, Bot, KeyRound, Link2, Plus, Sparkles, Workflow,
+  Activity, ArrowRight, Bot, Check, Circle, Clock3, KeyRound, Link2, LockKeyhole,
+  Plus, ShieldCheck, Sparkles, Workflow,
 } from 'lucide-react'
 
 import AgentCard from '../components/AgentCard'
-import { getAgents, getDashboardStats } from '../lib/api'
+import { getActivationSummary, getAgents, getDashboardStats } from '../lib/api'
 import { useNavigate } from '../lib/router.jsx'
 
 const QUICK_ACTIONS = [
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [agents, setAgents] = useState([])
   const [stats, setStats] = useState(null)
+  const [activation, setActivation] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -24,9 +26,12 @@ export default function Dashboard() {
     try {
       setLoading(true)
       setError('')
-      const [agentsData, statsData] = await Promise.all([getAgents(), getDashboardStats()])
+      const [agentsData, statsData, activationData] = await Promise.all([
+        getAgents(), getDashboardStats(), getActivationSummary().catch(() => null),
+      ])
       setAgents(agentsData)
       setStats(statsData)
+      setActivation(activationData)
     } catch (err) {
       setError(err.message || 'Failed to load dashboard data')
     } finally {
@@ -83,6 +88,41 @@ export default function Dashboard() {
           </article>
         ))}
       </section>
+
+      {activation && <section className="activation-path" aria-labelledby="activation-path-title">
+        <div className="activation-path-head">
+          <div>
+            <span className="activation-path-kicker"><ShieldCheck size={13} /> Launch path</span>
+            <h2 id="activation-path-title">Turn setup into a production-ready outcome</h2>
+            <p>{activation.completed} of {activation.total} launch controls complete. Each signal is calculated from workspace metadata, never customer content.</p>
+          </div>
+          <div className="activation-path-score" aria-label={`${activation.percentage}% launch path complete`}>
+            <strong>{activation.percentage}%</strong>
+            <span>{activation.activated ? 'Activated' : 'In progress'}</span>
+          </div>
+        </div>
+        <div className="activation-progress" role="progressbar" aria-label="Launch path progress"
+          aria-valuemin="0" aria-valuemax="100" aria-valuenow={activation.percentage}>
+          <span style={{ width:`${activation.percentage}%` }} />
+        </div>
+        <div className="activation-stages">
+          {activation.stages.map((stage, index) => (
+            <button type="button" key={stage.key} className={`activation-stage${stage.ready ? ' activation-stage-ready' : ''}`}
+              onClick={() => navigate(stage.path)} aria-label={`${stage.label}: ${stage.ready ? 'complete' : 'not complete'}`}>
+              <span className="activation-stage-status">{stage.ready ? <Check size={13} /> : <Circle size={13} />}</span>
+              <span><small>0{index + 1}</small><strong>{stage.label}</strong></span>
+            </button>
+          ))}
+        </div>
+        <div className="activation-path-footer">
+          <div>
+            {activation.current_stage ? <><Clock3 size={14} /><span>Next: <strong>{activation.current_stage.label}</strong> — {activation.current_stage.detail}</span></>
+              : <><Check size={14} /><span>Every activation control is complete. Run final release checks before launch.</span></>}
+          </div>
+          <button type="button" onClick={() => navigate('/launch')}>Open Release Center <ArrowRight size={14} /></button>
+        </div>
+        <div className="activation-privacy"><LockKeyhole size={12} /> {activation.privacy.note}</div>
+      </section>}
 
       <section className="dashboard-section">
         <div className="dashboard-section-heading">

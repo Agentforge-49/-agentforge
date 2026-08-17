@@ -70,6 +70,7 @@ export const askWorkspaceGuide = (message, history = [], model = 'claude-sonnet-
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 export const getDashboardStats = () => request('GET', '/api/dashboard/stats')
+export const getActivationSummary = () => request('GET', '/api/activation')
 
 // ── Chains (NEW — Day 7) ──────────────────────────────────────────────────────
 export const getChains     = ()                  => request('GET',    '/api/chains')

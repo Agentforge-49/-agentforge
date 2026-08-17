@@ -86,7 +86,7 @@ export default function Settings() {
     <div style={{ maxWidth:900, margin:'0 auto' }}>
       <h1 style={{ fontSize:30, margin:'0 0 8px' }}>Settings</h1>
       <p style={{ color:'#8B8FA3', margin:'0 0 24px' }}>
-        Manage your profile, usage, and account lifecycle.
+        Manage your profile, usage, release controls, and account lifecycle.
       </p>
 
       {error && (
@@ -137,6 +137,16 @@ export default function Settings() {
         </div>
         <Link to="/usage" style={{ display:'inline-block', marginTop:16, color:'#A78BFA' }}>
           View detailed usage and plans
+        </Link>
+      </section>
+
+      <section style={card}>
+        <h2 style={{ fontSize:18, margin:'0 0 8px' }}>Release & reliability</h2>
+        <p style={{ color:'#9CA3AF', lineHeight:1.6, margin:'0 0 14px' }}>
+          Check live platform health, run the release gate, and create a secret-free recovery snapshot before launch.
+        </p>
+        <Link to="/launch" style={{ color:'#0B7A53', fontWeight:700 }}>
+          Open Release Center
         </Link>
       </section>
 

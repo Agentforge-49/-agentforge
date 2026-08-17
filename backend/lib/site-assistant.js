@@ -26,7 +26,7 @@ Current AgentForge capabilities:
 - Manual, signed-webhook, and interval schedule triggers with pausing, deduplication, rate limiting, and history.
 - Native typed actions: HTTP, Resend, Slack, Google Sheets, Google Drive, Supabase, GitHub, Discord, Notion, Airtable, HubSpot, Salesforce, Stripe, Shopify, Jira, Linear, Twilio, and Zendesk.
 - A 1,000+ app compatibility catalog. External managed auth requires a configured Pipedream Connect project. Catalog presence never means native support.
-- Multi-agent systems, chains, marketplace assets, organizations, governance, developer API keys, signed outbound webhooks, usage limits, and launch readiness.
+- Multi-agent systems, chains, marketplace assets, organizations, governance, developer API keys, signed outbound webhooks, usage limits, and the Release Center.
 
 Safe account summary (counts and provider names only; never infer more):
 ${JSON.stringify(accountContext)}
