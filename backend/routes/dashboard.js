@@ -17,7 +17,7 @@ router.get('/stats', async (req, res, next) => {
     ] = await Promise.all([
       supabase.from('agents').select('id', { count: 'exact', head: true }).eq('user_id', req.userId),
       supabase.from('agents').select('id', { count: 'exact', head: true }).eq('user_id', req.userId).eq('status', 'active'),
-      supabase.from('agent_runs').select('id', { count: 'exact', head: true }).eq('user_id', req.userId),
+      supabase.from('run_observability').select('execution_job_id', { count: 'exact', head: true }).eq('user_id', req.userId),
       supabase.from('profiles').select('api_calls_used, api_calls_limit').eq('id', req.userId).single(),
       supabase.from('agent_chains').select('id', { count: 'exact', head: true }).eq('user_id', req.userId),
       supabase.from('chain_runs').select('id', { count: 'exact', head: true }).eq('user_id', req.userId)

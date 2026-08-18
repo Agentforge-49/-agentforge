@@ -13,7 +13,7 @@ async function getHeaders() {
 
 async function request(method, path, body = null) {
   const headers = await getHeaders()
-  const options  = { method, headers }
+  const options  = { method, headers, cache:'no-store' }
   if (body) options.body = JSON.stringify(body)
 
   const response = await fetch(`${API_URL}${path}`, options)

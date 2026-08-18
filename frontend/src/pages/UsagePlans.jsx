@@ -205,13 +205,13 @@ export default function UsagePlans() {
           <label style={{ display:'block', color:'#8B8FA3', fontSize:11, margin:'13px 0 5px' }}>Monthly budget (USD)</label>
           <input style={field} type="number" min="0.01" step="0.01" placeholder="Optional"
             value={budget.monthly_cost_limit_usd}
-            onChange={event => setBudget({ ...budget, monthly_cost_limit_usd:event.target.value })} />
+            onChange={event => setBudget(current => ({ ...current, monthly_cost_limit_usd:event.target.value }))} />
           <label style={{ display:'block', color:'#8B8FA3', fontSize:11, margin:'10px 0 5px' }}>Warn at percent</label>
           <input style={field} type="number" min="1" max="100" value={budget.warning_percent}
-            onChange={event => setBudget({ ...budget, warning_percent:event.target.value })} />
+            onChange={event => setBudget(current => ({ ...current, warning_percent:event.target.value }))} />
           <label style={{ display:'flex', gap:8, color:'#C4B5FD', fontSize:12, margin:'11px 0' }}>
             <input type="checkbox" checked={budget.hard_limit_enabled}
-              onChange={event => setBudget({ ...budget, hard_limit_enabled:event.target.checked })} />
+              onChange={event => setBudget(current => ({ ...current, hard_limit_enabled:event.target.checked }))} />
             Block model calls at this budget
           </label>
           <button style={button} disabled={busy === 'budget'}>
