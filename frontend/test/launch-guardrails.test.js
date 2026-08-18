@@ -22,3 +22,13 @@ test('cost guardrail submission reads the rendered form state', async () => {
     assert.match(source, new RegExp(`name=["']${name}["']`))
   }
 })
+
+test('credential vault submits rendered fields and uses functional updates', async () => {
+  const source = await readFile(new URL('../src/pages/Credentials.jsx', import.meta.url), 'utf8')
+  assert.match(source, /new FormData\(event\.currentTarget\)/)
+  assert.match(source, /secret:String\(fields\.get\('secret'\)/)
+  assert.doesNotMatch(source, /setForm\(\{\s*\.\.\.form/)
+  for (const name of ['name', 'provider', 'secret', 'project_url', 'app_slug']) {
+    assert.match(source, new RegExp(`name=["']${name}["']`))
+  }
+})

@@ -140,15 +140,18 @@ export default function Credentials() {
   const create = async event => {
     event.preventDefault()
     setError('')
+    const fields = new FormData(event.currentTarget)
+    const provider = String(fields.get('provider') || 'generic')
+    const appSlug = String(fields.get('app_slug') || '')
     try {
       const created = await createCredential({
-        name:form.name,
-        provider:form.provider,
-        secret:form.secret,
-        metadata:form.provider === 'supabase'
-          ? { project_url:form.project_url }
-          : form.provider === 'generic' && form.app_slug
-            ? { app_slug:form.app_slug }
+        name:String(fields.get('name') || '').trim(),
+        provider,
+        secret:String(fields.get('secret') || ''),
+        metadata:provider === 'supabase'
+          ? { project_url:String(fields.get('project_url') || '') }
+          : provider === 'generic' && appSlug
+            ? { app_slug:appSlug }
             : {},
       })
       setCredentials(items => [created, ...items])
@@ -330,30 +333,30 @@ export default function Credentials() {
         <div style={grid}>
           <div>
             <label style={label}>Name</label>
-            <input required value={form.name} onChange={e => setForm({ ...form, name:e.target.value })}
+            <input required name="name" value={form.name} onChange={e => setForm(current => ({ ...current, name:e.target.value }))}
               placeholder="Production OpenAI key" style={input} />
           </div>
           <div>
             <label style={label}>Provider</label>
-            <select value={form.provider} onChange={e => setForm({ ...form, provider:e.target.value })} style={input}>
+            <select name="provider" value={form.provider} onChange={e => setForm(current => ({ ...current, provider:e.target.value }))} style={input}>
               {PROVIDERS.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
             </select>
           </div>
           <div>
             <label style={label}>Secret</label>
-            <input required type="password" minLength="8" value={form.secret}
-              onChange={e => setForm({ ...form, secret:e.target.value })}
+            <input required name="secret" type="password" minLength="8" value={form.secret}
+              onChange={e => setForm(current => ({ ...current, secret:e.target.value }))}
               autoComplete="new-password" placeholder="Will be encrypted immediately" style={input} />
           </div>
           {form.provider === 'supabase' && <div>
             <label style={label}>Project URL</label>
-            <input required type="url" value={form.project_url}
-              onChange={e => setForm({ ...form, project_url:e.target.value })}
+            <input required name="project_url" type="url" value={form.project_url}
+              onChange={e => setForm(current => ({ ...current, project_url:e.target.value }))}
               placeholder="https://project.supabase.co" style={input} />
           </div>}
           {form.provider === 'generic' && <div>
             <label style={label}>App identifier</label>
-            <input value={form.app_slug} onChange={e => setForm({ ...form, app_slug:e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 100) })}
+            <input name="app_slug" value={form.app_slug} onChange={e => setForm(current => ({ ...current, app_slug:e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 100) }))}
               placeholder="hubspot" style={input} />
           </div>}
         </div>
