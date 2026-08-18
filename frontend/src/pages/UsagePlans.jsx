@@ -107,11 +107,12 @@ export default function UsagePlans() {
 
   const saveBudget = event => {
     event.preventDefault()
+    const fields = new FormData(event.currentTarget)
+    const monthlyLimit = fields.get('monthly_cost_limit_usd')
     act('budget', () => updateUsageBudget({
-      monthly_cost_limit_usd:budget.monthly_cost_limit_usd === ''
-        ? null : Number(budget.monthly_cost_limit_usd),
-      warning_percent:Number(budget.warning_percent),
-      hard_limit_enabled:budget.hard_limit_enabled,
+      monthly_cost_limit_usd:monthlyLimit === '' ? null : Number(monthlyLimit),
+      warning_percent:Number(fields.get('warning_percent')),
+      hard_limit_enabled:fields.get('hard_limit_enabled') === 'on',
     }), 'Budget guardrails saved.')
   }
 
@@ -203,14 +204,14 @@ export default function UsagePlans() {
             <h2 style={{ margin:0, fontSize:16 }}>Personal cost guardrail</h2>
           </div>
           <label style={{ display:'block', color:'#8B8FA3', fontSize:11, margin:'13px 0 5px' }}>Monthly budget (USD)</label>
-          <input style={field} type="number" min="0.01" step="0.01" placeholder="Optional"
+          <input name="monthly_cost_limit_usd" style={field} type="number" min="0.01" step="0.01" placeholder="Optional"
             value={budget.monthly_cost_limit_usd}
             onChange={event => setBudget(current => ({ ...current, monthly_cost_limit_usd:event.target.value }))} />
           <label style={{ display:'block', color:'#8B8FA3', fontSize:11, margin:'10px 0 5px' }}>Warn at percent</label>
-          <input style={field} type="number" min="1" max="100" value={budget.warning_percent}
+          <input name="warning_percent" style={field} type="number" min="1" max="100" value={budget.warning_percent}
             onChange={event => setBudget(current => ({ ...current, warning_percent:event.target.value }))} />
           <label style={{ display:'flex', gap:8, color:'#C4B5FD', fontSize:12, margin:'11px 0' }}>
-            <input type="checkbox" checked={budget.hard_limit_enabled}
+            <input name="hard_limit_enabled" type="checkbox" checked={budget.hard_limit_enabled}
               onChange={event => setBudget(current => ({ ...current, hard_limit_enabled:event.target.checked }))} />
             Block model calls at this budget
           </label>

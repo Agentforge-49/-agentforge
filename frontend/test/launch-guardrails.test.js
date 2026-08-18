@@ -14,3 +14,11 @@ test('cost guardrail fields use functional state updates', async () => {
   assert.doesNotMatch(source, /setBudget\(\{\s*\.\.\.budget/)
 })
 
+test('cost guardrail submission reads the rendered form state', async () => {
+  const source = await readFile(new URL('../src/pages/UsagePlans.jsx', import.meta.url), 'utf8')
+  assert.match(source, /new FormData\(event\.currentTarget\)/)
+  assert.match(source, /fields\.get\('hard_limit_enabled'\) === 'on'/)
+  for (const name of ['monthly_cost_limit_usd', 'warning_percent', 'hard_limit_enabled']) {
+    assert.match(source, new RegExp(`name=["']${name}["']`))
+  }
+})
