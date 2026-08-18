@@ -5,6 +5,26 @@ const STOP_WORDS = new Set([
 
 const TOPICS = [
   {
+    id:'overview',
+    phrases:['what is agentforge', 'what does agentforge do', 'explain agentforge', 'how does agentforge work', 'what can you do', 'help me understand', 'simple words'],
+    words:['agentforge', 'platform', 'explain', 'understand', 'overview', 'beginner', 'simple'],
+    title:'AgentForge turns a business process into a controlled AI workflow',
+    text:'In simple terms: you describe repetitive work, connect the apps involved, and AgentForge builds a step-by-step workflow. AI handles judgment, normal steps handle predictable work, and a person can approve anything important before it happens.',
+    bullets:['Describe the request that starts the work.', 'Choose what AI should decide or create.', 'Review the final action before sending data to another app.'],
+    actions:[{ label:'See how it works', path:'/#how-it-works' }, { label:'Build free', path:'/signup', guest:true }, { label:'Open your workspace', path:'/dashboard', auth:true }],
+    followUps:['What should I build first?', 'Which apps work now?'],
+  },
+  {
+    id:'troubleshooting',
+    phrases:['not working', 'does not work', 'is broken', 'something failed', 'connector failed', 'app not working', 'why is it failing'],
+    words:['broken', 'problem', 'issue', 'error', 'failure', 'failing', 'stuck'],
+    title:'Find the failing step before changing the workflow',
+    text:'Open Runs, select the failed run, and read the first red step. AgentForge keeps the input, output, provider response, retry history, and approval state together so you can fix the actual cause.',
+    bullets:['Connection errors: test or rotate the credential in Apps.', 'Input errors: compare the failing payload with a successful test.', 'AI quality errors: add a Quality case before changing the prompt.'],
+    actions:[{ label:'Open failed runs', path:'/observability', auth:true }, { label:'Check app connections', path:'/apps', auth:true }],
+    followUps:['How do I test safely?', 'How are credentials stored?'],
+  },
+  {
     id:'starter-kit',
     phrases:['which workflow', 'which template', 'starter kit', 'start first', 'build first', 'use case'],
     words:['template', 'workflow', 'starter', 'support', 'lead', 'research', 'begin'],
@@ -149,11 +169,11 @@ function fallbackFor(path, signedIn) {
   if (path.startsWith('/launch')) return TOPICS.find(topic => topic.id === 'launch');
   return {
     id:'fallback',
-    title:'I can guide you to the right next step',
+    title:'Tell me the outcome, not the technical setup',
     text:signedIn
-      ? 'Tell me the business process you want to automate, the tool it should connect to, or the part of AgentForge you are trying to use.'
-      : 'Ask about starter workflows, integrations, safety, pricing, or how AgentForge turns a business process into a controlled workflow.',
-    bullets:['Describe the input you receive.', 'Say what decision should be made.', 'Name the final action and whether a person should approve it.'],
+      ? 'I can design a first workflow, explain any AgentForge page, troubleshoot a failed run, or tell you which connection is needed. Describe what happens today and what a successful result looks like.'
+      : 'I can explain AgentForge in simple words, recommend a starter workflow, compare connection options, explain safety, or help you decide whether the platform fits your process.',
+    bullets:['What starts the work?', 'What decision or content is needed?', 'What app receives the result, and should a person approve it?'],
     actions:[{ label:'Explore starter kits', path:'/templates' }, { label:signedIn ? 'Open dashboard' : 'Start free', path:signedIn ? '/dashboard' : '/signup' }],
     followUps:['Which workflow fits me?', 'How is AgentForge safe?'],
   };
@@ -177,6 +197,6 @@ export function contextSuggestions(path, signedIn) {
   if (path.startsWith('/workflows')) return ['Agent vs workflow?', 'How do I test before publishing?', 'How do approvals work?'];
   if (path.startsWith('/launch')) return ['What should I check before launch?', 'How do I test a workflow?', 'How is AgentForge safe?'];
   return signedIn
-    ? ['What should I build first?', 'What should I connect first?', 'How do I test safely?']
-    : ['Which workflow fits me?', 'Can I start free?', 'How is AgentForge safe?'];
+    ? ['Explain AgentForge simply', 'Design my first workflow', 'Help me fix a failed run']
+    : ['What does AgentForge do?', 'Which workflow fits me?', 'Can I start free?'];
 }

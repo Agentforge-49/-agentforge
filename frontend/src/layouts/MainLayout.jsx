@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from '../lib/router.jsx'
-import { Activity, BookOpen, Building2, Cable, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Settings, ShieldCheck, Sparkles, Store, X } from 'lucide-react'
+import { Activity, BookOpen, Building2, Cable, ChevronDown, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Settings, ShieldCheck, Sparkles, Store, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { isWorkspaceNavActive, WORKSPACE_NAV_GROUPS } from '../lib/workspace-navigation.js'
 import BrandLogo from '../components/BrandLogo'
@@ -16,6 +16,7 @@ export default function MainLayout({ children, user }) {
   const navigate = useNavigate()
   const [location] = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const logout = async () => {
     await supabase.auth.signOut()
@@ -48,9 +49,16 @@ export default function MainLayout({ children, user }) {
         </div>
 
         <nav className="workspace-nav">
-          {WORKSPACE_NAV_GROUPS.map(group => (
+          {WORKSPACE_NAV_GROUPS.map(group => {
+            const containsActive = group.items.some(item => isWorkspaceNavActive(location, item))
+            if (group.advanced && !advancedOpen && !containsActive) return (
+              <button className="workspace-advanced-toggle" type="button" key={group.label} onClick={() => setAdvancedOpen(true)} aria-expanded="false">
+                <Settings size={16.5} /> Advanced <ChevronDown size={14} />
+              </button>
+            )
+            return (
             <div className="workspace-nav-group" key={group.label}>
-              <div className="workspace-nav-label">{group.label}</div>
+              <div className="workspace-nav-label">{group.label}{group.advanced && <button type="button" onClick={() => setAdvancedOpen(false)} aria-label="Collapse advanced navigation"><ChevronDown size={12} /></button>}</div>
               {group.items.map(item => {
                 const Icon = ICONS[item.icon]
                 const isActive = isWorkspaceNavActive(location, item)
@@ -64,7 +72,7 @@ export default function MainLayout({ children, user }) {
                 )
               })}
             </div>
-          ))}
+          )})}
         </nav>
 
         <div className="workspace-account">

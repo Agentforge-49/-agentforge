@@ -1032,3 +1032,8 @@
   .dashboard-stats { grid-template-columns:1fr; }
   .dashboard-hero { padding:23px 20px; }
 }
+.workspace-advanced-toggle { display:flex; width:100%; align-items:center; gap:9px; margin-top:5px; border:0; border-radius:8px; padding:9px 10px; background:transparent; color:var(--workspace-muted); cursor:pointer; font-size:10px; font-weight:750; text-align:left; }
+.workspace-advanced-toggle:hover { background:var(--workspace-green-soft); color:var(--workspace-green-strong); }
+.workspace-advanced-toggle svg:last-child { margin-left:auto; }
+.workspace-nav-label { display:flex; align-items:center; justify-content:space-between; }
+.workspace-nav-label button { display:grid; width:22px; height:22px; place-items:center; border:0; background:transparent; color:inherit; cursor:pointer; transform:rotate(180deg); }

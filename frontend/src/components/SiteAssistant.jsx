@@ -13,7 +13,7 @@ const INITIAL_MESSAGE = {
   role:'assistant',
   answer:{
     title:'Hi, I am the AgentForge Guide.',
-    text:'Tell me what you want to automate and I will recommend a workflow, explain the platform, or take you to the right place.',
+    text:'Describe work in your own words. I can design a first workflow, explain any feature simply, troubleshoot a problem, or take you to the exact page you need.',
     bullets:[],
     actions:[],
     followUps:[],
@@ -69,11 +69,11 @@ export default function SiteAssistant({ user }) {
     const draftAction = wantsWorkflow
       ? [{ label:'Generate this workflow draft', path:`/workflows/new?copilot=${encodeURIComponent(clean)}` }]
       : []
-    if (!signedIn) {
+    if (!signedIn || localAnswer.id !== 'fallback') {
       replyTimer.current = window.setTimeout(() => {
         setMessages(current => [...current, { role:'assistant', answer:{ ...localAnswer, actions:[...draftAction, ...(localAnswer.actions || [])] } }])
         setThinking(false)
-      }, 380)
+      }, 220)
       return
     }
     try {
@@ -128,15 +128,15 @@ export default function SiteAssistant({ user }) {
           <header className="site-assistant-header">
             <div className="site-assistant-avatar"><Bot size={20} /></div>
             <div>
-              <strong>AgentForge Guide</strong>
-              <span><i /> Product help, grounded in AgentForge</span>
+              <strong>AgentForge Copilot</strong>
+              <span><i /> Answers, workflow design, and troubleshooting</span>
             </div>
             <button type="button" onClick={reset} aria-label="Clear conversation" title="Clear conversation"><RotateCcw size={16} /></button>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close guide"><X size={18} /></button>
           </header>
 
           <div className="site-assistant-context">
-            <ShieldCheck size={14} /> The guide can prepare workflow drafts. It cannot see secrets, publish, or run external actions.
+            <ShieldCheck size={14} /> Safe by design: it can prepare and explain, but never publish, reveal secrets, or run external actions.
           </div>
 
           <div className="site-assistant-messages" aria-live="polite">
@@ -180,10 +180,10 @@ export default function SiteAssistant({ user }) {
           )}
 
           <form className="site-assistant-composer" onSubmit={event => { event.preventDefault(); ask(input) }}>
-            <label htmlFor="site-assistant-input">Ask AgentForge</label>
+            <label htmlFor="site-assistant-input">What are you trying to accomplish?</label>
             <div>
               <input id="site-assistant-input" ref={inputRef} value={input} maxLength={500}
-                onChange={event => setInput(event.target.value)} placeholder="What should I automate first?" />
+                onChange={event => setInput(event.target.value)} placeholder="Example: automate customer support from start to finish" />
               <button type="submit" disabled={!input.trim() || thinking} aria-label="Send question"><Send size={16} /></button>
             </div>
           </form>
@@ -193,7 +193,7 @@ export default function SiteAssistant({ user }) {
       <button className="site-assistant-launcher" type="button" onClick={() => setOpen(current => !current)}
         aria-label={open ? 'Close AgentForge Guide' : 'Open AgentForge Guide'} aria-expanded={open}>
         {open ? <X size={20} /> : <MessageCircle size={20} />}
-        <span>{open ? 'Close' : 'Ask AgentForge'}</span>
+        <span>{open ? 'Close' : 'Ask Copilot'}</span>
         {!open && <i />}
       </button>
     </div>

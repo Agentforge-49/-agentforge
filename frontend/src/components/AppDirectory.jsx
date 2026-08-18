@@ -11,13 +11,10 @@ import {
   INTEGRATION_COUNTS,
 } from '../lib/integration-catalog.js'
 import { useNavigate } from '../lib/router.jsx'
+import AppLogo from './AppLogo.jsx'
 import './AppDirectory.css'
 
 const PAGE_SIZE = 30
-
-function appMonogram(name) {
-  return name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()
-}
 
 export default function AppDirectory({ workspace = false }) {
   const navigate = useNavigate()
@@ -55,7 +52,7 @@ export default function AppDirectory({ workspace = false }) {
       return
     }
     if (!bridge.configured) {
-      setNotice('Managed OAuth for the external catalog needs a Pipedream development project. Universal API keys and signed webhooks work now.')
+      navigate(`/credentials?app=custom_api&target=${encodeURIComponent(app.slug)}`)
       return
     }
     setBusy(app.slug)
@@ -72,15 +69,15 @@ export default function AppDirectory({ workspace = false }) {
   const modeLabel = app => {
     if (app.mode === 'native') return 'Native action'
     if (app.mode === 'oauth') return 'OAuth ready'
-    return bridge.configured ? 'Managed connection' : 'External bridge'
+    return bridge.configured ? 'Managed connection' : 'Catalog only'
   }
 
   return (
     <section className={`app-directory${workspace ? ' app-directory--workspace' : ''}`}>
       <div className="app-directory-summary">
-        <div><strong>{INTEGRATION_COUNTS.catalog.toLocaleString()}+</strong><span>discoverable apps</span></div>
-        <div><strong>10,000+</strong><span>external actions and triggers</span></div>
-        <div><strong>19</strong><span>typed workflow actions</span></div>
+        <div><strong>{INTEGRATION_COUNTS.catalog.toLocaleString()}</strong><span>apps you can discover</span></div>
+        <div><strong>{INTEGRATION_COUNTS.native}</strong><span>native connectors now</span></div>
+        <div><strong>{INTEGRATION_COUNTS.bridge.toLocaleString()}</strong><span>via API or managed bridge</span></div>
         <div className={bridge.configured ? 'is-ready' : ''}>
           <strong>{workspace && bridge.configured ? 'Ready' : 'Honest'}</strong>
           <span>{workspace && bridge.configured ? 'managed bridge configured' : 'readiness labels'}</span>
@@ -96,7 +93,7 @@ export default function AppDirectory({ workspace = false }) {
         </div>
         <div className="app-directory-modes" aria-label="Connection types">
           {[
-            ['all','All apps'],['native','Native'],['oauth','OAuth ready'],['bridge','External bridge'],
+            ['all','All apps'],['native','Native now'],['oauth','OAuth ready'],['bridge','API / bridge'],
           ].filter(([value]) => value !== 'oauth' || INTEGRATION_COUNTS.oauthReady > 0).map(([value, label]) => (
             <button type="button" className={mode === value ? 'active' : ''} key={value} onClick={() => { setMode(value); setVisible(PAGE_SIZE) }}>{label}</button>
           ))}
@@ -115,7 +112,7 @@ export default function AppDirectory({ workspace = false }) {
         {filtered.slice(0, visible).map(app => (
           <article className="app-directory-card" key={app.slug}>
             <div className="app-directory-card-top">
-              <span className={`app-directory-monogram app-directory-monogram--${app.mode}`}>{appMonogram(app.name)}</span>
+              <AppLogo slug={app.slug} name={app.name} />
               <span className={`app-directory-status app-directory-status--${app.mode}`}>
                 {app.mode === 'native' ? <CheckCircle2 size={11} /> : app.mode === 'oauth' ? <KeyRound size={11} /> : <Webhook size={11} />}
                 {modeLabel(app)}
@@ -127,10 +124,10 @@ export default function AppDirectory({ workspace = false }) {
               ? 'Use a typed AgentForge action with encrypted credentials and observable execution.'
               : app.mode === 'oauth'
                 ? 'The consent foundation is ready; provider permissions determine available operations.'
-                : 'Connect through managed auth when configured, or use the universal API and signed-webhook path now.'}</p>
+                : 'Listed for compatibility. Use its API or a signed webhook now; one-click OAuth requires the optional managed bridge.'}</p>
             <div className="app-directory-card-actions">
               <button type="button" onClick={() => connect(app)} disabled={busy === app.slug}>
-                {busy === app.slug ? 'Opening...' : workspace ? 'Connect app' : 'Start connecting'} <ArrowRight size={13} />
+                {busy === app.slug ? 'Opening...' : !workspace ? 'See connection options' : app.mode === 'native' ? 'Set up connector' : bridge.configured ? 'Connect with OAuth' : 'Use API or webhook'} <ArrowRight size={13} />
               </button>
               {workspace && app.mode === 'bridge' && (
                 <button className="secondary" type="button" onClick={() => navigate(`/credentials?app=${encodeURIComponent(app.slug)}`)} title="Store an API key instead">

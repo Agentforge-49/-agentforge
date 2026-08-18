@@ -37,3 +37,16 @@ test('site guide falls back to page-aware help', () => {
   assert.equal(answer.id, 'starter-kit')
   assert(contextSuggestions('/credentials', true).some(item => /connect/i.test(item)))
 })
+
+test('site guide explains the product in simple words', () => {
+  const answer = answerSiteQuestion('What does AgentForge do? Explain it in simple words.')
+  assert.equal(answer.id, 'overview')
+  assert.match(answer.text, /step-by-step workflow/i)
+  assert.match(answer.text, /person can approve/i)
+})
+
+test('site guide gives a real troubleshooting path', () => {
+  const answer = answerSiteQuestion('My app is not working and the connector failed', { signedIn:true })
+  assert.equal(answer.id, 'troubleshooting')
+  assert(answer.actions.some(action => action.path === '/observability'))
+})

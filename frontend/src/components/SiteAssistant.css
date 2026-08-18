@@ -117,3 +117,15 @@
 @media (prefers-reduced-motion:reduce) {
   .site-assistant-panel,.site-assistant-launcher,.site-assistant-thinking i { animation:none; transition:none; }
 }
+.site-assistant-panel { width:min(480px,calc(100vw - 28px)); max-height:min(760px,calc(100vh - 96px)); border-radius:20px; box-shadow:0 28px 80px rgba(5,45,27,.24); }
+.site-assistant-header { padding:16px 17px; background:linear-gradient(135deg,#073d25,#0a7043); color:#fff; }
+.site-assistant-avatar { background:#fff!important; color:#08754a!important; }
+.site-assistant-context { padding:10px 15px; background:#effaf4; color:#30654a; line-height:1.45; }
+.site-assistant-messages { min-height:260px; padding:15px; background:#fbfdfb; }
+.site-assistant-answer { padding:14px; border:1px solid #dce9e1; border-radius:14px; background:#fff; box-shadow:0 7px 22px rgba(20,48,36,.05); }
+.site-assistant-answer + .site-assistant-answer { margin-top:10px; }
+.site-assistant-answer p { font-size:11px; line-height:1.65; }
+.site-assistant-suggestions { padding:0 15px 13px; background:#fbfdfb; }
+.site-assistant-suggestions button { text-align:left; }
+.site-assistant-composer { padding:13px 15px 15px; }
+.site-assistant-composer input { font-size:11px; }

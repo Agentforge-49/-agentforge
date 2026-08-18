@@ -1,443 +1,117 @@
+import { useState } from 'react'
 import {
-  Activity,
-  ArrowRight,
-  Bot,
-  Braces,
-  Cable,
-  Check,
-  ChevronRight,
-  CircleCheck,
-  Database,
-  GitBranch,
-  KeyRound,
-  Menu,
-  Network,
-  Play,
-  ShieldCheck,
-  Sparkles,
-  MessageCircleMore,
-  Radio,
-  Users,
-  Workflow,
-  X,
-  Zap,
+  ArrowRight, Bot, Check, CheckCircle2, ChevronRight, CircleDot, Menu,
+  MessageCircleMore, Play, ShieldCheck, Sparkles, Workflow, X, Zap,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+
+import AppLogo from '../components/AppLogo.jsx'
 import BrandLogo from '../components/BrandLogo'
+import { LANDING_FEATURED_APPS } from '../lib/landing-apps.js'
 import { useNavigate } from '../lib/router.jsx'
 import './Landing.css'
 
-const CAPABILITIES = [
-  {
-    icon: Bot,
-    eyebrow: 'Build',
-    title: 'Agents that understand the assignment',
-    description:
-      'Define goals, tools, knowledge, guardrails, and output contracts in one focused workspace.',
-  },
-  {
-    icon: Workflow,
-    eyebrow: 'Orchestrate',
-    title: 'One canvas for every kind of work',
-    description:
-      'Blend deterministic logic, AI decisions, human approvals, and multi-agent collaboration.',
-  },
-  {
-    icon: Activity,
-    eyebrow: 'Operate',
-    title: 'See what happened—and why',
-    description:
-      'Trace every run, inspect every handoff, replay failures, and measure quality, speed, and cost.',
-  },
+const OUTCOMES = [
+  ['Support triage', 'Classify requests, draft replies, and ask a person before Slack delivery.'],
+  ['Lead qualification', 'Score inbound leads and write approved results to Google Sheets.'],
+  ['Research delivery', 'Turn supplied evidence into a reviewed brief and deliver it safely.'],
 ]
 
-const PLATFORM_FEATURES = [
-  { icon: Network, label: 'Multi-agent systems' },
-  { icon: Database, label: 'Grounded knowledge' },
-  { icon: Users, label: 'Human approvals' },
-  { icon: KeyRound, label: 'Encrypted credentials' },
-  { icon: Braces, label: 'Developer APIs' },
-  { icon: ShieldCheck, label: 'Policies and audit' },
-]
-
-const WORKFLOW_STEPS = [
-  { icon: Zap, label: 'New request', detail: 'Webhook trigger', status: 'Ready' },
-  { icon: Database, label: 'Find context', detail: 'Knowledge search', status: '12 sources' },
-  { icon: Bot, label: 'Research agent', detail: 'Analyze and decide', status: 'Running' },
-  { icon: Users, label: 'Manager review', detail: 'Approval checkpoint', status: 'Required' },
-]
-
-const USE_CASES = [
-  'Customer operations',
-  'Revenue workflows',
-  'IT and security',
-  'Research and reporting',
-]
-
-const PLATFORM_MODULES = [
-  { icon:Cable, label:'App ecosystem', metric:'1,000+', title:'Connect the stack around your team', text:'Choose native actions, managed connections, or universal APIs and signed webhooks.', action:'Explore apps', path:'/integrations', size:'wide' },
-  { icon:Radio, label:'Event operations', metric:'3 paths', title:'Start work from any moment', text:'Manual, signed webhook, and durable schedule triggers with independent controls.', action:'See triggers', path:'/signup' },
-  { icon:MessageCircleMore, label:'Account-aware guide', metric:'Live', title:'Know the next useful move', text:'Get grounded product answers and signed-in recommendations from safe workspace counts.', action:'Ask the guide', guide:true },
-  { icon:Network, label:'AI workforce', metric:'Parallel', title:'Coordinate specialist agents', text:'Route work, preserve handoffs, add approvals, and trace every delegated task.', action:'Build a workforce', path:'/signup', size:'wide' },
-  { icon:ShieldCheck, label:'Production control', metric:'Always on', title:'Govern every external action', text:'Versioning, evaluations, budgets, approvals, audit, and recovery are built into operations.', action:'Review controls', path:'/#security' },
+const STEPS = [
+  [MessageCircleMore, 'Describe the result', 'Say what comes in, what decision is needed, and where the approved result should go.'],
+  [Workflow, 'Review the workflow', 'AgentForge creates the steps, connection requirements, tests, and approval point for you.'],
+  [Play, 'Test, then turn it on', 'Run with safe sample data, inspect every step, and publish only when the result is reliable.'],
 ]
 
 export default function Landing() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const sceneRef = useRef(null)
-
-  const goTo = (path) => {
-    setMobileOpen(false)
-    navigate(path)
-  }
-
-  const moveScene = event => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = (event.clientX - rect.left) / rect.width - .5
-    const y = (event.clientY - rect.top) / rect.height - .5
-    sceneRef.current?.style.setProperty('--scene-x', `${x * 7}deg`)
-    sceneRef.current?.style.setProperty('--scene-y', `${y * -6}deg`)
-  }
-
-  const resetScene = () => {
-    sceneRef.current?.style.setProperty('--scene-x', '-2deg')
-    sceneRef.current?.style.setProperty('--scene-y', '1deg')
-  }
-
+  const goTo = path => { setMobileOpen(false); navigate(path) }
   const openGuide = () => window.dispatchEvent(new Event('agentforge:open-guide'))
 
   return (
-    <div className="landing">
+    <div className="landing landing-v2">
       <header className="landing-nav">
         <div className="landing-container landing-nav__inner">
-          <button className="brand-button" type="button" onClick={() => goTo('/')} aria-label="AgentForge home">
-            <BrandLogo size={38} />
-          </button>
-
+          <button className="brand-button" type="button" onClick={() => goTo('/')} aria-label="AgentForge home"><BrandLogo size={38} /></button>
           <nav className="desktop-nav" aria-label="Primary navigation">
-            <a href="#platform">Platform</a>
-            <button type="button" onClick={() => goTo('/integrations')}>Integrations</button>
+            <a href="#how-it-works">How it works</a>
+            <button type="button" onClick={() => goTo('/integrations')}>Apps</button>
             <button type="button" onClick={() => goTo('/templates')}>Templates</button>
             <button type="button" onClick={() => goTo('/pricing')}>Pricing</button>
           </nav>
-
           <div className="landing-nav__actions">
-            <button className="button button--ghost nav-signin" type="button" onClick={() => goTo('/login')}>
-              Sign in
-            </button>
-            <button className="button button--primary nav-cta" type="button" onClick={() => goTo('/signup')}>
-              Start building
-              <ArrowRight size={16} />
-            </button>
-            <button
-              className="mobile-menu-button"
-              type="button"
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileOpen}
-              onClick={() => setMobileOpen((open) => !open)}
-            >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            <button className="button button--ghost nav-signin" type="button" onClick={() => goTo('/login')}>Sign in</button>
+            <button className="button button--primary nav-cta" type="button" onClick={() => goTo('/signup')}>Build free <ArrowRight size={16} /></button>
+            <button className="mobile-menu-button" type="button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} onClick={() => setMobileOpen(value => !value)}>{mobileOpen ? <X size={22} /> : <Menu size={22} />}</button>
           </div>
         </div>
-
-        {mobileOpen && (
-          <nav className="mobile-nav" aria-label="Mobile navigation">
-            <a href="#platform" onClick={() => setMobileOpen(false)}>Platform</a>
-            <button type="button" onClick={() => goTo('/integrations')}>Integrations</button>
-            <button type="button" onClick={() => goTo('/templates')}>Templates</button>
-            <button type="button" onClick={() => goTo('/pricing')}>Pricing</button>
-            <button type="button" onClick={() => goTo('/login')}>Sign in</button>
-            <button className="button button--primary" type="button" onClick={() => goTo('/signup')}>
-              Start building
-            </button>
-          </nav>
-        )}
+        {mobileOpen && <nav className="mobile-nav" aria-label="Mobile navigation"><a href="#how-it-works" onClick={() => setMobileOpen(false)}>How it works</a><button type="button" onClick={() => goTo('/integrations')}>Apps</button><button type="button" onClick={() => goTo('/templates')}>Templates</button><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/login')}>Sign in</button><button className="button button--primary" type="button" onClick={() => goTo('/signup')}>Build free</button></nav>}
       </header>
 
       <main>
-        <section className="hero-section">
-          <div className="hero-grid-pattern" aria-hidden="true" />
-          <div className="landing-container hero-layout">
-            <div className="hero-copy">
-              <div className="eyebrow-pill">
-                <Sparkles size={14} />
-                Governed AI automation for support and operations
+        <section className="lf-hero">
+          <div className="landing-container lf-hero__grid">
+            <div className="lf-hero__copy">
+              <div className="lf-eyebrow"><span><Sparkles size={13} /></span> AI automation you can understand and control</div>
+              <h1>Describe the work.<br /><em>AgentForge builds the workflow.</em></h1>
+              <p>Connect your apps, add an AI decision, and keep a human in control—without learning a complicated automation platform first.</p>
+              <div className="lf-hero__actions">
+                <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>Build your first workflow <ArrowRight size={17} /></button>
+                <button className="lf-ask-button" type="button" onClick={openGuide}><MessageCircleMore size={17} /> Ask the guide</button>
               </div>
-              <h1>
-                Turn repetitive operations into <span>controlled AI workflows.</span>
-              </h1>
-              <p className="hero-lede">
-                Start from a real support, lead, or research workflow. Connect your tools,
-                require human approval, and inspect every decision from one workspace.
-              </p>
-              <div className="hero-actions">
-                <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>
-                  Build your first agent
-                  <ArrowRight size={18} />
-                </button>
-                <a className="button button--secondary button--large" href="#workflow">
-                  <Play size={17} fill="currentColor" />
-                  See how it works
-                </a>
-              </div>
-              <div className="hero-proof">
-                <span><Check size={15} /> No credit card required</span>
-                <span><Check size={15} /> Human approval built in</span>
-                <span><Check size={15} /> Publish when you are ready</span>
-              </div>
-              <button className="hero-guide-prompt" type="button" onClick={openGuide}>
-                <span><Sparkles size={16} /></span>
-                <div><strong>Describe what you want to automate</strong><small>AgentForge Guide will map your first workflow</small></div>
-                <kbd>Ask AI</kbd>
-              </button>
+              <div className="lf-hero__proof"><span><Check size={14} /> Free to start</span><span><Check size={14} /> No credit card</span><span><Check size={14} /> Approval before action</span></div>
             </div>
 
-            <div className="hero-system-stage" ref={sceneRef} onPointerMove={moveScene} onPointerLeave={resetScene}>
-              <span className="hero-orbit hero-orbit--apps"><Cable size={13} /> 1,000+ apps</span>
-              <span className="hero-orbit hero-orbit--events"><Radio size={13} /> Live events</span>
-              <span className="hero-orbit hero-orbit--guard"><ShieldCheck size={13} /> Approval ready</span>
-              <div className="product-preview" aria-label="AgentForge workflow preview">
-              <div className="product-preview__topbar">
-                <div className="preview-window-controls" aria-hidden="true">
-                  <span /><span /><span />
-                </div>
-                <span className="preview-title">Customer request triage</span>
-                <span className="preview-status"><span /> Live</span>
+            <div className="lf-workbench" aria-label="Example AgentForge workflow">
+              <div className="lf-workbench__bar"><span><i /><i /><i /></span><b>Customer support triage</b><small>Draft</small></div>
+              <div className="lf-prompt"><div><Sparkles size={16} /></div><p>“When a customer asks for help, classify the issue, draft a reply, and send it to Slack after I approve it.”</p></div>
+              <div className="lf-flow">
+                <div className="lf-flow__step"><span><Zap size={16} /></span><div><small>WHEN</small><strong>New support request</strong></div><CheckCircle2 size={16} /></div>
+                <div className="lf-flow__line" />
+                <div className="lf-flow__step lf-flow__step--ai"><span><Bot size={16} /></span><div><small>AI DECIDES</small><strong>Priority, category, reply</strong></div><b>AI</b></div>
+                <div className="lf-flow__line" />
+                <div className="lf-flow__step"><span><ShieldCheck size={16} /></span><div><small>REVIEW</small><strong>You approve the result</strong></div><CircleDot size={15} /></div>
+                <div className="lf-flow__line" />
+                <div className="lf-flow__step"><AppLogo slug="slack" name="Slack" size={34} /><div><small>THEN</small><strong>Send to Slack</strong></div><CheckCircle2 size={16} /></div>
               </div>
-              <div className="product-preview__body">
-                <aside className="preview-sidebar" aria-hidden="true">
-                  <BrandLogo size={28} showWordmark={false} />
-                  <span className="preview-sidebar__active"><Workflow size={16} /></span>
-                  <span><Bot size={16} /></span>
-                  <span><Database size={16} /></span>
-                  <span><Activity size={16} /></span>
-                </aside>
-                <div className="workflow-preview">
-                  <div className="workflow-preview__heading">
-                    <div>
-                      <span className="preview-kicker">Workflow</span>
-                      <h2>Resolve customer requests</h2>
-                    </div>
-                    <button type="button" tabIndex="-1"><Play size={14} fill="currentColor" /> Run</button>
-                  </div>
-                  <div className="workflow-chain">
-                    {WORKFLOW_STEPS.map(({ icon: Icon, label, detail, status }, index) => (
-                      <div className="workflow-node-wrap" key={label}>
-                        <div className={`workflow-node workflow-node--${index + 1}`}>
-                          <div className="workflow-node__icon"><Icon size={17} /></div>
-                          <div>
-                            <strong>{label}</strong>
-                            <span>{detail}</span>
-                          </div>
-                          <small>{status}</small>
-                        </div>
-                        {index < WORKFLOW_STEPS.length - 1 && (
-                          <div className="workflow-connector" aria-hidden="true">
-                            <span />
-                            <ChevronRight size={14} />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="run-summary">
-                    <span className="run-summary__icon"><CircleCheck size={17} /></span>
-                    <div>
-                      <strong>Production controls are active</strong>
-                      <span>Retries, audit trail, budget policy, and approval rules</span>
-                    </div>
-                    <div className="run-summary__metric">
-                      <strong>4 / 4</strong>
-                      <span>Controls on</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <div className="lf-workbench__footer"><span><ShieldCheck size={14} /> External action is approval-gated</span><button type="button" onClick={() => goTo('/signup')}>Use this template <ChevronRight size={14} /></button></div>
             </div>
           </div>
         </section>
 
-        <section className="trust-strip" aria-label="Platform highlights">
-          <div className="landing-container trust-strip__inner">
-            <span>Built for real operations</span>
-            <div>
-              <span><ShieldCheck size={17} /> Governed</span>
-              <span><Activity size={17} /> Observable</span>
-              <span><GitBranch size={17} /> Versioned</span>
-              <span><Users size={17} /> Human-aware</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="section platform-map-section" id="platform-map">
+        <section className="lf-apps" aria-label="Popular app connections">
           <div className="landing-container">
-            <div className="section-heading">
-              <span className="section-kicker">A full operating layer</span>
-              <h2>More than an agent builder. A system for connected work.</h2>
-              <p>Every module has a clear job: connect, trigger, reason, approve, deliver, observe, and improve.</p>
-            </div>
-            <div className="platform-map-grid">
-              {PLATFORM_MODULES.map(({ icon:Icon, label, metric, title, text, action, path, guide, size }) => (
-                <article className={size === 'wide' ? 'platform-map-card platform-map-card--wide' : 'platform-map-card'} key={title}>
-                  <div><span><Icon size={18} /></span><small>{label}</small><b>{metric}</b></div>
-                  <h3>{title}</h3><p>{text}</p>
-                  <button type="button" onClick={() => guide ? openGuide() : goTo(path)}>{action} <ArrowRight size={14} /></button>
-                </article>
-              ))}
-            </div>
+            <p>Works with the tools your team already uses</p>
+            <div className="lf-apps__row">{LANDING_FEATURED_APPS.map(([slug, name]) => <div key={slug}><AppLogo slug={slug} name={name} size={38} /><span>{name}</span></div>)}</div>
+            <button type="button" onClick={() => goTo('/integrations')}>See 17 native connectors and 1,000+ API-compatible apps <ArrowRight size={14} /></button>
           </div>
         </section>
 
-        <section className="section" id="platform">
+        <section className="lf-section" id="how-it-works">
           <div className="landing-container">
-            <div className="section-heading">
-              <span className="section-kicker">One connected platform</span>
-              <h2>Everything you need to move from idea to dependable automation.</h2>
-              <p>
-                AgentForge brings agent design, workflow orchestration, quality,
-                and governance into one coherent system.
-              </p>
-            </div>
-
-            <div className="capability-grid">
-              {CAPABILITIES.map(({ icon: Icon, eyebrow, title, description }, index) => (
-                <article className="capability-card" key={title}>
-                  <div className="capability-card__number">0{index + 1}</div>
-                  <div className="capability-card__icon"><Icon size={22} /></div>
-                  <span>{eyebrow}</span>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                  <a href="#workflow">Explore {eyebrow.toLowerCase()} <ArrowRight size={15} /></a>
-                </article>
-              ))}
-            </div>
-
-            <div className="feature-rail">
-              {PLATFORM_FEATURES.map(({ icon: Icon, label }) => (
-                <div key={label}><Icon size={19} /><span>{label}</span></div>
-              ))}
-            </div>
+            <div className="lf-heading"><span>Simple by design</span><h2>From idea to a safe workflow in three steps.</h2><p>You never need to understand agents, chains, triggers, or model routing before you start.</p></div>
+            <div className="lf-steps">{STEPS.map(([Icon, title, text], index) => <article key={title}><b>0{index + 1}</b><span><Icon size={20} /></span><h3>{title}</h3><p>{text}</p></article>)}</div>
           </div>
         </section>
 
-        <section className="section section--tint" id="workflow">
-          <div className="landing-container split-section">
-            <div className="split-section__copy">
-              <span className="section-kicker">Control without complexity</span>
-              <h2>Let agents reason. Keep the workflow in control.</h2>
-              <p>
-                Use AI where judgment matters and deterministic steps where
-                consistency matters. Add a human whenever a decision deserves one.
-              </p>
-              <ul className="check-list">
-                <li><CircleCheck size={19} /> Visual workflows with conditions and handoffs</li>
-                <li><CircleCheck size={19} /> Durable runs with retries and checkpoints</li>
-                <li><CircleCheck size={19} /> Multi-agent routing and parallel execution</li>
-                <li><CircleCheck size={19} /> Approval gates before sensitive actions</li>
-              </ul>
-              <button className="text-link" type="button" onClick={() => goTo('/signup')}>
-                Start with a workflow <ArrowRight size={16} />
-              </button>
-            </div>
-
-            <div className="logic-card">
-              <div className="logic-card__header">
-                <span>Decision path</span>
-                <small>Every action explained</small>
-              </div>
-              <div className="logic-line">
-                <span className="logic-line__dot"><Zap size={15} /></span>
-                <div><strong>Request received</strong><small>Trigger validates the payload</small></div>
-              </div>
-              <div className="logic-line">
-                <span className="logic-line__dot"><Bot size={15} /></span>
-                <div><strong>Agent classifies intent</strong><small>Confidence: 94% · 3 sources cited</small></div>
-              </div>
-              <div className="logic-branch">
-                <div><span>Low risk</span><strong>Resolve automatically</strong></div>
-                <div className="logic-branch__active"><span>Needs judgment</span><strong>Request approval</strong></div>
-              </div>
-              <div className="logic-result">
-                <CircleCheck size={19} />
-                <div><strong>Complete and auditable</strong><small>Decision, context, and approval stored together</small></div>
-              </div>
-            </div>
+        <section className="lf-section lf-section--soft">
+          <div className="landing-container lf-outcomes">
+            <div className="lf-heading lf-heading--left"><span>Start with a real result</span><h2>Three complete workflows. Pick one and make it yours.</h2><p>Each starter includes the agent instructions, workflow steps, approval gate, connection checklist, and quality tests.</p><button className="button button--primary" type="button" onClick={() => goTo('/templates')}>Explore templates <ArrowRight size={15} /></button></div>
+            <div className="lf-outcome-list">{OUTCOMES.map(([title, text], index) => <button type="button" key={title} onClick={() => goTo('/templates')}><span>0{index + 1}</span><div><strong>{title}</strong><p>{text}</p></div><ArrowRight size={17} /></button>)}</div>
           </div>
         </section>
 
-        <section className="section security-section" id="security">
-          <div className="landing-container security-panel">
-            <div className="security-panel__mark"><ShieldCheck size={28} /></div>
-            <div className="security-panel__copy">
-              <span className="section-kicker">Governance from the first run</span>
-              <h2>Move fast without losing control.</h2>
-              <p>
-                Credentials stay encrypted, risky actions can require approval,
-                and every important change is recorded in an audit trail.
-              </p>
-            </div>
-            <div className="security-stats">
-              <div><strong>Role-based</strong><span>Workspace access</span></div>
-              <div><strong>Encrypted</strong><span>Stored credentials</span></div>
-              <div><strong>Versioned</strong><span>Production changes</span></div>
-            </div>
+        <section className="lf-trust">
+          <div className="landing-container lf-trust__panel">
+            <div><span><ShieldCheck size={18} /></span><small>Control is built in</small><h2>AI can think. You decide when it acts.</h2><p>Test privately, inspect every run, require approval, and keep credentials encrypted outside prompts.</p></div>
+            <ul><li><CheckCircle2 size={17} /> Human approval gates</li><li><CheckCircle2 size={17} /> Visible run history</li><li><CheckCircle2 size={17} /> Encrypted connections</li><li><CheckCircle2 size={17} /> Versioned production changes</li></ul>
           </div>
         </section>
 
-        <section className="section" id="use-cases">
-          <div className="landing-container">
-            <div className="use-case-layout">
-              <div className="section-heading section-heading--left">
-                <span className="section-kicker">Built for the work between tools</span>
-                <h2>Start with one workflow. Expand into an AI workforce.</h2>
-              </div>
-              <div className="use-case-list">
-                {USE_CASES.map((item, index) => (
-                  <button type="button" key={item} onClick={() => goTo('/signup')}>
-                    <span>0{index + 1}</span>
-                    <strong>{item}</strong>
-                    <ArrowRight size={18} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="cta-section">
-          <div className="landing-container cta-panel">
-            <div>
-              <span className="section-kicker section-kicker--light">Forge the way work gets done</span>
-              <h2>Your first reliable AI workflow starts here.</h2>
-              <p>Build for free. Test safely. Publish when you are ready.</p>
-            </div>
-            <button className="button button--light button--large" type="button" onClick={() => goTo('/signup')}>
-              Start building
-              <ArrowRight size={18} />
-            </button>
-          </div>
-        </section>
+        <section className="lf-final"><div className="landing-container"><div><span>Start small. Prove it. Scale it.</span><h2>What should AgentForge automate for you?</h2><p>Build free, test with sample data, and publish when you are ready.</p></div><div><button className="button button--light button--large" type="button" onClick={() => goTo('/signup')}>Build my first workflow <ArrowRight size={17} /></button><button type="button" onClick={openGuide}>Ask a question</button></div></div></section>
       </main>
 
-      <footer className="landing-footer">
-        <div className="landing-container landing-footer__top">
-          <div>
-            <BrandLogo size={38} />
-            <p>Reliable AI agents for real work.</p>
-          </div>
-          <div className="landing-footer__links">
-            <div><strong>Product</strong><a href="#platform">Platform</a><button type="button" onClick={() => goTo('/integrations')}>Integrations</button><button type="button" onClick={() => goTo('/templates')}>Templates</button></div>
-            <div><strong>Start</strong><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/signup')}>Create account</button><button type="button" onClick={() => goTo('/login')}>Sign in</button></div>
-          </div>
-        </div>
-        <div className="landing-container landing-footer__bottom">
-          <span>© 2026 AgentForge</span>
-          <span>Built for dependable automation.</span>
-        </div>
-      </footer>
+      <footer className="landing-footer"><div className="landing-container landing-footer__top"><div><BrandLogo size={38} /><p>Understandable AI automation for real work.</p></div><div className="landing-footer__links"><div><strong>Product</strong><a href="#how-it-works">How it works</a><button type="button" onClick={() => goTo('/integrations')}>Apps</button><button type="button" onClick={() => goTo('/templates')}>Templates</button></div><div><strong>Start</strong><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/signup')}>Create account</button><button type="button" onClick={() => goTo('/login')}>Sign in</button></div></div></div><div className="landing-container landing-footer__bottom"><span>© 2026 AgentForge</span><span>Built for dependable automation.</span></div></footer>
     </div>
   )
 }

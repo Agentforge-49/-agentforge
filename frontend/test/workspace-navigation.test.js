@@ -7,9 +7,10 @@ const items = WORKSPACE_NAV_GROUPS.flatMap(group => group.items)
 
 test('workspace navigation exposes the focused launch structure', () => {
   assert.deepEqual(items.map(item => item.label), [
-    'Home', 'Studio', 'Templates', 'Knowledge', 'Apps',
-    'Runs', 'Inbox', 'Quality', 'Team', 'Developer', 'Settings',
+    'Home', 'Studio', 'Templates', 'Apps', 'Runs', 'Inbox',
+    'Knowledge', 'Quality', 'Team', 'Developer', 'Settings',
   ])
+  assert.equal(WORKSPACE_NAV_GROUPS.find(group => group.label === 'Advanced')?.advanced, true)
 })
 
 test('unfinished and overlapping surfaces are not primary navigation', () => {

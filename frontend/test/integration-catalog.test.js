@@ -7,6 +7,7 @@ test('integration catalog exceeds the 500-app launch target with honest modes', 
   assert(INTEGRATION_COUNTS.catalog > 1000)
   assert(INTEGRATION_COUNTS.native >= 17)
   assert(INTEGRATION_COUNTS.bridge > 500)
+  assert.equal(INTEGRATION_COUNTS.catalog, INTEGRATION_COUNTS.native + INTEGRATION_COUNTS.oauthReady + INTEGRATION_COUNTS.bridge)
   assert(INTEGRATION_CATALOG.every(app => ['native', 'oauth', 'bridge'].includes(app.mode)))
 })
 
