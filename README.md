@@ -128,11 +128,11 @@ the corresponding user connection and provider account.
 
 ## App ecosystem and product guide
 
-The Apps workspace exposes a searchable compatibility catalog of more than
-1,000 applications. Catalog entries are explicitly labeled as native,
-OAuth-ready, or external bridge integrations. Native AgentForge actions remain
-the source of truth for built-in execution. Any public API can also be called
-through the allowlisted HTTP connector, and signed inbound webhooks can start
+The Apps workspace exposes exactly 100 curated business applications. Seventeen
+use typed native actions, while 83 use authenticated universal API or signed
+webhook paths. Native AgentForge actions remain the source of truth for built-in
+execution. Any public API can also be called through the allowlisted HTTP
+connector, and signed inbound webhooks can start
 workflows from external automation systems.
 
 The launch action catalog contains 19 typed operations across HTTP, Resend,

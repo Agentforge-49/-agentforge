@@ -50,3 +50,10 @@ test('site guide gives a real troubleshooting path', () => {
   assert.equal(answer.id, 'troubleshooting')
   assert(answer.actions.some(action => action.path === '/observability'))
 })
+
+test('site guide answers the common app availability question locally', () => {
+  const answer = answerSiteQuestion('Which apps work now?', { signedIn:true })
+  assert.equal(answer.id, 'connections')
+  assert.equal(answer.actions[0].path, '/apps')
+  assert.match(answer.text, /100 curated app connections/)
+})

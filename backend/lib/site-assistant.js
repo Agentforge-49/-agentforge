@@ -15,6 +15,17 @@ export function suggestedAssistantPath(question) {
   return PAGE_RULES.find(([pattern]) => pattern.test(String(question || '')))?.[1] || '/dashboard';
 }
 
+export function plainAssistantText(value) {
+  return String(value || '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/\r?\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function siteAssistantPrompt(accountContext) {
   return `You are AgentForge Guide, an account-aware product operator inside AgentForge.
 
@@ -34,6 +45,8 @@ ${JSON.stringify(accountContext)}
 Response rules:
 - Lead with the recommended next action.
 - Use no more than 220 words.
+- Return plain text only. Do not use Markdown, asterisks, headings, links, tables, or code formatting.
+- Use the exact workspace labels: Apps, Studio, Runs, Inbox, Quality, Team, Developer, Settings, and Release Center.
 - If an external dependency is missing, name it clearly.
 - Consequential external actions should remain approval-gated until tested.
 - Never output markdown tables, JSON, code, or a fake success message.`;

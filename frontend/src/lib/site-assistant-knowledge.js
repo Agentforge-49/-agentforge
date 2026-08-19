@@ -80,12 +80,12 @@ const TOPICS = [
   },
   {
     id:'connections',
-    phrases:['what can i connect', 'connect tools', 'connect slack', 'connect google', 'integrations', 'credentials'],
-    words:['connect', 'connection', 'integration', 'credential', 'slack', 'google', 'resend', 'supabase', 'webhook'],
+    phrases:['what can i connect', 'which apps work', 'apps work now', 'connect tools', 'connect slack', 'connect google', 'integrations', 'credentials'],
+    words:['app', 'apps', 'connect', 'connection', 'integration', 'credential', 'slack', 'google', 'resend', 'supabase', 'webhook'],
     title:'Connect only what your first workflow needs',
     text:'AgentForge has 100 curated app connections. Seventeen use typed native actions; the other 83 use authenticated HTTP requests or signed webhook triggers.',
     bullets:['Typed actions cover Slack, Google, GitHub, Discord, Notion, Airtable, HubSpot, Salesforce, Stripe, Shopify, Jira, Linear, Twilio, Zendesk, Resend, and Supabase.', 'Universal connections support bearer tokens, custom API-key headers, and Basic authentication.', 'Credentials stay encrypted and external actions can remain approval-gated.'],
-    actions:[{ label:'See integrations', path:'/integrations' }, { label:'Manage connections', path:'/credentials', auth:true }],
+    actions:[{ label:'See apps', path:'/apps' }, { label:'Manage connections', path:'/credentials', auth:true }],
     followUps:['Which workflow fits me?', 'How are credentials stored?'],
   },
   {

@@ -4,7 +4,7 @@ import { Router } from 'express';
 import { executeAgent } from '../lib/engine.js';
 import { MODEL_CATALOG } from '../lib/model-catalog.js';
 import { estimateCostUsd } from '../lib/observability.js';
-import { siteAssistantPrompt, suggestedAssistantPath } from '../lib/site-assistant.js';
+import { plainAssistantText, siteAssistantPrompt, suggestedAssistantPath } from '../lib/site-assistant.js';
 import { supabase } from '../lib/supabase.js';
 import { assertUsageAllowance, getUsageSummary, recordUsage } from '../lib/usage.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -90,7 +90,7 @@ router.post('/chat', async (req, res, next) => {
       metadata:{ operation:'account_guidance', model },
     });
     res.json({
-      answer:result.final_answer.trim().slice(0, 4000),
+      answer:plainAssistantText(result.final_answer).slice(0, 4000),
       suggested_path:suggestedAssistantPath(message),
       context:{
         active_agents:context.agents.active,

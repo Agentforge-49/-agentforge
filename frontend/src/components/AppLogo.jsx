@@ -1,3 +1,7 @@
+import { useState } from 'react'
+
+import { appLogoUrl } from '../lib/app-logo-sources.js'
+
 const BRAND_STYLES = {
   airtable:['#f82b60', 'A'], anthropic:['#191919', 'AI'], discord:['#5865f2', 'D'],
   github:['#181717', 'GH'], google_drive:['#0f9d58', 'Drive'], google_sheets:['#188038', 'Sheets'],
@@ -6,16 +10,6 @@ const BRAND_STYLES = {
   resend:['#111111', 'R'], salesforce:['#00a1e0', 'SF'], shopify:['#7ab55c', 'S'],
   slack:['#4a154b', ''], stripe:['#635bff', 'S'], supabase:['#1c8f5d', 'S'],
   twilio:['#f22f46', 'T'], zendesk:['#03363d', 'Z'], gmail:['#ea4335', 'M'],
-}
-
-const SIMPLE_ICON_SLUGS = {
-  google_sheets:'googlesheets', google_drive:'googledrive', microsoft_teams:'microsoftteams',
-  microsoft_outlook:'microsoftoutlook', google_calendar:'googlecalendar', whatsapp_business:'whatsapp',
-  monday:'mondaydotcom', customer_io:'customerio', facebook_pages:'facebook',
-  instagram_business:'instagram', quickbooks:'intuit', google_cloud:'googlecloud',
-  bigquery:'googlebigquery', aws:'amazonwebservices', azure:'microsoftazure', docker_hub:'docker',
-  google_gemini:'googlegemini', adobe_sign:'adobeacrobatreader', apollo_io:'apollo',
-  zoho_crm:'zoho', dynamics_365:'microsoftdynamics365', telegram:'telegram',
 }
 
 function fallbackLabel(name) {
@@ -39,9 +33,8 @@ export default function AppLogo({ slug, name, size = 42, className = '' }) {
   }
   return (
     <span className={`app-logo ${className}`} style={{ width:size, height:size, '--app-color':color }} role="img" aria-label={`${name} logo`}>
-      {!imageFailed && <img src={`https://cdn.simpleicons.org/${SIMPLE_ICON_SLUGS[slug] || slug.replaceAll('_', '')}`} alt="" loading="lazy" onError={() => setImageFailed(true)} />}
+      {!imageFailed && <img src={appLogoUrl(slug)} alt="" loading="lazy" onError={() => setImageFailed(true)} />}
       {imageFailed && <span>{label}</span>}
     </span>
   )
 }
-import { useState } from 'react'
