@@ -32,3 +32,22 @@ test('credential vault submits rendered fields and uses functional updates', asy
     assert.match(source, new RegExp(`name=["']${name}["']`))
   }
 })
+
+test('focused app setup keeps beginners on one connection path', async () => {
+  const source = await readFile(new URL('../src/pages/Credentials.jsx', import.meta.url), 'utf8')
+  assert.match(source, /focusedConnection/)
+  assert.match(source, /Universal API connection/)
+  assert.match(source, /type="hidden" name="provider" value="generic"/)
+  assert.match(source, /After saving/)
+})
+
+test('launch metadata exposes canonical, social, manifest, and search contracts', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8')
+  const manifest = await readFile(new URL('../public/site.webmanifest', import.meta.url), 'utf8')
+  const robots = await readFile(new URL('../public/robots.txt', import.meta.url), 'utf8')
+  assert.match(html, /rel="canonical"/)
+  assert.match(html, /property="og:title"/)
+  assert.match(html, /rel="manifest"/)
+  assert.equal(JSON.parse(manifest).name, 'AgentForge')
+  assert.match(robots, /sitemap\.xml/i)
+})

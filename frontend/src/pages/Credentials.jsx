@@ -13,6 +13,8 @@ import {
   startOauthConnection,
   testCredential,
 } from '../lib/api'
+import AppLogo from '../components/AppLogo.jsx'
+import { INTEGRATION_CATALOG } from '../lib/integration-catalog.js'
 
 const PROVIDERS = [
   ['generic', 'Generic secret'],
@@ -57,6 +59,9 @@ export default function Credentials() {
   const initialNotice = oauthNotice()
   const initialApp = requestedApp()
   const initialMode = requestedMode()
+  const requestedDefinition = INTEGRATION_CATALOG.find(app => app.slug === initialApp)
+  const requestedName = requestedDefinition?.name || initialApp.replace(/[_-]+/g, ' ')
+  const focusedConnection = Boolean(initialApp && initialMode === 'universal')
   const initialProvider = APP_CREDENTIAL_PROVIDERS[initialApp] || 'generic'
   const [credentials, setCredentials] = useState([])
   const [logs, setLogs] = useState([])
@@ -246,7 +251,7 @@ export default function Credentials() {
       {error && <div style={errorBox}>{error}</div>}
       {message && <div style={successBox}>{message}</div>}
 
-      <section className="connection-launch-center">
+      {!focusedConnection && <section className="connection-launch-center">
         <div className="connection-launch-heading">
           <div><span>Launch connections</span><h2>Connect the three tools used by flagship workflows.</h2></div>
           <p>Start with one connection. You do not need every provider to install your first workflow.</p>
@@ -280,9 +285,9 @@ export default function Credentials() {
             )
           })}
         </div>
-      </section>
+      </section>}
 
-      <section style={{ ...panel, marginBottom:18 }}>
+      {!focusedConnection && <section style={{ ...panel, marginBottom:18 }}>
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:4 }}>
           <Link2 size={19} color="#34D399" />
           <h2 style={{ fontSize:15 }}>Connected apps</h2>
@@ -334,12 +339,18 @@ export default function Credentials() {
             })}
           </div>
         )}
-      </section>
+      </section>}
+
+      {focusedConnection && <section className="focused-connection-intro">
+        <AppLogo slug={initialApp} name={requestedName} size={46} />
+        <div><span>Connect one app</span><h2>{requestedName}</h2><p>Store the API credential here, then choose it in a Studio HTTP step. AgentForge will add authentication at run time without exposing the secret to the workflow.</p></div>
+        <ol><li><b>1</b> Create an API credential in {requestedName}</li><li><b>2</b> Choose its authentication type below</li><li><b>3</b> Test privately before publishing</li></ol>
+      </section>}
 
       <form id="store-credential" onSubmit={create} style={panel}>
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:14 }}>
-          <ShieldCheck size={19} color="#A78BFA" />
-          <div><h2 style={{ fontSize:15 }}>{initialApp ? `Connect ${initialApp.replace(/[_-]+/g, ' ')}` : 'Store a credential'}</h2>{initialApp && <p style={{ color:'#6B7280', fontSize:10, marginTop:3 }}>{initialMode === 'universal' ? 'Universal API connection' : 'Native connector credential'}</p>}</div>
+          <ShieldCheck size={19} color="#087A4B" />
+          <div><h2 style={{ fontSize:15 }}>{initialApp ? `Connect ${requestedName}` : 'Store a credential'}</h2>{initialApp && <p style={{ color:'#6B7280', fontSize:10, marginTop:3 }}>{initialMode === 'universal' ? 'Universal API connection' : 'Native connector credential'}</p>}</div>
         </div>
         <div style={grid}>
           <div>
@@ -347,12 +358,13 @@ export default function Credentials() {
             <input required name="name" value={form.name} onChange={e => setForm(current => ({ ...current, name:e.target.value }))}
               placeholder="Production OpenAI key" style={input} />
           </div>
-          <div>
+          {!focusedConnection && <div>
             <label style={label}>Provider</label>
             <select name="provider" value={form.provider} onChange={e => setForm(current => ({ ...current, provider:e.target.value }))} style={input}>
               {PROVIDERS.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
             </select>
-          </div>
+          </div>}
+          {focusedConnection && <input type="hidden" name="provider" value="generic" />}
           <div>
             <label style={label}>Secret</label>
             <input required name="secret" type="password" minLength="8" value={form.secret}
@@ -386,6 +398,8 @@ export default function Credentials() {
         <p style={{ color:'#6B7280', fontSize:11, marginTop:10 }}>{form.auth_mode === 'basic' && form.provider === 'generic' ? 'Enter the secret as username:password. ' : ''}Secrets use authenticated AES-256-GCM encryption. Plaintext is never returned by the API.</p>
         <button style={primaryButton}><KeyRound size={14} /> Encrypt and store</button>
       </form>
+
+      {focusedConnection && <div className="focused-connection-next"><ShieldCheck size={17} /><div><strong>After saving</strong><span>Add an HTTP Request step in Studio, select this credential, enter the app API URL, and run with safe sample data.</span></div><a href="/studio">Open Studio <ArrowRight size={13} /></a></div>}
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14, marginTop:18 }}>
         {credentials.map(credential => <div key={credential.id} style={panel}>
@@ -452,18 +466,18 @@ export default function Credentials() {
   )
 }
 
-const panel = { background:'#171A23', border:'1px solid #292D3D', borderRadius:14, padding:18 }
+const panel = { background:'#FFFFFF', border:'1px solid #D9E8DF', borderRadius:14, padding:18, boxShadow:'0 10px 30px rgba(20,48,36,.05)' }
 const grid = { display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))', gap:12 }
-const label = { display:'block', color:'#9CA3AF', fontSize:11, marginBottom:6 }
-const input = { boxSizing:'border-box', width:'100%', background:'#101219', border:'1px solid #303447', borderRadius:8, color:'#E5E7EB', padding:'9px 10px', fontSize:12 }
-const primaryButton = { display:'inline-flex', alignItems:'center', gap:6, background:'#7C3AED', color:'white', border:0, borderRadius:8, padding:'9px 13px', cursor:'pointer', marginTop:14 }
-const secondaryButton = { display:'inline-flex', alignItems:'center', gap:5, background:'#202431', color:'#C7CAD4', border:'1px solid #34394D', borderRadius:7, padding:'7px 9px', cursor:'pointer', fontSize:11 }
-const dangerButton = { ...secondaryButton, color:'#FCA5A5' }
-const actions = { display:'flex', gap:7, marginTop:14, paddingTop:12, borderTop:'1px solid #292D3D' }
-const errorBox = { background:'#2D1515', border:'1px solid #EF4444', borderRadius:9, padding:11, color:'#FCA5A5', fontSize:12, marginBottom:14 }
-const successBox = { background:'#0B2A20', border:'1px solid #059669', borderRadius:9, padding:11, color:'#6EE7B7', fontSize:12, marginBottom:14 }
-const oauthCard = { background:'#101219', border:'1px solid #2D3142', borderRadius:10, padding:13 }
-const oauthConnection = { display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginTop:9, color:'#C7CAD4', fontSize:11 }
-const iconButton = { display:'grid', placeItems:'center', border:'1px solid #3B4158', borderRadius:6, padding:5, color:'#FCA5A5', background:'#202431', cursor:'pointer' }
-const th = { textAlign:'left', color:'#8B8FA3', borderBottom:'1px solid #303447', padding:'8px 6px' }
-const td = { color:'#C7CAD4', borderBottom:'1px solid #222637', padding:'9px 6px' }
+const label = { display:'block', color:'#4F695B', fontSize:11, fontWeight:700, marginBottom:6 }
+const input = { boxSizing:'border-box', width:'100%', background:'#FFFFFF', border:'1px solid #C8D8CE', borderRadius:8, color:'#143024', padding:'10px 11px', fontSize:12 }
+const primaryButton = { display:'inline-flex', alignItems:'center', gap:6, background:'#087A4B', color:'white', border:0, borderRadius:8, padding:'10px 14px', cursor:'pointer', marginTop:14, fontWeight:800 }
+const secondaryButton = { display:'inline-flex', alignItems:'center', gap:5, background:'#F7FAF8', color:'#315845', border:'1px solid #C8D8CE', borderRadius:7, padding:'7px 9px', cursor:'pointer', fontSize:11 }
+const dangerButton = { ...secondaryButton, color:'#B42318', borderColor:'#F0C7C3', background:'#FFF8F7' }
+const actions = { display:'flex', gap:7, marginTop:14, paddingTop:12, borderTop:'1px solid #E5EDE8' }
+const errorBox = { background:'#FFF5F4', border:'1px solid #F4B4AE', borderRadius:9, padding:11, color:'#A92C22', fontSize:12, marginBottom:14 }
+const successBox = { background:'#F1FAF5', border:'1px solid #AED5BD', borderRadius:9, padding:11, color:'#086743', fontSize:12, marginBottom:14 }
+const oauthCard = { background:'#F8FBF9', border:'1px solid #DCE7DF', borderRadius:10, padding:13 }
+const oauthConnection = { display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginTop:9, color:'#4F695B', fontSize:11 }
+const iconButton = { display:'grid', placeItems:'center', border:'1px solid #F0C7C3', borderRadius:6, padding:5, color:'#B42318', background:'#FFF8F7', cursor:'pointer' }
+const th = { textAlign:'left', color:'#61776B', borderBottom:'1px solid #DCE7DF', padding:'8px 6px' }
+const td = { color:'#315845', borderBottom:'1px solid #E5EDE8', padding:'9px 6px' }

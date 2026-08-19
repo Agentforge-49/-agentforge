@@ -3,7 +3,7 @@
 .app-directory-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
 .app-directory-summary > div { padding:15px; border:1px solid #d9e8df; border-radius:13px; background:rgba(255,255,255,.88); box-shadow:0 10px 30px rgba(20,48,36,.05); }
 .app-directory-summary strong { display:block; color:#0b6b3e; font-size:21px; line-height:1; }
-.app-directory-summary span { display:block; margin-top:6px; color:#667b6e; font-size:9px; text-transform:uppercase; letter-spacing:.06em; }
+.app-directory-summary span { display:block; margin-top:6px; color:#667b6e; font-size:10px; text-transform:uppercase; letter-spacing:.06em; }
 .app-directory-summary .is-ready { border-color:#75c497; background:#effbf4; }
 .app-directory-toolbar { display:grid; grid-template-columns:minmax(280px,1fr) auto; align-items:center; gap:12px; padding:12px; border:1px solid #d9e8df; border-radius:14px; background:#fff; }
 .app-directory-search { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; min-width:0; border:1px solid #c9ddd1; border-radius:10px; padding:0 10px; background:#f9fcfa; color:#658074; }
@@ -29,9 +29,10 @@
 .app-directory-status--universal { background:#edf3ff; color:#315e9b; }
 .app-directory-card > small { color:#13814c; font-size:8px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
 .app-directory-card h3 { margin:5px 0 6px; color:#153326; font-size:14px; }
-.app-directory-card p { margin:0 0 13px; color:#65796e; font-size:9.5px; line-height:1.55; }
+.app-directory-card p { margin:0 0 13px; color:#65796e; font-size:11px; line-height:1.58; }
 .app-directory-card-actions { display:flex; gap:6px; margin-top:auto; }
-.app-directory-card-actions button { display:inline-flex; align-items:center; justify-content:center; gap:5px; border:0; border-radius:8px; padding:8px 10px; background:#0d7c48; color:#fff; cursor:pointer; font-size:9px; font-weight:800; }
+.app-directory-card-actions button { display:inline-flex; align-items:center; justify-content:center; gap:5px; border:0; border-radius:8px; padding:9px 11px; background:#0d7c48; color:#fff; cursor:pointer; font-size:10px; font-weight:800; }
+.apps-hub-feature-grid article > span { font-size:11px!important; line-height:1.55!important; }
 .app-directory-card-actions button.secondary { width:33px; padding:0; border:1px solid #c9ddd1; background:#fff; color:#236b48; }
 .app-directory-card-actions button:disabled { opacity:.55; cursor:wait; }
 .app-directory-more { display:flex; align-items:center; gap:6px; margin:16px auto 0; border:1px solid #8fbea4; border-radius:9px; padding:9px 13px; background:#effaf4; color:#09683d; cursor:pointer; font-size:10px; font-weight:800; }

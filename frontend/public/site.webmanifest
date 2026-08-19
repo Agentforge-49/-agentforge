@@ -1,0 +1,12 @@
+{
+  "name": "AgentForge",
+  "short_name": "AgentForge",
+  "description": "Understandable, controlled AI automation for real work.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f4f9f6",
+  "theme_color": "#087A4B",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

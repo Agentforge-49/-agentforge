@@ -1037,3 +1037,15 @@
 .workspace-advanced-toggle svg:last-child { margin-left:auto; }
 .workspace-nav-label { display:flex; align-items:center; justify-content:space-between; }
 .workspace-nav-label button { display:grid; width:22px; height:22px; place-items:center; border:0; background:transparent; color:inherit; cursor:pointer; transform:rotate(180deg); }
+.focused-connection-intro { display:grid; grid-template-columns:auto minmax(0,1fr); gap:14px 16px; margin-bottom:14px; padding:20px; border:1px solid #B8D8C6; border-radius:15px; background:linear-gradient(135deg,#EFFAF4,#FFFFFF); box-shadow:var(--workspace-shadow); }
+.focused-connection-intro > div > span { color:var(--workspace-green); font-size:9px; font-weight:850; letter-spacing:.1em; text-transform:uppercase; }
+.focused-connection-intro h2 { margin:4px 0; color:var(--workspace-text); font-size:19px; }
+.focused-connection-intro p { max-width:720px; margin:0; color:var(--workspace-muted); font-size:11px; line-height:1.55; }
+.focused-connection-intro ol { display:grid; grid-column:1/-1; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:3px 0 0; padding:0; list-style:none; }
+.focused-connection-intro li { display:flex; align-items:center; gap:7px; padding:9px; border:1px solid #D9E8DF; border-radius:9px; background:#fff; color:#496256; font-size:9px; }
+.focused-connection-intro li b { display:grid; width:20px; height:20px; flex:none; place-items:center; border-radius:50%; background:var(--workspace-green); color:#fff; font-size:8px; }
+.focused-connection-next { display:flex; align-items:center; gap:10px; margin-top:10px; padding:12px 14px; border:1px solid #CCE0D4; border-radius:11px; background:#F3FAF6; color:var(--workspace-green); }
+.focused-connection-next > div { display:flex; min-width:0; flex:1; flex-direction:column; gap:2px; }
+.focused-connection-next strong { color:var(--workspace-text); font-size:10px; }.focused-connection-next span { color:var(--workspace-muted); font-size:9px; line-height:1.45; }
+.focused-connection-next a { display:inline-flex; align-items:center; gap:4px; border-radius:8px; padding:8px 10px; background:var(--workspace-green); color:#fff; font-size:9px; font-weight:800; text-decoration:none; white-space:nowrap; }
+@media(max-width:680px){.focused-connection-intro ol{grid-template-columns:1fr}.focused-connection-next{align-items:flex-start;flex-direction:column}.focused-connection-next a{width:100%;box-sizing:border-box;justify-content:center}}
