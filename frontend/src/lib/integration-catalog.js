@@ -1,78 +1,124 @@
-// Snapshot source: PipedreamHQ/pipedream public component registry (GitHub), 2026-08-06.
-// Catalog entries describe compatibility through native actions, universal HTTP/webhooks,
-// or the optional Pipedream Connect bridge. They are not all native AgentForge connectors.
-const REGISTRY_SLUGS = ["a123formbuilder","ably","abstract","abstract_ip_geo","abuselpdb","abyssale","accelo","accredible","accuranker","accuweather","acelle_mail","acquire","acronis_cyber_protect_cloud","act_365","action1","action_builder","action_network","actitime","active_trail","activecalculator","activecampaign","acuity_scheduling","acumbamail","acymailing","adafruit_io","adalo","add_to_calendar_pro","addevent","addressfinder","addresszen","adhook","adobe_document_generation_api","adobe_pdf_services","adobe_photoshop","adobe_photoshop_lightroom","adobe_sign","adp","adrapid","adroll","adtraction","adversus","adyen","adyntel","aerisweather","aero_workflow","aeroleads","aevent","affinda","affinity","afosto","aftership","agendor","agentos","agentql","agentset","agentx","agenty","agify","agile_crm","agiled","agiliron","agility_cms","agrello","aha","ahrefs","ai_chatbot_hub","ai_ml_api","ai_textraction","aidaform","aidbase","aimtell","air","airbrake","aircall","airfocus","airmeet","airnow","airops","airparser","airpinpoint","airplane","airship","airslate","airtable_oauth","airtop","airweave","aitable_ai","aivoov","akeneo","akismet","akkio","albus","alchemer","alchemy","alegra","alerty","algodocs","algolia","algomo","algorand_developer_portal","algorithmia","alibaba_cloud","alienvault","all_images_ai","all_voice_lab","allocadence","alpaca","alpha_vantage","alphamoon","alt_text_generator_ai","alt_text_lab","alteryx_analytics_cloud","altiria","altoviz","alttext_ai","alttextify","alttextlab","amara","amazing_marvin","amazon","amazon_advertising","amazon_alexa","amazon_polly","amazon_redshift","amazon_selling_partner","amazon_ses","ambee","ambient_weather","ambivo","amcards","amentum_aerospace","americommerce","amilia","amplenote","amplifier","amplitude","amplitude_experiment_management","amqp","anchor_browser","annature","announcekit","anonyflow","anthropic","anydb","anyflow","anymail_finder","apaleo","apex","apex_27","apexverify","api2convert","api2pdf","api4ai","api_bible","api_labz","api_ninjas","api_sports","api_void","apiary","apideck","apiflash","apiframe","apify","apify_oauth","apilio","apimage","apipie_ai","apitemplate_io","apiverve","apollo_io","apollo_io_oauth","appcircle","appcues","appdrag","applicantstack","appointedd","appointo","appsflyer","appveyor","appwrite","arcgis_online","are_na","arlo","aroflo","arpoone","arxiv","aryn","asana","ascora","ashby","ashby_job_postings_api","asin_data_api","asknicely","askyourpdf","aspsms","assembla","assemblyai","assured_platform","asters","astica_ai","astrology_api","async_interview","attentive","attio","attractwell","auth0_management_api","autoblogger","autobound","autocalls","autodesk","autoklose","autom","automatic_data_extraction","automizy","autopilot","autotask_psa","avaza","avinode","avochato","avosms","awardco","aweber","awork","aws","axesso_data_service","axis_lms","axonaut","aylien_news_api","ayrshare","azure_ai_vision","azure_api_for_fhir","azure_cosmos_db","azure_devops","azure_devops_microsoft_entra_id_oauth","azure_openai_service","azure_speech_service","azure_sql","azure_storage","babelfy","backblaze","backendless","backlog_api","badger_maps","bamboohr","bandwidth","bannerbear","bannerify","barcode_lookup","baremetrics","bart","basecamp","baselinker","baserow","bash","basin","battle_net","bc_gov_news","beaconchain","beaconstac","beamer","beanstalkapp","beebole","beebole_app","beehiiv","beehiv","beekeeper","beeminder","beeper","belco","benchmark_email","benchmarkone","benzinga","better_proposals","better_stack","better_uptime","bettercontact","bettervoice","bexio","beyond_presence","bidsketch","big_cartel","big_data_cloud","bigbox","bigcommerce","bigdatacorp","bigmailer","bigml","bigpicture_io","bika_ai","bilflo","bilig_workpaper","bilionis","bill","billbee","billplz","billsby","binalyze_air","bingx","bippybox","bit_io","bitbadges","bitbucket","bitbucket_data_center","bitdefender_gravityzone","bitget","bitly","bitmex","bitport","bitquery","bitrated","bitrix24","bitwarden","biztera","blackbaud","bland_ai","blazemeter","blink","blockchain_exchange","blocknative","blogger","blogify","bloom_growth","bloomerang","blotato","blue","bluecart_api","bluesky","bluesky_by_unshape","bluesnap","bokun","bol_com","boldsign","boloforms","bolt_iot","bonusly","booking_experts","bookingmood","boomtrain","booqable","bot9","botbaba","botcake","botconversa","botmaker","botpenguin","botpress","botsonic","botstar","botx","bouncer","box","boxhero","brainbase_labs","brainshop","braintree","brand_dev","brandblast","brandfetch","brandmentions","brave_search_api","braze","breathe","breeze","breezy_hr","brevo","brex","brex_staging","bridge","bridge_interactive_platform","bright_data","brilliant_directories","brillium","brosix","browse_ai","browser_use","browseract","browserbase","browserflow","browserhub","browserless","browserstack","bruzu","btcpay_server","bubble","buddee","buddy","budgets_ai","bugbug","bugherd","bugsnag","buildchatbot","builder_io","builderall_mailingboss","buildkite","builtwith","bulkgate","bump_sh","bunnycdn","bunnydoc","burst_sms","burstyai","business_edge","businesslogic","buy_me_a_coffee","buysellads","buzzsprout","bybit","bytebot","byteforms","bytenite","cabinpanda","cal_com","calendarhero","calendly_v2","call_fire","callerapi","callhippo","callhub","callingly","calllerapi","callminer","callpage","callrail","camino_ai","campaign_cleaner","campaign_monitor","campaignhq","campayn","canny","canva","canva_enterprise","canvas","capgo","capsule","captaindata","capturekit","carbone","cardinal","cardly","carmd","cartes","cascade_strategy","caspio","castingwords","castmagic","catch_all_verifier","cats","cdc_national_environmental_public_health_tracking","cdr_platform","celonis_ems","celoxis","census_bureau","centralstationcrm","cerebras","certifier","certs365","cflow","chainaware_ai","chaindesk","change_photos","changenow","changes_page","channable","channeladvisor","chaport","chargebee","chargeblast","chargekeep","chargeover","chargify","charthop","chartly","chartmogul","chaser","chat_api_for_whatsapp","chat_data","chatbase","chatbot","chatbot_builder","chatbotic","chatbotkit","chatfai","chatfly","chatforma","chatfuel_dashboard_api_","chatlayer","chatpdf","chatra","chatrace","chatsistant","chatsonic","chatspark","chattermill","chatwoot","chatwork","checkout_com","checkvist","cheddar","chimp_rewriter","chmeetings","chroma_cloud","chucknorris","cinc","cincopa","circl_hash_lookup","circle","circleci","cisco_meraki","cisco_webex","cisco_webex_custom_app","civicrm","claap","claid_ai","clappia","clarifai","clarify","claris_filemaker_server_admin_api","claris_filemaker_server_data_api","claris_filemaker_server_odata_api","classmarker","clear_books","clearbit","clearly_defined","clearout","clerk","cleverreach","clevertap","click2mail2","click_sign","clickfunnels","clickhelp","clickmeeting","clicksend","clicktime","clickup","cliengo","clientary","clientify","cliento","clinchpad","cliniko","clio","clio_australia","clio_canada","clio_eu","clockify","clockodo","clockwork_recruiting","close","cloud_66","cloud_convert","cloudbeds","cloudbees","cloudcart","cloudentity","cloudfill","cloudflare_api_key","cloudflare_browser_rendering","cloudflare_r2","cloudinary","cloudlayer","cloudmersive","cloudpresenter","cloudpress","cloudtables","cloudtalk","cloze","clubworx","coassemble","cobalt","cockpit","coda","codacy","codat","code_climate","codeberg","codeclassify","codefresh","codegpt","codemagic","codeq_natural_language_processing_api","codeqr","codereadr","coderpad","codescene","codex","cody","cogmento","cohere_platform","coinapi","coinbase","coinbase_commerce","coinbase_developer_platform","coincatch","coingecko","coinlore","coinmarketcal","coinmarketcal_demo_app","coinmarketcap","coinranking","college_football_data","columns_ai","cometapi","cometly","commcare","commerce_tools","commercehq","commercetools","common_paper","commonninja","commpeak","companycam","companyhub","concord","confection","configcat","confluence","confluence_data_center","confluent","congress_gov","connecteam","connectwise_psa","constant_contact","consulta_unica","contact_enhance","contactout","contacts","contactually","content_snare","contentdrips","contentful","contentful_graphql","contentgroove","contentstack","control_d","convenia","conversion_tools","convertapi","convertkit","conveyor","convolo_ai","copicake","copper","copperx","corporate_merch","corrently","corsizio","cortex","countdown_api","countly","coupontools","covalent","cradl_ai","craftboxx","craftmypdf","cratedb_cloud","crawlbase","credit_repair_cloud","crimeometer","crisp","cronfree","cronly","cronlytic","crossmint","crove_app","crowd_dev","crowdin","crowdpower","crowdstrike_falcon","crunchbase","crustdata","cryptlex","crypto_apis_by_alternative","cryptowatch","csvbox","cube_cloud","cufinder","cults","curated","curated_letters","currencyapi","currencyscoop","current_rms","currents_api","cursor","customer_fields","customer_guru","customer_io","customgpt","customjs","cutt_ly","cvr_dev","cyberark_certificate_manager","cyberimpact","cyfe","d2l_brightspace","d4sign","d7_darwin","d7_networks","dacast","dachser","dadata_ru","daffy","daftara","daily","dailybot","daktela","damstra_forms","dandelion","danny_test_app","dante_ai","dappier","darksky_api","dart","darwinbox","dasha_ai","data247","data_axle_platform","data_police_uk","data_soap","data_stores","database","databox","databricks","databricks_oauth","datadog","dataforb2b","dataforseo","datagma","dataiku","datanews","datarobot","datascope","dataset","datawaves","datumbox","dayschedule","daytona","dbt","dealcloud","dealmachine","dear","decision_journal","decodo","deel","deep_tagger","deepgram","deepimage","deepl","deeplogix","deepseek","deepsouce","deepsource","defastra","deftship","degreed","delighted","delivery_march","demandbase","demio","deployhq","deputy","desktime","detectify","detrack","deutschlandgpt","dev_to","devcycle","device_magic","devin","devolens","devrev","dex","dexatel","dext","dhl","dhl_parcel","diabatix_coldstream","dialmycalls","dialpad","dictionary_api","diffbot","diffchecker","diffy","dify","digicert","digistore24","digital_ocean","digitalocean_gradient_ai_serverless_inference","digitalocean_spaces","digitalriver","dingconnect","directus","discogs","discord","discord_bot","discourse","dispatch","ditlead","dixa","dnsfilter","dock_certs","docker_engine","docker_hub","docmosis","docnify","docparser","docraptor","docsautomator","docsbot_ai","docsgenflow","docsumo","docugenerate","documenso","document360","documentero","documenterra","documentpro","documerge","documint","docupilot","docupost","docuseal","docusign","docusign_developer","docutray","docuwriter_ai","dokan","dolibarr","domain_group","domo","donately","donedone","donorbox","doppler","doppler_marketing_automation","doppler_ops","dopplerai","dots_","dotsimple","dovetail","dpd2","dpd_connect","dpd_shipping","draftable","drata","drchrono","dreamdata","dreamhost","dreamstudio","dribbble","drift","drimify","drip","dripcel","dromo","dropboard","dropbox","dropcontact","dropinblog","dropmark","droxy","dub","dumplingai","dungeon_fighter_online","dust","dux_soup","dynalist","dynamic_content_snippet","dynamics_365_business_central_api","dynapictures","dynatrace_api","e2b","e_conomic","e_goi","eaccounting","eagle_doc","easy8","easy_peasy_ai","easy_project","easy_projects","easy_redmine","easybroker","easycsv","easydns","easyfill_ai","easyhire","easyly","easypost","easypromos","easysendy","easyship","ebay","echowin","echtpost_postcards","ecologi","ecwid","edapp","eden_ai","educateme","edusign","efinder","egestor","egnyte","elastic_cloud","elastic_email","elastic_security","elasticemail","element","elevenlabs","elevio","elmah_io","elopage","elorus","email","email_on_acid","email_verifier_api","emailable","emailchaser","emailchef","emaillistverify","emailoctopus","emailverify_io","embedapi","emboss","emelia","encharge","encodian","endorsal","enedis","engage","engagebay","enginemailer","enigma","enormail","enrich_layer","enrichley","enrow","envoy","eodhd_apis","epic_games","eppo","epsy","equifax","erpnext","error","escrow","esendex","esignatures_io","espocrm","esputnik","espy","estreamdesk","etermin","ethereum","etrusted","etsy","evenium","event_tickets","eventbrite","eventee","eventzilla","everhour","evernote","eversign","everstox","evervault","everwebinar","ewebinar","exa","exact","exact_mails","excalidraw","exhibitday","exist","expedy","expensify","explorium","expofp","extensiv_integration_manager","extracta_ai","extruct_ai","eyepop_ai","ez_texting"];
+// Launch catalog: exactly 100 curated business apps.
+// "native" means a typed AgentForge action. "universal" means the app works
+// through AgentForge's authenticated HTTP action or signed webhook trigger.
+const APPS = [
+  ['slack','Slack','Communication','native'],
+  ['google_sheets','Google Sheets','Productivity','native'],
+  ['google_drive','Google Drive','Storage','native'],
+  ['resend','Resend','Email','native'],
+  ['supabase','Supabase','Database','native'],
+  ['github','GitHub','Engineering','native'],
+  ['discord','Discord','Communication','native'],
+  ['notion','Notion','Productivity','native'],
+  ['airtable','Airtable','Database','native'],
+  ['hubspot','HubSpot','CRM','native'],
+  ['salesforce','Salesforce','CRM','native'],
+  ['stripe','Stripe','Commerce','native'],
+  ['shopify','Shopify','Commerce','native'],
+  ['jira','Jira','Engineering','native'],
+  ['linear','Linear','Engineering','native'],
+  ['twilio','Twilio','Communication','native'],
+  ['zendesk','Zendesk','Support','native'],
+  ['microsoft_teams','Microsoft Teams','Communication','universal'],
+  ['gmail','Gmail','Email','universal'],
+  ['microsoft_outlook','Microsoft Outlook','Email','universal'],
+  ['google_calendar','Google Calendar','Productivity','universal'],
+  ['telegram','Telegram','Communication','universal'],
+  ['whatsapp_business','WhatsApp Business','Communication','universal'],
+  ['zoom','Zoom','Communication','universal'],
+  ['calendly','Calendly','Scheduling','universal'],
+  ['asana','Asana','Project management','universal'],
+  ['trello','Trello','Project management','universal'],
+  ['monday','monday.com','Project management','universal'],
+  ['clickup','ClickUp','Project management','universal'],
+  ['todoist','Todoist','Productivity','universal'],
+  ['dropbox','Dropbox','Storage','universal'],
+  ['box','Box','Storage','universal'],
+  ['onedrive','OneDrive','Storage','universal'],
+  ['confluence','Confluence','Productivity','universal'],
+  ['figma','Figma','Design','universal'],
+  ['canva','Canva','Design','universal'],
+  ['miro','Miro','Design','universal'],
+  ['pipedrive','Pipedrive','CRM','universal'],
+  ['zoho_crm','Zoho CRM','CRM','universal'],
+  ['dynamics_365','Microsoft Dynamics 365','CRM','universal'],
+  ['intercom','Intercom','Support','universal'],
+  ['freshdesk','Freshdesk','Support','universal'],
+  ['servicenow','ServiceNow','IT operations','universal'],
+  ['mailchimp','Mailchimp','Marketing','universal'],
+  ['activecampaign','ActiveCampaign','Marketing','universal'],
+  ['brevo','Brevo','Marketing','universal'],
+  ['sendgrid','SendGrid','Email','universal'],
+  ['klaviyo','Klaviyo','Marketing','universal'],
+  ['customer_io','Customer.io','Marketing','universal'],
+  ['typeform','Typeform','Forms','universal'],
+  ['jotform','Jotform','Forms','universal'],
+  ['surveymonkey','SurveyMonkey','Forms','universal'],
+  ['facebook_pages','Facebook Pages','Social','universal'],
+  ['instagram_business','Instagram for Business','Social','universal'],
+  ['linkedin','LinkedIn','Social','universal'],
+  ['youtube','YouTube','Media','universal'],
+  ['wordpress','WordPress','Content','universal'],
+  ['paypal','PayPal','Commerce','universal'],
+  ['square','Square','Commerce','universal'],
+  ['woocommerce','WooCommerce','Commerce','universal'],
+  ['bigcommerce','BigCommerce','Commerce','universal'],
+  ['quickbooks','QuickBooks','Finance','universal'],
+  ['xero','Xero','Finance','universal'],
+  ['chargebee','Chargebee','Finance','universal'],
+  ['razorpay','Razorpay','Finance','universal'],
+  ['adyen','Adyen','Finance','universal'],
+  ['plaid','Plaid','Finance','universal'],
+  ['postgresql','PostgreSQL','Database','universal'],
+  ['mysql','MySQL','Database','universal'],
+  ['mongodb','MongoDB','Database','universal'],
+  ['snowflake','Snowflake','Data','universal'],
+  ['bigquery','Google BigQuery','Data','universal'],
+  ['datadog','Datadog','Observability','universal'],
+  ['sentry','Sentry','Observability','universal'],
+  ['gitlab','GitLab','Engineering','universal'],
+  ['bitbucket','Bitbucket','Engineering','universal'],
+  ['circleci','CircleCI','Engineering','universal'],
+  ['vercel','Vercel','Cloud','universal'],
+  ['netlify','Netlify','Cloud','universal'],
+  ['cloudflare','Cloudflare','Cloud','universal'],
+  ['aws','Amazon Web Services','Cloud','universal'],
+  ['azure','Microsoft Azure','Cloud','universal'],
+  ['google_cloud','Google Cloud','Cloud','universal'],
+  ['docker_hub','Docker Hub','Engineering','universal'],
+  ['pagerduty','PagerDuty','IT operations','universal'],
+  ['grafana','Grafana','Observability','universal'],
+  ['elasticsearch','Elasticsearch','Data','universal'],
+  ['openai','OpenAI','AI','universal'],
+  ['anthropic','Anthropic','AI','universal'],
+  ['google_gemini','Google Gemini','AI','universal'],
+  ['perplexity','Perplexity','AI','universal'],
+  ['pinecone','Pinecone','AI','universal'],
+  ['weaviate','Weaviate','AI','universal'],
+  ['qdrant','Qdrant','AI','universal'],
+  ['docusign','DocuSign','Documents','universal'],
+  ['adobe_sign','Adobe Acrobat Sign','Documents','universal'],
+  ['loom','Loom','Media','universal'],
+  ['gong','Gong','Sales','universal'],
+  ['apollo_io','Apollo.io','Sales','universal'],
+  ['segment','Twilio Segment','Data','universal'],
+]
 
-const FEATURED_APPS = [["salesforce","Salesforce","CRM"],["hubspot","HubSpot","CRM"],["slack","Slack","Communication"],["microsoft_teams","Microsoft Teams","Communication"],["gmail","Gmail","Email"],["microsoft_outlook","Microsoft Outlook","Email"],["google_sheets","Google Sheets","Productivity"],["google_drive","Google Drive","Storage"],["google_calendar","Google Calendar","Productivity"],["notion","Notion","Productivity"],["airtable","Airtable","Database"],["stripe","Stripe","Commerce"],["shopify","Shopify","Commerce"],["zendesk","Zendesk","Support"],["intercom","Intercom","Support"],["jira","Jira","Engineering"],["github","GitHub","Engineering"],["gitlab","GitLab","Engineering"],["linear","Linear","Engineering"],["asana","Asana","Project management"],["trello","Trello","Project management"],["monday","monday.com","Project management"],["dropbox","Dropbox","Storage"],["box","Box","Storage"],["twilio","Twilio","Communication"],["sendgrid","SendGrid","Email"],["mailchimp","Mailchimp","Marketing"],["activecampaign","ActiveCampaign","Marketing"],["facebook_pages","Facebook Pages","Social"],["instagram_business","Instagram for Business","Social"],["linkedin","LinkedIn","Social"],["youtube","YouTube","Media"],["zoom","Zoom","Communication"],["calendly","Calendly","Scheduling"],["quickbooks","QuickBooks","Finance"],["xero","Xero","Finance"],["snowflake","Snowflake","Data"],["postgresql","PostgreSQL","Database"],["mysql","MySQL","Database"],["mongodb","MongoDB","Database"],["aws","Amazon Web Services","Cloud"],["google_cloud","Google Cloud","Cloud"],["azure","Microsoft Azure","Cloud"],["openai","OpenAI","AI"],["anthropic","Anthropic","AI"],["google_gemini","Google Gemini","AI"],["perplexity","Perplexity","AI"],["discord","Discord","Communication"],["telegram_bot_api","Telegram","Communication"],["wordpress_org","WordPress","Content"],["webflow","Webflow","Content"],["typeform","Typeform","Forms"],["docusign","DocuSign","Documents"],["servicenow","ServiceNow","IT operations"],["freshdesk","Freshdesk","Support"],["pipedrive","Pipedrive","CRM"],["zoho_crm","Zoho CRM","CRM"]];
-
-const NATIVE = new Map([
-  ['slack',{ mode:'native', status:'Live', category:'Communication' }],
-  ['google_sheets',{ mode:'native', status:'Live with credential', category:'Productivity' }],
-  ['google_drive',{ mode:'native', status:'Live with credential', category:'Storage' }],
-  ['resend',{ mode:'native', status:'Live', category:'Email' }],
-  ['supabase',{ mode:'native', status:'Live', category:'Database' }],
-  ['github',{ mode:'native', status:'Live with credential', category:'Engineering' }],
-  ['discord',{ mode:'native', status:'Live with credential', category:'Communication' }],
-  ['notion',{ mode:'native', status:'Live with credential', category:'Productivity' }],
-  ['airtable',{ mode:'native', status:'Live with credential', category:'Database' }],
-  ['hubspot',{ mode:'native', status:'Live with credential', category:'CRM' }],
-  ['salesforce',{ mode:'native', status:'Live with credential', category:'CRM' }],
-  ['stripe',{ mode:'native', status:'Live with credential', category:'Commerce' }],
-  ['shopify',{ mode:'native', status:'Live with credential', category:'Commerce' }],
-  ['jira',{ mode:'native', status:'Live with credential', category:'Engineering' }],
-  ['linear',{ mode:'native', status:'Live with credential', category:'Engineering' }],
-  ['twilio',{ mode:'native', status:'Live with credential', category:'Communication' }],
-  ['zendesk',{ mode:'native', status:'Live with credential', category:'Support' }],
-]);
-
-function humanize(slug) {
-  return slug.split(/[_-]+/).filter(Boolean).map(part => {
-    const known = { api:'API', ai:'AI', aws:'AWS', crm:'CRM', sms:'SMS', rss:'RSS', pdf:'PDF', sql:'SQL', url:'URL' };
-    return known[part] || part.charAt(0).toUpperCase() + part.slice(1);
-  }).join(' ');
-}
-
-function inferredCategory(slug) {
-  const tests = [
-    ['AI',/(openai|anthropic|gemini|ai_|_ai|replicate|perplexity)/],
-    ['CRM',/(crm|sales|lead|customer)/],
-    ['Communication',/(slack|discord|chat|message|sms|telegram|twilio|teams)/],
-    ['Email',/(mail|email|sendgrid|resend)/],
-    ['Marketing',/(marketing|campaign|facebook|instagram|linkedin|social)/],
-    ['Commerce',/(shop|commerce|stripe|payment|invoice)/],
-    ['Data',/(database|data|sql|snowflake|airtable|analytics)/],
-    ['Engineering',/(github|gitlab|jira|developer|code|deploy)/],
-    ['Productivity',/(calendar|document|sheet|notion|task|project)/],
-    ['Storage',/(drive|dropbox|storage|box)/],
-  ];
-  return tests.find(([, pattern]) => pattern.test(slug))?.[0] || 'Business apps';
-}
-
-const featuredMap = new Map(FEATURED_APPS.map(([slug, name, category]) => [slug, { name, category }]));
-const allSlugs = [...new Set([...NATIVE.keys(), ...FEATURED_APPS.map(item => item[0]), ...REGISTRY_SLUGS])];
-
-export const INTEGRATION_CATALOG = Object.freeze(allSlugs.map((slug, index) => {
-  const native = NATIVE.get(slug);
-  const featured = featuredMap.get(slug);
-  return Object.freeze({
-    id:slug,
-    slug,
-    name:featured?.name || humanize(slug),
-    category:native?.category || featured?.category || inferredCategory(slug),
-    mode:native?.mode || 'bridge',
-    status:native?.status || 'External bridge',
-    featured:Boolean(featured),
-    sortOrder:featured ? index : 10000 + index,
-  });
-}).sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name)));
+export const INTEGRATION_CATALOG = Object.freeze(APPS.map(([slug, name, category, mode]) => Object.freeze({
+  id:slug,
+  slug,
+  name,
+  category,
+  mode,
+  status:mode === 'native' ? 'Native connector' : 'Universal connector',
+})))
 
 export const INTEGRATION_CATEGORIES = Object.freeze([
   'All', ...new Set(INTEGRATION_CATALOG.map(app => app.category).sort()),
-]);
+])
 
 export const INTEGRATION_COUNTS = Object.freeze({
   catalog:INTEGRATION_CATALOG.length,
   native:INTEGRATION_CATALOG.filter(app => app.mode === 'native').length,
-  oauthReady:INTEGRATION_CATALOG.filter(app => app.mode === 'oauth').length,
-  bridge:INTEGRATION_CATALOG.filter(app => app.mode === 'bridge').length,
-});
+  universal:INTEGRATION_CATALOG.filter(app => app.mode === 'universal').length,
+})

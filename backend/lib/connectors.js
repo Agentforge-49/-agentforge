@@ -212,6 +212,23 @@ function redact(value, secret) {
   return value;
 }
 
+export function credentialAuthHeaders(loadedCredential) {
+  if (!loadedCredential?.secret) return {}
+  const metadata = loadedCredential.credential?.metadata || {}
+  const mode = text(metadata.auth_mode || 'bearer').toLowerCase()
+  if (mode === 'basic') {
+    return { Authorization:`Basic ${Buffer.from(loadedCredential.secret, 'utf8').toString('base64')}` }
+  }
+  if (mode === 'header') {
+    const name = text(metadata.header_name)
+    if (!/^[A-Za-z][A-Za-z0-9-]{0,79}$/.test(name) || /^(authorization|cookie|host|content-length)$/i.test(name)) {
+      throw new Error('Custom API key header name is invalid')
+    }
+    return { [name]:loadedCredential.secret }
+  }
+  return { Authorization:`Bearer ${loadedCredential.secret}` }
+}
+
 async function executeHttp(parameters, credential) {
   const url = text(parameters.url);
   const method = text(parameters.method || 'GET').toUpperCase();
@@ -223,7 +240,7 @@ async function executeHttp(parameters, credential) {
     if (/^(authorization|cookie|host|content-length)$/i.test(key)) continue;
     if (typeof value === 'string' && value.length <= 2000) headers[key] = value;
   }
-  if (credential) headers.Authorization = `Bearer ${credential.secret}`;
+  Object.assign(headers, credentialAuthHeaders(credential));
   let body;
   if (method !== 'GET' && parameters.body !== undefined) {
     body = typeof parameters.body === 'string'

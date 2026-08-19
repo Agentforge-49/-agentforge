@@ -49,9 +49,14 @@ function requestedApp() {
   return /^[a-z0-9][a-z0-9_-]{0,99}$/i.test(value) ? value.toLowerCase() : ''
 }
 
+function requestedMode() {
+  return new URLSearchParams(window.location.search).get('mode') === 'universal' ? 'universal' : 'native'
+}
+
 export default function Credentials() {
   const initialNotice = oauthNotice()
   const initialApp = requestedApp()
+  const initialMode = requestedMode()
   const initialProvider = APP_CREDENTIAL_PROVIDERS[initialApp] || 'generic'
   const [credentials, setCredentials] = useState([])
   const [logs, setLogs] = useState([])
@@ -62,6 +67,8 @@ export default function Credentials() {
     secret:'',
     project_url:'',
     app_slug:initialApp,
+    auth_mode:'bearer',
+    header_name:'X-API-Key',
   })
   const [error, setError] = useState(initialNotice.error)
   const [message, setMessage] = useState(initialNotice.message)
@@ -151,11 +158,15 @@ export default function Credentials() {
         metadata:provider === 'supabase'
           ? { project_url:String(fields.get('project_url') || '') }
           : provider === 'generic' && appSlug
-            ? { app_slug:appSlug }
+            ? {
+                app_slug:appSlug,
+                auth_mode:String(fields.get('auth_mode') || 'bearer'),
+                header_name:String(fields.get('header_name') || '').trim(),
+              }
             : {},
       })
       setCredentials(items => [created, ...items])
-      setForm(current => ({ ...current, name:'', secret:'', project_url:'', app_slug:'' }))
+      setForm(current => ({ ...current, name:'', secret:'', project_url:'', app_slug:'', auth_mode:'bearer', header_name:'X-API-Key' }))
       setMessage('Credential encrypted and stored. The plaintext was discarded.')
     } catch (err) {
       setError(err.message)
@@ -328,7 +339,7 @@ export default function Credentials() {
       <form id="store-credential" onSubmit={create} style={panel}>
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:14 }}>
           <ShieldCheck size={19} color="#A78BFA" />
-          <h2 style={{ fontSize:15 }}>Store a credential</h2>
+          <div><h2 style={{ fontSize:15 }}>{initialApp ? `Connect ${initialApp.replace(/[_-]+/g, ' ')}` : 'Store a credential'}</h2>{initialApp && <p style={{ color:'#6B7280', fontSize:10, marginTop:3 }}>{initialMode === 'universal' ? 'Universal API connection' : 'Native connector credential'}</p>}</div>
         </div>
         <div style={grid}>
           <div>
@@ -359,8 +370,20 @@ export default function Credentials() {
             <input name="app_slug" value={form.app_slug} onChange={e => setForm(current => ({ ...current, app_slug:e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 100) }))}
               placeholder="hubspot" style={input} />
           </div>}
+          {form.provider === 'generic' && <div>
+            <label style={label}>API authentication</label>
+            <select name="auth_mode" value={form.auth_mode} onChange={e => setForm(current => ({ ...current, auth_mode:e.target.value }))} style={input}>
+              <option value="bearer">Bearer token</option>
+              <option value="header">API key header</option>
+              <option value="basic">Basic authentication</option>
+            </select>
+          </div>}
+          {form.provider === 'generic' && form.auth_mode === 'header' && <div>
+            <label style={label}>Header name</label>
+            <input required name="header_name" value={form.header_name} onChange={e => setForm(current => ({ ...current, header_name:e.target.value.replace(/[^A-Za-z0-9-]/g, '').slice(0, 80) }))} placeholder="X-API-Key" style={input} />
+          </div>}
         </div>
-        <p style={{ color:'#6B7280', fontSize:11, marginTop:10 }}>Secrets use authenticated AES-256-GCM encryption. Plaintext is never returned by the API.</p>
+        <p style={{ color:'#6B7280', fontSize:11, marginTop:10 }}>{form.auth_mode === 'basic' && form.provider === 'generic' ? 'Enter the secret as username:password. ' : ''}Secrets use authenticated AES-256-GCM encryption. Plaintext is never returned by the API.</p>
         <button style={primaryButton}><KeyRound size={14} /> Encrypt and store</button>
       </form>
 

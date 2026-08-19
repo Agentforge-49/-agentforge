@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  credentialAuthHeaders,
   CONNECTOR_DEFINITIONS,
   assertSafeConnectorUrl,
   buildAppConnectorRequest,
@@ -23,6 +24,19 @@ test('connector configuration requires supported actions and credentials', () =>
   assert.match(invalid.errors.join(' '), /requires a credential/);
   const email = CONNECTOR_DEFINITIONS.find(item => item.action === 'email.send');
   assert.deepEqual(email.providers, ['resend']);
+});
+
+test('universal connector supports common API authentication schemes', () => {
+  const bearer = credentialAuthHeaders({ secret:'token-value', credential:{ metadata:{ auth_mode:'bearer' } } });
+  assert.deepEqual(bearer, { Authorization:'Bearer token-value' });
+  const header = credentialAuthHeaders({ secret:'api-key-value', credential:{ metadata:{ auth_mode:'header', header_name:'X-API-Key' } } });
+  assert.deepEqual(header, { 'X-API-Key':'api-key-value' });
+  const basic = credentialAuthHeaders({ secret:'user:password', credential:{ metadata:{ auth_mode:'basic' } } });
+  assert.equal(basic.Authorization, `Basic ${Buffer.from('user:password').toString('base64')}`);
+  assert.throws(
+    () => credentialAuthHeaders({ secret:'value', credential:{ metadata:{ auth_mode:'header', header_name:'Authorization' } } }),
+    /header name is invalid/,
+  );
 });
 
 test('launch connector catalog exposes typed actions for major business apps', () => {

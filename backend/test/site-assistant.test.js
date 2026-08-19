@@ -11,7 +11,8 @@ test('account guide routes common requests to safe workspace pages', () => {
 
 test('account guide prompt preserves honest integration boundaries', () => {
   const prompt = siteAssistantPrompt({ connections:{ providers:['slack'] } });
-  assert.match(prompt, /Catalog presence never means native support/);
+  assert.match(prompt, /Exactly 100 curated app connections/);
+  assert.match(prompt, /Do not describe universal connections as typed native actions/);
   assert.match(prompt, /Do not claim you performed an action/);
   assert(!prompt.includes('secret-value'));
 });

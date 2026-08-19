@@ -83,7 +83,7 @@ export default function Landing() {
           <div className="landing-container">
             <p>Works with the tools your team already uses</p>
             <div className="lf-apps__row">{LANDING_FEATURED_APPS.map(([slug, name]) => <div key={slug}><AppLogo slug={slug} name={name} size={38} /><span>{name}</span></div>)}</div>
-            <button type="button" onClick={() => goTo('/integrations')}>See 17 native connectors and 1,000+ API-compatible apps <ArrowRight size={14} /></button>
+            <button type="button" onClick={() => goTo('/integrations')}>See all 100 working app connections <ArrowRight size={14} /></button>
           </div>
         </section>
 

@@ -57,7 +57,7 @@ export default function Integrations() {
           <div className="marketing-heading">
             <span className="section-kicker">Expanded app ecosystem</span>
             <h2>Find the app first. Then choose the right connection path.</h2>
-            <p>Search a catalog sourced from the public Pipedream component registry. Native, OAuth-ready, and external-bridge apps are labeled separately.</p>
+            <p>Choose from 100 curated apps with real connection paths. Native actions are typed; every other app uses the authenticated universal API or signed webhooks.</p>
           </div>
           <AppDirectory />
         </div>

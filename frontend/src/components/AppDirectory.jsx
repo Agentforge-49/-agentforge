@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  ArrowRight, CheckCircle2, ExternalLink, KeyRound, Search, ShieldCheck,
-  Sparkles, Unplug, Webhook,
+  ArrowRight, CheckCircle2, KeyRound, Search, ShieldCheck,
+  Sparkles, Unplug,
 } from 'lucide-react'
 
-import { createIntegrationConnectLink, getIntegrationBridgeStatus } from '../lib/api'
 import {
   INTEGRATION_CATALOG,
   INTEGRATION_CATEGORIES,
   INTEGRATION_COUNTS,
 } from '../lib/integration-catalog.js'
+import { appConnectionPath } from '../lib/app-connections.js'
 import { useNavigate } from '../lib/router.jsx'
 import AppLogo from './AppLogo.jsx'
 import './AppDirectory.css'
@@ -22,16 +22,6 @@ export default function AppDirectory({ workspace = false }) {
   const [category, setCategory] = useState('All')
   const [mode, setMode] = useState('all')
   const [visible, setVisible] = useState(PAGE_SIZE)
-  const [bridge, setBridge] = useState({ configured:false, loading:workspace })
-  const [busy, setBusy] = useState('')
-  const [notice, setNotice] = useState('')
-
-  useEffect(() => {
-    if (!workspace) return
-    getIntegrationBridgeStatus()
-      .then(status => setBridge({ ...status, loading:false }))
-      .catch(() => setBridge({ configured:false, loading:false }))
-  }, [workspace])
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -42,46 +32,26 @@ export default function AppDirectory({ workspace = false }) {
     })
   }, [query, category, mode])
 
-  const connect = async app => {
+  const connect = app => {
     if (!workspace) {
       navigate('/signup')
       return
     }
-    if (app.mode !== 'bridge') {
-      navigate(`/credentials?app=${encodeURIComponent(app.slug)}&mode=${app.mode}`)
-      return
-    }
-    if (!bridge.configured) {
-      navigate(`/credentials?app=custom_api&target=${encodeURIComponent(app.slug)}`)
-      return
-    }
-    setBusy(app.slug)
-    setNotice('')
-    try {
-      const result = await createIntegrationConnectLink(app.slug)
-      window.location.assign(result.connect_url)
-    } catch (error) {
-      setNotice(error.message)
-      setBusy('')
-    }
+    navigate(appConnectionPath(app))
   }
 
   const modeLabel = app => {
     if (app.mode === 'native') return 'Native action'
-    if (app.mode === 'oauth') return 'OAuth ready'
-    return bridge.configured ? 'Managed connection' : 'Catalog only'
+    return 'Universal API'
   }
 
   return (
     <section className={`app-directory${workspace ? ' app-directory--workspace' : ''}`}>
       <div className="app-directory-summary">
-        <div><strong>{INTEGRATION_COUNTS.catalog.toLocaleString()}</strong><span>apps you can discover</span></div>
+        <div><strong>{INTEGRATION_COUNTS.catalog}</strong><span>curated working apps</span></div>
         <div><strong>{INTEGRATION_COUNTS.native}</strong><span>native connectors now</span></div>
-        <div><strong>{INTEGRATION_COUNTS.bridge.toLocaleString()}</strong><span>via API or managed bridge</span></div>
-        <div className={bridge.configured ? 'is-ready' : ''}>
-          <strong>{workspace && bridge.configured ? 'Ready' : 'Honest'}</strong>
-          <span>{workspace && bridge.configured ? 'managed bridge configured' : 'readiness labels'}</span>
-        </div>
+        <div><strong>{INTEGRATION_COUNTS.universal}</strong><span>universal API connectors</span></div>
+        <div className="is-ready"><strong>100%</strong><span>real setup paths</span></div>
       </div>
 
       <div className="app-directory-toolbar">
@@ -93,8 +63,8 @@ export default function AppDirectory({ workspace = false }) {
         </div>
         <div className="app-directory-modes" aria-label="Connection types">
           {[
-            ['all','All apps'],['native','Native now'],['oauth','OAuth ready'],['bridge','API / bridge'],
-          ].filter(([value]) => value !== 'oauth' || INTEGRATION_COUNTS.oauthReady > 0).map(([value, label]) => (
+            ['all','All apps'],['native','Native actions'],['universal','Universal API'],
+          ].map(([value, label]) => (
             <button type="button" className={mode === value ? 'active' : ''} key={value} onClick={() => { setMode(value); setVisible(PAGE_SIZE) }}>{label}</button>
           ))}
         </div>
@@ -106,15 +76,13 @@ export default function AppDirectory({ workspace = false }) {
         ))}
       </div>
 
-      {notice && <div className="app-directory-notice"><ShieldCheck size={16} /><span>{notice}</span><button type="button" onClick={() => navigate('/credentials?app=custom_api')}>Use universal API</button></div>}
-
       <div className="app-directory-grid">
         {filtered.slice(0, visible).map(app => (
           <article className="app-directory-card" key={app.slug}>
             <div className="app-directory-card-top">
               <AppLogo slug={app.slug} name={app.name} />
               <span className={`app-directory-status app-directory-status--${app.mode}`}>
-                {app.mode === 'native' ? <CheckCircle2 size={11} /> : app.mode === 'oauth' ? <KeyRound size={11} /> : <Webhook size={11} />}
+                {app.mode === 'native' ? <CheckCircle2 size={11} /> : <KeyRound size={11} />}
                 {modeLabel(app)}
               </span>
             </div>
@@ -122,18 +90,11 @@ export default function AppDirectory({ workspace = false }) {
             <h3>{app.name}</h3>
             <p>{app.mode === 'native'
               ? 'Use a typed AgentForge action with encrypted credentials and observable execution.'
-              : app.mode === 'oauth'
-                ? 'The consent foundation is ready; provider permissions determine available operations.'
-                : 'Listed for compatibility. Use its API or a signed webhook now; one-click OAuth requires the optional managed bridge.'}</p>
+              : 'Use this app through AgentForge’s authenticated HTTP action or start workflows from its signed webhooks.'}</p>
             <div className="app-directory-card-actions">
-              <button type="button" onClick={() => connect(app)} disabled={busy === app.slug}>
-                {busy === app.slug ? 'Opening...' : !workspace ? 'See connection options' : app.mode === 'native' ? 'Set up connector' : bridge.configured ? 'Connect with OAuth' : 'Use API or webhook'} <ArrowRight size={13} />
+              <button type="button" onClick={() => connect(app)}>
+                {!workspace ? 'See connection options' : app.mode === 'native' ? 'Set up connector' : 'Connect with API'} <ArrowRight size={13} />
               </button>
-              {workspace && app.mode === 'bridge' && (
-                <button className="secondary" type="button" onClick={() => navigate(`/credentials?app=${encodeURIComponent(app.slug)}`)} title="Store an API key instead">
-                  <KeyRound size={13} />
-                </button>
-              )}
             </div>
           </article>
         ))}
@@ -144,8 +105,7 @@ export default function AppDirectory({ workspace = false }) {
 
       <div className="app-directory-contract">
         <ShieldCheck size={18} />
-        <div><strong>Connection labels mean something.</strong><span>Native is built and executed by AgentForge. OAuth ready requires provider configuration. External bridge requires a Pipedream project. Universal HTTP and signed webhooks work independently.</span></div>
-        <a href="https://github.com/PipedreamHQ/pipedream" target="_blank" rel="noreferrer">Catalog source <ExternalLink size={13} /></a>
+        <div><strong>Every listed app has a real execution path.</strong><span>Native apps have typed AgentForge actions. Universal apps use authenticated HTTP requests and signed webhook triggers with the same encrypted vault, approvals, and run history.</span></div>
       </div>
     </section>
   )

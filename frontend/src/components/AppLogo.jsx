@@ -8,11 +8,22 @@ const BRAND_STYLES = {
   twilio:['#f22f46', 'T'], zendesk:['#03363d', 'Z'], gmail:['#ea4335', 'M'],
 }
 
+const SIMPLE_ICON_SLUGS = {
+  google_sheets:'googlesheets', google_drive:'googledrive', microsoft_teams:'microsoftteams',
+  microsoft_outlook:'microsoftoutlook', google_calendar:'googlecalendar', whatsapp_business:'whatsapp',
+  monday:'mondaydotcom', customer_io:'customerio', facebook_pages:'facebook',
+  instagram_business:'instagram', quickbooks:'intuit', google_cloud:'googlecloud',
+  bigquery:'googlebigquery', aws:'amazonwebservices', azure:'microsoftazure', docker_hub:'docker',
+  google_gemini:'googlegemini', adobe_sign:'adobeacrobatreader', apollo_io:'apollo',
+  zoho_crm:'zoho', dynamics_365:'microsoftdynamics365', telegram:'telegram',
+}
+
 function fallbackLabel(name) {
   return String(name || 'App').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()
 }
 
 export default function AppLogo({ slug, name, size = 42, className = '' }) {
+  const [imageFailed, setImageFailed] = useState(false)
   const [color, label] = BRAND_STYLES[slug] || ['#246b4b', fallbackLabel(name)]
   if (slug === 'slack') {
     return (
@@ -28,7 +39,9 @@ export default function AppLogo({ slug, name, size = 42, className = '' }) {
   }
   return (
     <span className={`app-logo ${className}`} style={{ width:size, height:size, '--app-color':color }} role="img" aria-label={`${name} logo`}>
-      <span>{label}</span>
+      {!imageFailed && <img src={`https://cdn.simpleicons.org/${SIMPLE_ICON_SLUGS[slug] || slug.replaceAll('_', '')}`} alt="" loading="lazy" onError={() => setImageFailed(true)} />}
+      {imageFailed && <span>{label}</span>}
     </span>
   )
 }
+import { useState } from 'react'
