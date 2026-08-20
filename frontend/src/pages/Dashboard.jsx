@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
 
   const load = useCallback(async (fresh = false) => {
+    setLoading(true)
     try { setError(''); setData(await getWorkspaceBootstrap({ fresh })) }
     catch (err) { setError(err.message) }
     finally { setLoading(false) }
@@ -39,7 +40,7 @@ export default function Dashboard() {
   }, [load])
 
   const readiness = useMemo(() => data ? Object.values(data.readiness).filter(Boolean).length : 0, [data])
-  if (loading) return <div className="workspace-loading"><div className="workspace-loading-card"><span className="workspace-spinner" /> Preparing your command center…</div></div>
+  if (loading || (!data && !error)) return <div className="workspace-loading"><div className="workspace-loading-card"><span className="workspace-spinner" /> Preparing your command center…</div></div>
   if (error) return <div className="dashboard-error"><div className="dashboard-error-card"><strong>Command Center is unavailable</strong><p>{error}</p><button onClick={() => load(true)}>Try again</button></div></div>
 
   const metrics = [
