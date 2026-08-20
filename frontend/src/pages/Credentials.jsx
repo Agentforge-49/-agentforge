@@ -354,45 +354,45 @@ export default function Credentials() {
         </div>
         <div style={grid}>
           <div>
-            <label style={label}>Name</label>
-            <input required name="name" value={form.name} onChange={e => setForm(current => ({ ...current, name:e.target.value }))}
+            <label htmlFor="credential-name" style={label}>Name</label>
+            <input id="credential-name" required name="name" value={form.name} onChange={e => setForm(current => ({ ...current, name:e.target.value }))}
               placeholder="Production OpenAI key" style={input} />
           </div>
           {!focusedConnection && <div>
-            <label style={label}>Provider</label>
-            <select name="provider" value={form.provider} onChange={e => setForm(current => ({ ...current, provider:e.target.value }))} style={input}>
+            <label htmlFor="credential-provider" style={label}>Provider</label>
+            <select id="credential-provider" name="provider" value={form.provider} onChange={e => setForm(current => ({ ...current, provider:e.target.value }))} style={input}>
               {PROVIDERS.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
             </select>
           </div>}
           {focusedConnection && <input type="hidden" name="provider" value="generic" />}
           <div>
-            <label style={label}>Secret</label>
-            <input required name="secret" type="password" minLength="8" value={form.secret}
+            <label htmlFor="credential-secret" style={label}>Secret</label>
+            <input id="credential-secret" required name="secret" type="password" minLength="8" value={form.secret}
               onChange={e => setForm(current => ({ ...current, secret:e.target.value }))}
               autoComplete="new-password" placeholder="Will be encrypted immediately" style={input} />
           </div>
           {form.provider === 'supabase' && <div>
-            <label style={label}>Project URL</label>
-            <input required name="project_url" type="url" value={form.project_url}
+            <label htmlFor="credential-project-url" style={label}>Project URL</label>
+            <input id="credential-project-url" required name="project_url" type="url" value={form.project_url}
               onChange={e => setForm(current => ({ ...current, project_url:e.target.value }))}
               placeholder="https://project.supabase.co" style={input} />
           </div>}
           {form.provider === 'generic' && <div>
-            <label style={label}>App identifier</label>
-            <input name="app_slug" value={form.app_slug} onChange={e => setForm(current => ({ ...current, app_slug:e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 100) }))}
+            <label htmlFor="credential-app-slug" style={label}>App identifier</label>
+            <input id="credential-app-slug" name="app_slug" value={form.app_slug} onChange={e => setForm(current => ({ ...current, app_slug:e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 100) }))}
               placeholder="hubspot" style={input} />
           </div>}
           {form.provider === 'generic' && <div>
-            <label style={label}>API authentication</label>
-            <select name="auth_mode" value={form.auth_mode} onChange={e => setForm(current => ({ ...current, auth_mode:e.target.value }))} style={input}>
+            <label htmlFor="credential-auth-mode" style={label}>API authentication</label>
+            <select id="credential-auth-mode" name="auth_mode" value={form.auth_mode} onChange={e => setForm(current => ({ ...current, auth_mode:e.target.value }))} style={input}>
               <option value="bearer">Bearer token</option>
               <option value="header">API key header</option>
               <option value="basic">Basic authentication</option>
             </select>
           </div>}
           {form.provider === 'generic' && form.auth_mode === 'header' && <div>
-            <label style={label}>Header name</label>
-            <input required name="header_name" value={form.header_name} onChange={e => setForm(current => ({ ...current, header_name:e.target.value.replace(/[^A-Za-z0-9-]/g, '').slice(0, 80) }))} placeholder="X-API-Key" style={input} />
+            <label htmlFor="credential-header-name" style={label}>Header name</label>
+            <input id="credential-header-name" required name="header_name" value={form.header_name} onChange={e => setForm(current => ({ ...current, header_name:e.target.value.replace(/[^A-Za-z0-9-]/g, '').slice(0, 80) }))} placeholder="X-API-Key" style={input} />
           </div>}
         </div>
         <p style={{ color:'#6B7280', fontSize:11, marginTop:10 }}>{form.auth_mode === 'basic' && form.provider === 'generic' ? 'Enter the secret as username:password. ' : ''}Secrets use authenticated AES-256-GCM encryption. Plaintext is never returned by the API.</p>

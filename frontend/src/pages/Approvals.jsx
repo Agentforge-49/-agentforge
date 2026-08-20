@@ -71,9 +71,9 @@ export default function Approvals() {
       {error && <div style={errorBox}>{error}</div>}
 
       {!approvals.length ? <div style={emptyState}>
-        <ShieldCheck size={42} color="#4B5563" />
+        <ShieldCheck size={42} color="#28704d" />
         <h2 style={{ fontSize:17, marginTop:12 }}>No {filter || 'recorded'} decisions</h2>
-        <p style={{ color:'#8B8FA3', fontSize:12, marginTop:6 }}>Approval-gated workflow actions and human exceptions will appear here.</p>
+        <p style={{ color:'#5f7469', fontSize:12, marginTop:6 }}>Approval-gated workflow actions and human exceptions will appear here.</p>
       </div> : <div style={{ display:'grid', gap:14 }}>
         {approvals.map(approval => {
           const isPending = approval.status === 'pending'
@@ -127,13 +127,13 @@ export default function Approvals() {
   )
 }
 
-const panel = { background:'#171A23', border:'1px solid #292D3D', borderRadius:14, padding:18 }
-const inputStyle = { background:'#101219', border:'1px solid #303447', borderRadius:8, color:'#E5E7EB', padding:'9px 10px', fontSize:12 }
-const labelStyle = { display:'block', color:'#8B8FA3', fontSize:11, marginTop:14, marginBottom:6 }
-const valueBox = { background:'#101219', border:'1px solid #292D3D', borderRadius:9, color:'#D1D5DB', padding:12, margin:0, whiteSpace:'pre-wrap', maxHeight:240, overflow:'auto', fontSize:12 }
+const panel = { background:'#FFFFFF', border:'1px solid #DDE9E2', borderRadius:14, padding:18, color:'#163126' }
+const inputStyle = { background:'#F7FBF8', border:'1px solid #C9DDD1', borderRadius:8, color:'#163126', padding:'9px 10px', fontSize:12 }
+const labelStyle = { display:'block', color:'#5F746A', fontSize:11, marginTop:14, marginBottom:6 }
+const valueBox = { background:'#F7FBF8', border:'1px solid #DDE9E2', borderRadius:9, color:'#29483A', padding:12, margin:0, whiteSpace:'pre-wrap', maxHeight:240, overflow:'auto', fontSize:12 }
 const baseButton = { display:'inline-flex', alignItems:'center', gap:6, borderRadius:8, padding:'8px 11px', cursor:'pointer', fontSize:11 }
-const approveButton = { ...baseButton, background:'#065F46', border:'1px solid #059669', color:'#A7F3D0' }
-const rejectButton = { ...baseButton, background:'#3F1717', border:'1px solid #7F1D1D', color:'#FCA5A5' }
-const secondaryButton = { ...baseButton, background:'#202431', border:'1px solid #34394D', color:'#C7CAD4' }
-const errorBox = { background:'#2D1515', border:'1px solid #EF4444', borderRadius:9, padding:11, color:'#FCA5A5', fontSize:12, marginBottom:14 }
-const emptyState = { background:'#171A23', border:'1px dashed #303447', borderRadius:14, padding:54, textAlign:'center' }
+const approveButton = { ...baseButton, background:'#067647', border:'1px solid #067647', color:'#FFFFFF' }
+const rejectButton = { ...baseButton, background:'#FFF1F2', border:'1px solid #E7A4AE', color:'#A4142E' }
+const secondaryButton = { ...baseButton, background:'#EEF6F1', border:'1px solid #C9DDD1', color:'#214D39' }
+const errorBox = { background:'#FFF1F2', border:'1px solid #E7A4AE', borderRadius:9, padding:11, color:'#A4142E', fontSize:12, marginBottom:14 }
+const emptyState = { background:'#FFFFFF', border:'1px dashed #C9DDD1', borderRadius:14, padding:54, textAlign:'center', color:'#163126' }

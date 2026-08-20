@@ -1,15 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from './lib/router.jsx'
 import { lazy, Suspense, useState, useEffect } from 'react'
-import { supabase } from './lib/supabase'
-import MainLayout from './layouts/MainLayout'
 import WorkspaceErrorBoundary from './components/WorkspaceErrorBoundary'
-import SiteAssistant from './components/SiteAssistant'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
 import Landing from './pages/Landing'
 import Pricing from './pages/Pricing'
 import Integrations from './pages/Integrations'
 import TemplatesShowcase from './pages/TemplatesShowcase'
+
+const MainLayout = lazy(() => import('./layouts/MainLayout'))
+const SiteAssistant = lazy(() => import('./components/SiteAssistant'))
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Studio = lazy(() => import('./pages/Studio'))
@@ -42,6 +42,7 @@ const AppsHub = lazy(() => import('./pages/AppsHub'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Copilot = lazy(() => import('./pages/Copilot'))
 const WorkspaceTools = lazy(() => import('./pages/WorkspaceTools'))
+const PUBLIC_ROUTES = new Set(['/', '/pricing', '/integrations', '/templates', '/login', '/signup'])
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -51,19 +52,42 @@ function ProtectedRoute({ children, user }) {
 export default function App() {
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const [assistantReady, setAssistantReady] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => setUser(session?.user ?? null))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => subscription.unsubscribe()
+    let cancelled = false
+    let subscription
+    const initializeAuth = async () => {
+      try {
+        const { supabase } = await import('./lib/supabase')
+        if (cancelled) return
+        const { data:{ session } } = await supabase.auth.getSession()
+        if (cancelled) return
+        setUser(session?.user ?? null)
+        ;({ data:{ subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          setUser(nextSession?.user ?? null)
+        }))
+      } catch {
+        if (!cancelled) setUser(null)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    const isMarketingPage = ['/', '/pricing', '/integrations', '/templates'].includes(window.location.pathname)
+    const timer = window.setTimeout(initializeAuth, isMarketingPage ? 1800 : 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+      subscription?.unsubscribe()
+    }
   }, [])
 
-  if (loading) return (
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAssistantReady(true), 2200)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (loading && !PUBLIC_ROUTES.has(window.location.pathname)) return (
     <div className="workspace-loading">
       <div className="workspace-loading-card"><span className="workspace-spinner" /> Loading AgentForge…</div>
     </div>
@@ -71,17 +95,13 @@ export default function App() {
 
   const protect = (Component) => (
     <ProtectedRoute user={user}>
-      <MainLayout user={user}>
-        <WorkspaceErrorBoundary>
-          <Suspense fallback={(
-            <div className="workspace-loading">
-              <div className="workspace-loading-card"><span className="workspace-spinner" /> Loading workspace…</div>
-            </div>
-          )}>
+      <Suspense fallback={<div className="workspace-loading"><div className="workspace-loading-card"><span className="workspace-spinner" /> Loading workspace…</div></div>}>
+        <MainLayout user={user}>
+          <WorkspaceErrorBoundary>
             <Component />
-          </Suspense>
-        </WorkspaceErrorBoundary>
-      </MainLayout>
+          </WorkspaceErrorBoundary>
+        </MainLayout>
+      </Suspense>
     </ProtectedRoute>
   )
 
@@ -92,8 +112,8 @@ export default function App() {
         <Route path="/pricing"           element={<Pricing />} />
         <Route path="/integrations"      element={<Integrations />} />
         <Route path="/templates"         element={<TemplatesShowcase />} />
-        <Route path="/login"             element={<Login    setUser={setUser} />} />
-        <Route path="/signup"            element={<Signup   setUser={setUser} />} />
+        <Route path="/login"             element={<Suspense fallback={null}><Login setUser={setUser} /></Suspense>} />
+        <Route path="/signup"            element={<Suspense fallback={null}><Signup setUser={setUser} /></Suspense>} />
         <Route path="/dashboard"         element={protect(Dashboard)} />
         <Route path="/studio"            element={protect(Studio)} />
         <Route path="/build"             element={<Navigate to="/studio" replace />} />
@@ -131,7 +151,7 @@ export default function App() {
         <Route path="/settings"          element={protect(Settings)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
-      <SiteAssistant user={user} />
+      {assistantReady && <Suspense fallback={null}><SiteAssistant user={user} /></Suspense>}
     </BrowserRouter>
   )
 }

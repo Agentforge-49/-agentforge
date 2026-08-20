@@ -24,9 +24,15 @@ export default function WorkflowCanvas({ nodes, edges, selectedId, onSelect, onM
     <div className="workflow-canvas-viewport" onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerLeave={pointerUp} onPointerDown={event => { if(event.target === event.currentTarget) setPanning({ x:event.clientX,y:event.clientY,origin:pan }) }}>
       <div className="workflow-canvas-world" style={{ transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})` }}>
         <svg width="1200" height="560" aria-hidden="true"><defs><marker id="workflow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>{edges.map(edge => { const source=nodeMap.get(edge.source),target=nodeMap.get(edge.target); if(!source||!target)return null; const x1=source.position.x+WIDTH,y1=source.position.y+HEIGHT/2,x2=target.position.x,y2=target.position.y+HEIGHT/2,bend=Math.max(40,Math.abs(x2-x1)/2); return <path key={edge.id} className={`workflow-edge workflow-edge-${edge.mode||'always'}`} d={`M${x1},${y1} C${x1+bend},${y1} ${x2-bend},${y2} ${x2},${y2}`} markerEnd="url(#workflow-arrow)"/> })}</svg>
-        {nodes.map(node => { const [Icon,color]=META[node.type]||META.transform; return <button key={node.id} className={`workflow-canvas-node${selectedId===node.id?' selected':''}`} style={{ left:node.position.x,top:node.position.y,'--node-color':color }} onClick={() => onSelect(node.id)} onPointerDown={event => { event.stopPropagation(); dragRef.current={ id:node.id,startX:event.clientX,startY:event.clientY,origin:node.position } }} aria-pressed={selectedId===node.id}><span><Icon size={16}/></span><span><strong>{node.label}</strong><small>{node.type}</small></span><i/></button> })}
+        {nodes.map(node => { const [Icon,color]=META[node.type]||META.transform; return <button key={node.id} className={`workflow-canvas-node${selectedId===node.id?' selected':''}`} style={{ left:node.position.x,top:node.position.y,'--node-color':color }} onClick={() => onSelect(node.id)} onKeyDown={event => {
+          const movement = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[event.key]
+          if (!movement) return
+          event.preventDefault()
+          const distance = event.shiftKey ? 40 : 12
+          onMove(node.id, { x:Math.max(20, node.position.x + movement[0] * distance), y:Math.max(20, node.position.y + movement[1] * distance) })
+        }} onPointerDown={event => { event.stopPropagation(); dragRef.current={ id:node.id,startX:event.clientX,startY:event.clientY,origin:node.position } }} aria-label={`${node.label}, ${node.type} node`} aria-pressed={selectedId===node.id}><span><Icon size={16}/></span><span><strong>{node.label}</strong><small>{node.type}</small></span><i/></button> })}
       </div>
       <div className="workflow-minimap" aria-hidden="true">{nodes.map(node => <i key={node.id} style={{ left:`${Math.min(92,node.position.x/12)}%`,top:`${Math.min(82,node.position.y/5.6)}%`,background:(META[node.type]||META.transform)[1] }}/>)}</div>
-    </div><div className="workflow-canvas-help">Drag nodes to organize · drag empty space to pan · use controls to zoom</div>
+    </div><div className="workflow-canvas-help">Drag nodes to organize · use arrow keys to move a focused node · drag empty space to pan · use controls to zoom</div>
   </div>
 }

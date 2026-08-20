@@ -18,6 +18,11 @@ import {
 } from 'lucide-react'
 import { useNavigate, useParams } from '../lib/router.jsx'
 import WorkflowCanvas from '../components/WorkflowCanvas.jsx'
+import {
+  graphSemanticsChanged,
+  linearGraphFromNodes,
+  workflowGraphForBuilder,
+} from '../lib/workflow-compat.js'
 
 import {
   activateWorkflow,
@@ -86,33 +91,7 @@ function makeNode(type) {
     approval: { instructions:'Review this value before the workflow continues.', timeout_minutes:60 },
     output: {},
   }
-  return { id, type, label:NODE_META[type].label, config:configs[type], position:{ x:0, y:0 } }
-}
-
-function graphFromNodes(nodes) {
-  const positioned = nodes.map((node, index) => ({
-    ...node,
-    position: Number.isFinite(node.position?.x) && Number.isFinite(node.position?.y)
-      && (node.position.x !== 0 || node.position.y !== 0)
-      ? node.position : { x:80 + index * 230, y: node.type === 'condition' ? 150 : 90 },
-  }))
-  const edges = []
-  positioned.forEach((node, index) => {
-    if (index === positioned.length - 1) return
-    if (node.type === 'condition') {
-      const later = positioned.slice(index + 1)
-      const fallback = later[0]?.id
-      const trueTarget = later.some(item => item.id === node.config.true_target)
-        ? node.config.true_target : fallback
-      const falseTarget = later.some(item => item.id === node.config.false_target)
-        ? node.config.false_target : fallback
-      edges.push({ id:`${node.id}_true`, source:node.id, target:trueTarget, source_handle:'true', target_handle:'default', mode:'condition_true' })
-      edges.push({ id:`${node.id}_false`, source:node.id, target:falseTarget, source_handle:'false', target_handle:'default', mode:'condition_false' })
-    } else {
-      edges.push({ id:`${node.id}_${positioned[index + 1].id}`, source:node.id, target:positioned[index + 1].id, source_handle:'default', target_handle:'default', mode:'always' })
-    }
-  })
-  return { nodes:positioned, edges }
+  return { id, type, label:NODE_META[type].label, config:configs[type] }
 }
 
 function requestedCopilotPrompt() {
@@ -162,7 +141,9 @@ export default function WorkflowBuilder() {
   const editing = Boolean(id)
   const [name, setName] = useState('Untitled workflow')
   const [description, setDescription] = useState('')
-  const [nodes, setNodes] = useState([makeNode('input'), makeNode('output')])
+  const [initialGraph] = useState(() => linearGraphFromNodes([makeNode('input'), makeNode('output')]))
+  const [nodes, setNodes] = useState(initialGraph.nodes)
+  const [edges, setEdges] = useState(initialGraph.edges)
   const [workflow, setWorkflow] = useState(null)
   const [agents, setAgents] = useState([])
   const [connectors, setConnectors] = useState([])
@@ -214,15 +195,17 @@ export default function WorkflowBuilder() {
           ? current : availableModels[0].id)
       }
       if (workflowData) {
+        const loadedGraph = workflowGraphForBuilder(workflowData)
         setWorkflow(workflowData)
         setName(workflowData.name)
         setDescription(workflowData.description || '')
-        setNodes(workflowData.nodes)
+        setNodes(loadedGraph.nodes)
+        setEdges(loadedGraph.edges)
       }
     }).catch(err => setError(err.message))
   }, [editing, id])
 
-  const graph = useMemo(() => graphFromNodes(nodes), [nodes])
+  const graph = useMemo(() => ({ nodes, edges }), [nodes, edges])
   const selected = nodes.find(node => node.id === selectedId)
   const issues = useMemo(
     () => workflowIssues(nodes, credentials, connectors),
@@ -232,9 +215,13 @@ export default function WorkflowBuilder() {
   const changeNodes = updater => {
     const next = typeof updater === 'function' ? updater(nodes) : updater
     if (next === nodes) return
-    setHistory(items => [...items, nodes].slice(-30))
+    setHistory(items => [...items, { nodes, edges }].slice(-30))
     setFuture([])
-    setNodes(next)
+    if (graphSemanticsChanged(nodes, next)) {
+      const nextGraph = linearGraphFromNodes(next)
+      setNodes(nextGraph.nodes)
+      setEdges(nextGraph.edges)
+    } else setNodes(next)
   }
 
   const addNode = type => {
@@ -255,18 +242,20 @@ export default function WorkflowBuilder() {
   const undo = () => {
     if (!history.length) return
     const previous = history[history.length - 1]
-    setFuture(items => [nodes, ...items].slice(0, 30))
+    setFuture(items => [{ nodes, edges }, ...items].slice(0, 30))
     setHistory(items => items.slice(0, -1))
-    setNodes(previous)
+    setNodes(previous.nodes)
+    setEdges(previous.edges)
     setSelectedId(null)
   }
 
   const redo = () => {
     if (!future.length) return
     const next = future[0]
-    setHistory(items => [...items, nodes].slice(-30))
+    setHistory(items => [...items, { nodes, edges }].slice(-30))
     setFuture(items => items.slice(1))
-    setNodes(next)
+    setNodes(next.nodes)
+    setEdges(next.edges)
     setSelectedId(null)
   }
 
@@ -309,9 +298,11 @@ export default function WorkflowBuilder() {
     setError('')
     try {
       const draft = await generateWorkflowDraft(copilotRequest.trim(), copilotModel)
-      setHistory(items => [...items, nodes].slice(-30))
+      const draftGraph = workflowGraphForBuilder(draft, draft.nodes)
+      setHistory(items => [...items, { nodes, edges }].slice(-30))
       setFuture([])
-      setNodes(draft.nodes)
+      setNodes(draftGraph.nodes)
+      setEdges(draftGraph.edges)
       setName(draft.name)
       setDescription(draft.description || '')
       setCopilotResult(draft)
@@ -321,7 +312,7 @@ export default function WorkflowBuilder() {
     } finally {
       setCopilotBusy(false)
     }
-  }, [copilotModel, copilotRequest, nodes])
+  }, [copilotModel, copilotRequest, edges, nodes])
 
   useEffect(() => {
     if (!autoDraft || !modelOptions.length || copilotBusy) return
@@ -343,7 +334,10 @@ export default function WorkflowBuilder() {
       const saved = editing
         ? await updateWorkflow(id, payload)
         : await createWorkflow(payload)
+      const savedGraph = workflowGraphForBuilder(saved, graph.nodes)
       setWorkflow(saved)
+      setNodes(savedGraph.nodes)
+      setEdges(savedGraph.edges)
       if (!editing) navigate(`/workflows/${saved.id}/edit`, { replace:true })
     } catch (err) {
       setError(err.message)
