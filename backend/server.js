@@ -67,6 +67,10 @@ app.use(express.json({
     req.rawBody = Buffer.from(buffer);
   },
 }));
+app.use(express.raw({
+  type:'application/octet-stream',
+  limit:'5mb',
+}));
 app.use(cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.has(origin.replace(/\/$/, ''))) {

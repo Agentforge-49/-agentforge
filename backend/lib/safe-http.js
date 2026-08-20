@@ -95,7 +95,7 @@ async function readBoundedBody(response, maxBytes) {
     }
     chunks.push(Buffer.from(chunk));
   }
-  return Buffer.concat(chunks, total).toString('utf8');
+  return Buffer.concat(chunks, total);
 }
 
 export async function requestPublicUrl(
@@ -104,6 +104,7 @@ export async function requestPublicUrl(
     allowedHostSuffix = null,
     maxResponseBytes = 100_000,
     timeoutMs = 15_000,
+    responseType = 'text',
     ...options
   } = {},
 ) {
@@ -126,11 +127,13 @@ export async function requestPublicUrl(
       redirect:'manual',
       signal:AbortSignal.timeout(timeoutMs),
     });
+    const body = await readBoundedBody(response, maxResponseBytes);
     return {
       ok:response.ok,
       status:response.status,
       headers:response.headers,
-      bodyText:await readBoundedBody(response, maxResponseBytes),
+      bodyText:responseType === 'buffer' ? undefined : body.toString('utf8'),
+      bodyBuffer:responseType === 'buffer' ? body : undefined,
     };
   } finally {
     await dispatcher.close();

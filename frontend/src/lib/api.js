@@ -3,12 +3,17 @@ import { supabase } from './supabase'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const queryCache = new Map()
 
-async function getHeaders() {
+async function getAccessToken() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not logged in')
+  return session.access_token
+}
+
+async function getHeaders() {
+  const accessToken = await getAccessToken()
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session.access_token}`
+    'Authorization': `Bearer ${accessToken}`
   }
 }
 
@@ -258,8 +263,36 @@ export const deleteKnowledgeBase = id => request('DELETE', `/api/knowledge/${id}
 export const getKnowledgeDocuments = id => request('GET', `/api/knowledge/${id}/documents`)
 export const addKnowledgeDocument = (id, data) =>
   request('POST', `/api/knowledge/${id}/documents`, data)
+export const getKnowledgeDocumentPreview = (id, documentId) =>
+  request('GET', `/api/knowledge/${id}/documents/${documentId}/preview`)
 export const deleteKnowledgeDocument = (id, documentId) =>
   request('DELETE', `/api/knowledge/${id}/documents/${documentId}`)
+export const getKnowledgeSources = id => request('GET', `/api/knowledge/${id}/sources`)
+export const createKnowledgeSource = (id, data) =>
+  request('POST', `/api/knowledge/${id}/sources`, data)
+export const syncKnowledgeSource = (id, sourceId) =>
+  request('POST', `/api/knowledge/${id}/sources/${sourceId}/sync`)
+export const deleteKnowledgeSource = (id, sourceId) =>
+  request('DELETE', `/api/knowledge/${id}/sources/${sourceId}`)
+export async function uploadKnowledgeSource(id, file) {
+  const accessToken = await getAccessToken()
+  const response = await fetch(`${API_URL}/api/knowledge/${id}/sources/upload`, {
+    method:'POST',
+    headers:{
+      Authorization:`Bearer ${accessToken}`,
+      'Content-Type':'application/octet-stream',
+      'X-File-Name':encodeURIComponent(file.name),
+      'X-File-Mime':file.type || 'application/octet-stream',
+    },
+    body:file,
+    cache:'no-store',
+  })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error:'File upload failed' }))
+    throw new Error(error.error || `Error ${response.status}`)
+  }
+  return response.json()
+}
 export const searchKnowledge = (id, query, topK = 6) =>
   request('POST', `/api/knowledge/${id}/search`, { query, top_k:topK })
 export const bindKnowledgeAgent = (id, agentId) =>

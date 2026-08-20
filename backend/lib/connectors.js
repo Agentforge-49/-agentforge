@@ -90,7 +90,7 @@ export async function assertSafeConnectorUrl(value, { allowedHostSuffix = null }
   return (await resolvePublicUrl(value, { allowedHostSuffix })).url;
 }
 
-async function loadCredential(credentialId, userId, definition) {
+export async function loadConnectorCredential(credentialId, userId, definition) {
   if (!credentialId) return null;
   const { data: credential, error } = await supabase
     .from('vault_credentials')
@@ -600,7 +600,7 @@ export async function executeConnector(config, input, userId) {
   const { action, credential_id: credentialId } = validated.value;
   const definition = DEFINITION_MAP.get(action);
   const parameters = renderConnectorParameters(validated.value.parameters, input);
-  const credential = await loadCredential(credentialId, userId, definition);
+  const credential = await loadConnectorCredential(credentialId, userId, definition);
   let output;
   if (action === 'http.request') output = await executeHttp(parameters, credential);
   else if (action === 'email.send') output = await executeEmail(parameters, credential);
