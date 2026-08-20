@@ -36,3 +36,10 @@ test('flagship migration keeps v1 workflows and adds owned immutable resources',
   assert.match(migration, /for update/);
   assert.match(migration, /grant execute.+service_role/s);
 });
+
+test('workspace bootstrap aliases the approval request timestamp contract', () => {
+  const route = fs.readFileSync(new URL('../routes/bootstrap.js', import.meta.url), 'utf8');
+  assert.match(route, /created_at:requested_at/);
+  assert.match(route, /order\('requested_at'/);
+  assert.doesNotMatch(route, /approval_requests'\)\.select\([^\n]*status, created_at,/);
+});

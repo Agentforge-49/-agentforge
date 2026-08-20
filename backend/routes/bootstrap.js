@@ -28,8 +28,8 @@ router.get('/', async (req, res, next) => {
       count('vault_credentials', req.userId),
       supabase.from('run_observability').select('execution_job_id, run_type, resource_name, status, duration_ms, estimated_cost_usd, created_at')
         .eq('user_id', req.userId).order('created_at', { ascending:false }).limit(8),
-      supabase.from('approval_requests').select('id, workflow_id, node_id, status, created_at, expires_at')
-        .eq('user_id', req.userId).eq('status', 'pending').order('created_at', { ascending:false }).limit(6),
+      supabase.from('approval_requests').select('id, workflow_id, node_id, status, created_at:requested_at, expires_at')
+        .eq('user_id', req.userId).eq('status', 'pending').order('requested_at', { ascending:false }).limit(6),
       fastestCopilotModel().catch(() => null),
     ]);
     const results = [profile, agents, activeAgents, workflows, activeWorkflows, approvals, failedRuns, tools, apps, recentRuns, recentApprovals];
