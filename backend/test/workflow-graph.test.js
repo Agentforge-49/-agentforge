@@ -85,3 +85,32 @@ test('validates connector and approval nodes', () => {
   nodes[2].config.timeout_minutes = 1;
   assert.match(validateWorkflowGraph(nodes, edges).errors.join(' '), /timeout/);
 });
+
+test('normalizes graph v2 edge modes without changing legacy semantics', () => {
+  const result = validateWorkflowGraph(validNodes, validEdges);
+  assert.equal(result.value.edges[0].mode, 'always');
+  assert.equal(result.value.edges[0].target_handle, 'default');
+  const branched = validateWorkflowGraph([
+    { id:'input', type:'input' },
+    { id:'decision', type:'condition', config:{ operator:'equals', value:'yes' } },
+    { id:'yes', type:'output' }, { id:'no', type:'output' },
+  ], [
+    { source:'input', target:'decision' },
+    { source:'decision', target:'yes', mode:'condition_true' },
+    { source:'decision', target:'no', mode:'condition_false' },
+  ]);
+  assert.deepEqual(branched.errors, []);
+});
+
+test('validates reusable tool and trigger nodes in graph v2', () => {
+  const result = validateWorkflowGraph([
+    { id:'input', type:'input' },
+    { id:'trigger', type:'trigger', config:{ trigger_type:'webhook' } },
+    { id:'tool', type:'tool', config:{ tool_id:'tool-1' } },
+    { id:'output', type:'output' },
+  ], [
+    { source:'input', target:'trigger' }, { source:'trigger', target:'tool' },
+    { source:'tool', target:'output' },
+  ]);
+  assert.deepEqual(result.errors, []);
+});

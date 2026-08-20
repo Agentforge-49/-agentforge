@@ -1,13 +1,11 @@
 export const WORKSPACE_NAV_GROUPS = [
   { label:'Start here', items:[
     { to:'/dashboard', icon:'home', label:'Home', activePaths:['/dashboard'] },
-    { to:'/studio', icon:'studio', label:'Studio', activePaths:['/studio', '/support-operations', '/agents', '/workflows', '/chains', '/multi-agents'] },
-    { to:'/marketplace', icon:'templates', label:'Templates', activePaths:['/marketplace'] },
+    { to:'/studio', icon:'studio', label:'Build', activePaths:['/studio', '/build', '/support-operations', '/agents', '/workflows', '/chains', '/multi-agents'] },
+    { to:'/copilot', icon:'copilot', label:'Copilot', activePaths:['/copilot'] },
+    { to:'/observability', icon:'runs', label:'Activity', activePaths:['/observability', '/approvals'] },
     { to:'/apps', icon:'apps', label:'Apps', activePaths:['/apps', '/credentials', '/triggers'] },
-  ] },
-  { label:'Your work', items:[
-    { to:'/observability', icon:'runs', label:'Runs', activePaths:['/observability'] },
-    { to:'/approvals', icon:'inbox', label:'Inbox', activePaths:['/approvals'] },
+    { to:'/marketplace', icon:'templates', label:'Templates', activePaths:['/marketplace'] },
   ] },
   { label:'Advanced', advanced:true, items:[
     { to:'/knowledge', icon:'knowledge', label:'Knowledge', activePaths:['/knowledge'] },

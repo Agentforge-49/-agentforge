@@ -19,16 +19,16 @@ const APPS = [
   ['linear','Linear','Engineering','native'],
   ['twilio','Twilio','Communication','native'],
   ['zendesk','Zendesk','Support','native'],
-  ['microsoft_teams','Microsoft Teams','Communication','universal'],
-  ['gmail','Gmail','Email','universal'],
-  ['microsoft_outlook','Microsoft Outlook','Email','universal'],
-  ['google_calendar','Google Calendar','Productivity','universal'],
+  ['microsoft_teams','Microsoft Teams','Communication','native'],
+  ['gmail','Gmail','Email','native'],
+  ['microsoft_outlook','Microsoft Outlook','Email','native'],
+  ['google_calendar','Google Calendar','Productivity','native'],
   ['telegram','Telegram','Communication','universal'],
   ['whatsapp_business','WhatsApp Business','Communication','universal'],
-  ['zoom','Zoom','Communication','universal'],
-  ['calendly','Calendly','Scheduling','universal'],
-  ['asana','Asana','Project management','universal'],
-  ['trello','Trello','Project management','universal'],
+  ['zoom','Zoom','Communication','native'],
+  ['calendly','Calendly','Scheduling','native'],
+  ['asana','Asana','Project management','native'],
+  ['trello','Trello','Project management','native'],
   ['monday','monday.com','Project management','universal'],
   ['clickup','ClickUp','Project management','universal'],
   ['todoist','Todoist','Productivity','universal'],
@@ -111,6 +111,12 @@ export const INTEGRATION_CATALOG = Object.freeze(APPS.map(([slug, name, category
   category,
   mode,
   status:mode === 'native' ? 'Native connector' : 'Universal connector',
+  setupGuide:mode === 'native'
+    ? ['Add a least-privilege credential or consent connection', 'Run the connection test', 'Insert the typed action in Build', 'Test with sample data before activation']
+    : ['Create a least-privilege API credential', 'Choose the documented API endpoint or signed webhook', 'Run a sample request in Build', 'Keep external delivery behind approval until verified'],
+  sampleOperation:mode === 'native' ? `Test a typed ${name} action` : `Test an authenticated ${name} API request`,
+  errorHelp:'Open Activity for the provider response, verify credential scope, then retry the failed node.',
+  workflowPath:'/workflows/new',
 })))
 
 export const INTEGRATION_CATEGORIES = Object.freeze([

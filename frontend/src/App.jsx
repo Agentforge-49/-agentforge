@@ -40,6 +40,8 @@ const DeveloperPlatform = lazy(() => import('./pages/DeveloperPlatform'))
 const LaunchReadiness = lazy(() => import('./pages/LaunchReadiness'))
 const AppsHub = lazy(() => import('./pages/AppsHub'))
 const Settings = lazy(() => import('./pages/Settings'))
+const Copilot = lazy(() => import('./pages/Copilot'))
+const WorkspaceTools = lazy(() => import('./pages/WorkspaceTools'))
 
 function ProtectedRoute({ children, user }) {
   if (!user) return <Navigate to="/login" replace />
@@ -94,6 +96,9 @@ export default function App() {
         <Route path="/signup"            element={<Signup   setUser={setUser} />} />
         <Route path="/dashboard"         element={protect(Dashboard)} />
         <Route path="/studio"            element={protect(Studio)} />
+        <Route path="/build"             element={<Navigate to="/studio" replace />} />
+        <Route path="/copilot"           element={protect(Copilot)} />
+        <Route path="/tools"             element={protect(WorkspaceTools)} />
         <Route path="/support-operations" element={protect(SupportOperations)} />
         <Route path="/agents/new"        element={protect(CreateAgent)} />
         <Route path="/agents/:id/edit"   element={protect(CreateAgent)} />

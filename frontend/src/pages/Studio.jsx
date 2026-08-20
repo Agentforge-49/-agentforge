@@ -13,6 +13,7 @@ const BUILD_MODES = [
   { key:'agent', eyebrow:'Conversational', title:'AI assistant', description:'Create a focused agent with instructions, knowledge, tools, versions, and a safe publish flow.', action:'Create assistant', path:'/agents/new', icon:Bot },
   { key:'chain', eyebrow:'Sequential', title:'Agent process', description:'Pass work through a fixed sequence of specialists with traceable handoffs and run history.', action:'Create process', path:'/chains/new', icon:GitBranch },
   { key:'team', eyebrow:'Advanced', title:'Agent team', description:'Coordinate published agents with routing, supervision, limits, and aggregation.', action:'Configure team', path:'/multi-agents', icon:Network },
+  { key:'tool', eyebrow:'Reusable', title:'Workspace tool', description:'Version a tested transformation or app action once and reuse it safely.', action:'Create tool', path:'/tools', icon:Boxes },
 ]
 
 const SOURCE_CONFIG = [

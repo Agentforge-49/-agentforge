@@ -36,6 +36,9 @@ import launchRouter from './routes/launch.js';
 import settingsRouter from './routes/settings.js';
 import integrationBridgeRouter from './routes/integration-bridge.js';
 import siteAssistantRouter from './routes/site-assistant.js';
+import copilotRouter from './routes/copilot.js';
+import workspaceToolsRouter from './routes/workspace-tools.js';
+import bootstrapRouter from './routes/bootstrap.js';
 import { getEngineHealth } from './lib/engine.js';
 import { startJobWorker } from './lib/job-worker.js';
 import { startTriggerScheduler } from './lib/trigger-scheduler.js';
@@ -114,6 +117,9 @@ app.use('/api/launch', launchRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/integration-bridge', integrationBridgeRouter);
 app.use('/api/site-assistant', siteAssistantRouter);
+app.use('/api/copilot', copilotRouter);
+app.use('/api/workspace-tools', workspaceToolsRouter);
+app.use('/api/workspace/bootstrap', bootstrapRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Base Diagnostics
 app.get('/health', async (req, res) => {

@@ -26,6 +26,7 @@ import {
 } from './workflow-graph.js';
 import { processMultiAgentRun } from './multi-agent-runner.js';
 import { assertUsageAllowance, recordUsage } from './usage.js';
+import { executeWorkspaceTool } from './workspace-tools.js';
 
 const POLL_INTERVAL_MS = Number(process.env.JOB_POLL_INTERVAL_MS || 1500);
 const WORKER_ID = `${os.hostname()}:${process.pid}`;
@@ -446,6 +447,8 @@ async function processWorkflowRun(job) {
         });
       } else if (node.type === 'connector') {
         output = await executeConnector(node.config, input, job.user_id);
+      } else if (node.type === 'tool') {
+        output = await executeWorkspaceTool(node.config, input, job.user_id);
       } else if (node.type === 'transform') {
         output = applyTransform(input, node.config);
       } else if (node.type === 'condition') {
@@ -456,6 +459,7 @@ async function processWorkflowRun(job) {
       const outgoing = edges.filter(edge => edge.source === node.id);
       for (const edge of outgoing) {
         const selected = node.type !== 'condition'
+          || edge.mode === `condition_${String(Boolean(output))}`
           || edge.source_handle === String(Boolean(output));
         if (selected) {
           selectedEdges.add(edge.id);

@@ -6,8 +6,8 @@ import { appLogoUrl } from '../src/lib/app-logo-sources.js'
 
 test('integration catalog contains exactly 100 curated working paths', () => {
   assert.equal(INTEGRATION_COUNTS.catalog, 100)
-  assert.equal(INTEGRATION_COUNTS.native, 17)
-  assert.equal(INTEGRATION_COUNTS.universal, 83)
+  assert.equal(INTEGRATION_COUNTS.native, 25)
+  assert.equal(INTEGRATION_COUNTS.universal, 75)
   assert.equal(INTEGRATION_COUNTS.catalog, INTEGRATION_COUNTS.native + INTEGRATION_COUNTS.universal)
   assert(INTEGRATION_CATALOG.every(app => ['native', 'universal'].includes(app.mode)))
   assert.equal(new Set(INTEGRATION_CATALOG.map(app => app.slug)).size, 100)

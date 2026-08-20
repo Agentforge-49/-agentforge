@@ -128,14 +128,14 @@ the corresponding user connection and provider account.
 
 ## App ecosystem and product guide
 
-The Apps workspace exposes exactly 100 curated business applications. Seventeen
-use typed native actions, while 83 use authenticated universal API or signed
+The Apps workspace exposes exactly 100 curated business applications. Twenty-five
+use typed guided actions, while 75 use authenticated universal API or signed
 webhook paths. Native AgentForge actions remain the source of truth for built-in
 execution. Any public API can also be called through the allowlisted HTTP
 connector, and signed inbound webhooks can start
 workflows from external automation systems.
 
-The launch action catalog contains 19 typed operations across HTTP, Resend,
+The launch action catalog contains 27 typed operations across HTTP, Resend,
 Slack, Google Sheets, Google Drive, Supabase, GitHub, Discord, Notion,
 Airtable, HubSpot, Salesforce, Stripe, Shopify, Jira, Linear, Twilio, and
 Zendesk. App-specific generic credentials must carry a matching `app_slug`, so

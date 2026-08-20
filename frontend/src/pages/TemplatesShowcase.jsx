@@ -17,7 +17,7 @@ export default function TemplatesShowcase() {
         <div className="landing-container">
           <span className="section-kicker">Production-minded starting points</span>
           <h1>Start from a proven pattern. <span>Make it yours.</span></h1>
-          <p>Install one of three complete flagship workflows with a focused agent, human approval, real delivery connection, and ready-to-use test input.</p>
+          <p>Install one of twelve complete operations workflows with a focused agent, human approval, a safe output path, and ready-to-use test input.</p>
           <div className="marketing-hero__actions"><button className="button button--primary button--large" type="button" onClick={() => navigate('/signup')}>Open the template marketplace <ArrowRight size={17} /></button></div>
         </div>
       </section>

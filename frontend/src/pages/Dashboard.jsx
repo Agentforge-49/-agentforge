@@ -1,164 +1,92 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Activity, ArrowRight, Bot, Check, Circle, Clock3, KeyRound, Link2, LockKeyhole,
-  Plus, ShieldCheck, Sparkles, Workflow,
+  Activity, AlertTriangle, ArrowRight, Bot, CheckCircle2, Clock3, Coins,
+  GitBranch, PlugZap, RefreshCw, ShieldCheck, Sparkles, Wrench,
 } from 'lucide-react'
 
-import AgentCard from '../components/AgentCard'
-import { getActivationSummary, getAgents, getDashboardStats } from '../lib/api'
+import { getWorkspaceBootstrap } from '../lib/api'
 import { useNavigate } from '../lib/router.jsx'
 
-const QUICK_ACTIONS = [
-  { title:'Install a starter workflow', detail:'Launch support, lead, or research automation from a guided production pattern.', to:'/marketplace', icon:Sparkles },
-  { title:'Open the unified Studio', detail:'Combine agents, logic, approvals, and connected apps in one build workspace.', to:'/studio', icon:Workflow },
-  { title:'Connect your tools', detail:'Add encrypted credentials or consent-based accounts.', to:'/apps', icon:KeyRound },
-]
+const ROLE_VIEWS = {
+  operations:{ label:'Internal operations', outcome:'Coordinate requests, approvals, and dependable delivery.' },
+  support:{ label:'Support', outcome:'Triage customer issues and keep escalation decisions visible.' },
+  sales:{ label:'Sales operations', outcome:'Prepare account work and route follow-ups without losing control.' },
+}
+
+function relativeTime(value) {
+  const seconds = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 1000))
+  if (seconds < 60) return `${seconds}s ago`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+  return `${Math.floor(seconds / 86400)}d ago`
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [agents, setAgents] = useState([])
-  const [stats, setStats] = useState(null)
-  const [activation, setActivation] = useState(null)
+  const [data, setData] = useState(null)
+  const [role, setRole] = useState('operations')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError('')
-      const [agentsData, statsData, activationData] = await Promise.all([
-        getAgents(), getDashboardStats(), getActivationSummary().catch(() => null),
-      ])
-      setAgents(agentsData)
-      setStats(statsData)
-      setActivation(activationData)
-    } catch (err) {
-      setError(err.message || 'Failed to load dashboard data')
-    } finally {
-      setLoading(false)
-    }
+  const load = useCallback(async (fresh = false) => {
+    try { setError(''); setData(await getWorkspaceBootstrap({ fresh })) }
+    catch (err) { setError(err.message) }
+    finally { setLoading(false) }
   }, [])
-
   useEffect(() => {
-    const timer = setTimeout(loadData, 0)
+    const timer = setTimeout(load, 0)
     return () => clearTimeout(timer)
-  }, [loadData])
+  }, [load])
 
-  if (loading) return (
-    <div className="workspace-loading">
-      <div className="workspace-loading-card"><span className="workspace-spinner" /> Preparing your command center…</div>
-    </div>
-  )
+  const readiness = useMemo(() => data ? Object.values(data.readiness).filter(Boolean).length : 0, [data])
+  if (loading) return <div className="workspace-loading"><div className="workspace-loading-card"><span className="workspace-spinner" /> Preparing your command center…</div></div>
+  if (error) return <div className="dashboard-error"><div className="dashboard-error-card"><strong>Command Center is unavailable</strong><p>{error}</p><button onClick={() => load(true)}>Try again</button></div></div>
 
-  if (error) return (
-    <div className="dashboard-error">
-      <div className="dashboard-error-card">
-        <strong>We could not load the dashboard</strong>
-        <p>{error}</p>
-        <button onClick={loadData}>Try again</button>
-      </div>
-    </div>
-  )
-
-  const statCards = [
-    { label:'Total agents', value:stats?.total_agents ?? 0, icon:Bot, tone:'green' },
-    { label:'Active agents', value:stats?.active_agents ?? 0, icon:Sparkles, tone:'mint' },
-    { label:'Total runs', value:stats?.total_runs ?? 0, icon:Activity, tone:'blue' },
-    { label:'API calls used', value:`${stats?.api_calls_used ?? 0} / ${stats?.api_calls_limit ?? 0}`, icon:Link2, tone:'amber' },
+  const metrics = [
+    { label:'Active work', value:(data.counts.active_agents + data.counts.active_workflows), detail:`${data.counts.active_agents} agents · ${data.counts.active_workflows} workflows`, icon:Activity, tone:'green' },
+    { label:'Needs approval', value:data.counts.approvals, detail:'Human decisions waiting', icon:ShieldCheck, tone:'violet' },
+    { label:'Failed runs', value:data.counts.failed_runs, detail:'Open Activity to recover', icon:AlertTriangle, tone:data.counts.failed_runs ? 'red' : 'green' },
+    { label:'Usage', value:`${data.usage.used}/${data.usage.limit}`, detail:`${data.user.plan} workspace`, icon:Coins, tone:'amber' },
   ]
 
-  return (
-    <div className="dashboard-page">
-      <section className="dashboard-hero">
-        <div>
-          <div className="dashboard-eyebrow"><Sparkles size={13} /> Agent operations workspace</div>
-          <h1>Turn one support or operations process into dependable automation.</h1>
-          <p>Start from an approval-gated workflow, connect the tools your team already uses, and inspect every run.</p>
-        </div>
-        <button className="dashboard-primary" onClick={() => navigate('/studio')}>
-          <Plus size={16} /> Open Studio
-        </button>
-      </section>
+  return <div className="command-page">
+    <section className="command-hero">
+      <div><span className="command-eyebrow"><Sparkles size={13} /> Operations Command Center</span><h1>See what is moving, what needs you, and what to improve.</h1><p>{ROLE_VIEWS[role].outcome}</p></div>
+      <div className="command-role-switch" aria-label="Command center role view">
+        {Object.entries(ROLE_VIEWS).map(([key, view]) => <button key={key} className={role === key ? 'active' : ''} onClick={() => setRole(key)}>{view.label}</button>)}
+      </div>
+    </section>
 
-      <section className="dashboard-stats" aria-label="Workspace statistics">
-        {statCards.map(({ label, value, icon:Icon, tone }) => (
-          <article className="dashboard-stat" key={label}>
-            <span className={`dashboard-stat-icon dashboard-stat-icon-${tone}`}><Icon size={17} /></span>
-            <div><small>{label}</small><strong>{value}</strong></div>
-          </article>
-        ))}
-      </section>
+    <section className="command-metrics" aria-label="Operational metrics">
+      {metrics.map(({ label, value, detail, icon:Icon, tone }) => <article key={label} className={`command-metric command-tone-${tone}`}><span><Icon size={17} /></span><div><small>{label}</small><strong>{value}</strong><p>{detail}</p></div></article>)}
+    </section>
 
-      {activation && <section className="activation-path" aria-labelledby="activation-path-title">
-        <div className="activation-path-head">
-          <div>
-            <span className="activation-path-kicker"><ShieldCheck size={13} /> Launch path</span>
-            <h2 id="activation-path-title">Turn setup into a production-ready outcome</h2>
-            <p>{activation.completed} of {activation.total} launch controls complete. Each signal is calculated from workspace metadata, never customer content.</p>
-          </div>
-          <div className="activation-path-score" aria-label={`${activation.percentage}% launch path complete`}>
-            <strong>{activation.percentage}%</strong>
-            <span>{activation.activated ? 'Activated' : 'In progress'}</span>
-          </div>
+    <section className="command-main-grid">
+      <article className="command-panel command-work">
+        <header><div><span>Live work</span><h2>Recent activity</h2></div><button onClick={() => navigate('/observability')}>View all <ArrowRight size={13} /></button></header>
+        <div className="command-list">
+          {data.recent_activity.length ? data.recent_activity.map(run => <button key={run.execution_job_id} onClick={() => navigate('/observability')}>
+            <span className={`command-run-status ${run.status}`}><Activity size={14} /></span><span><strong>{run.resource_name}</strong><small>{run.run_type.replaceAll('_', ' ')} · {relativeTime(run.created_at)}</small></span><em>{run.status}</em>
+          </button>) : <div className="command-empty"><Clock3 size={21} /><strong>No runs yet</strong><p>Test a workflow in Build and its trace will appear here.</p><button onClick={() => navigate('/studio')}>Open Build</button></div>}
         </div>
-        <div className="activation-progress" role="progressbar" aria-label="Launch path progress"
-          aria-valuemin="0" aria-valuemax="100" aria-valuenow={activation.percentage}>
-          <span style={{ width:`${activation.percentage}%` }} />
-        </div>
-        <div className="activation-stages">
-          {activation.stages.map((stage, index) => (
-            <button type="button" key={stage.key} className={`activation-stage${stage.ready ? ' activation-stage-ready' : ''}`}
-              onClick={() => navigate(stage.path)} aria-label={`${stage.label}: ${stage.ready ? 'complete' : 'not complete'}`}>
-              <span className="activation-stage-status">{stage.ready ? <Check size={13} /> : <Circle size={13} />}</span>
-              <span><small>0{index + 1}</small><strong>{stage.label}</strong></span>
-            </button>
-          ))}
-        </div>
-        <div className="activation-path-footer">
-          <div>
-            {activation.current_stage ? <><Clock3 size={14} /><span>Next: <strong>{activation.current_stage.label}</strong> — {activation.current_stage.detail}</span></>
-              : <><Check size={14} /><span>Every activation control is complete. Run final release checks before launch.</span></>}
-          </div>
-          <button type="button" onClick={() => navigate('/launch')}>Open Release Center <ArrowRight size={14} /></button>
-        </div>
-        <div className="activation-privacy"><LockKeyhole size={12} /> {activation.privacy.note}</div>
-      </section>}
+      </article>
 
-      <section className="dashboard-section">
-        <div className="dashboard-section-heading">
-          <div><span>Start here</span><h2>Move from idea to production</h2></div>
-        </div>
-        <div className="dashboard-actions">
-          {QUICK_ACTIONS.map(({ title, detail, to, icon:Icon }, index) => (
-            <button key={title} className="dashboard-action" onClick={() => navigate(to)}>
-              <span className="dashboard-action-number">0{index + 1}</span>
-              <span className="dashboard-action-icon"><Icon size={19} /></span>
-              <strong>{title}</strong>
-              <span>{detail}</span>
-              <span className="dashboard-action-link">Open workspace <ArrowRight size={14} /></span>
-            </button>
-          ))}
-        </div>
-      </section>
+      <aside className="command-side">
+        <article className="command-panel command-approvals"><header><div><span>Control point</span><h2>Approval queue</h2></div><strong>{data.counts.approvals}</strong></header>
+          {data.approval_queue.length ? data.approval_queue.slice(0, 3).map(item => <button key={item.id} onClick={() => navigate('/approvals')}><ShieldCheck size={15} /><span><strong>Workflow decision</strong><small>Requested {relativeTime(item.created_at)}</small></span><ArrowRight size={13} /></button>) : <div className="command-small-empty"><CheckCircle2 size={18} /><span><strong>Queue is clear</strong><small>No decisions are waiting.</small></span></div>}
+          <button className="command-panel-link" onClick={() => navigate('/approvals')}>Open approval queue <ArrowRight size={13} /></button>
+        </article>
+        <article className="command-panel command-readiness"><header><div><span>Workspace readiness</span><h2>{readiness}/3 foundations ready</h2></div><button onClick={() => load(true)} aria-label="Refresh readiness"><RefreshCw size={14} /></button></header>
+          {[
+            ['has_builder_resource','Build resource',GitBranch,'/studio'],['has_connection','App connection',PlugZap,'/apps'],['has_active_work','Active automation',Bot,'/studio'],
+          ].map(([key,label,Icon,to]) => <button key={key} onClick={() => navigate(to)}><span className={data.readiness[key] ? 'ready' : ''}>{data.readiness[key] ? <CheckCircle2 size={14} /> : <Icon size={14} />}</span><strong>{label}</strong><small>{data.readiness[key] ? 'Ready' : 'Set up'}</small></button>)}
+        </article>
+      </aside>
+    </section>
 
-      <section className="dashboard-section">
-        <div className="dashboard-section-heading dashboard-section-heading-row">
-          <div><span>Your workforce</span><h2>Agents</h2></div>
-          {agents.length > 0 && <button className="dashboard-secondary" onClick={() => navigate('/studio')}><Plus size={14} /> Open Studio</button>}
-        </div>
-        {agents.length === 0 ? (
-          <div className="dashboard-empty">
-            <div className="dashboard-empty-visual"><Bot size={28} /></div>
-            <h3>Start with a working business outcome</h3>
-            <p>Install a complete support, lead, or research workflow with a published agent, human approval, real delivery connection, and test input.</p>
-            <button className="dashboard-primary" onClick={() => navigate('/marketplace')}>Choose a starter workflow <ArrowRight size={15} /></button>
-          </div>
-        ) : (
-          <div className="dashboard-agent-grid">
-            {agents.map(agent => <AgentCard key={agent.id} agent={agent} />)}
-          </div>
-        )}
-      </section>
-    </div>
-  )
+    <section className="command-next">
+      <div><span><Wrench size={16} /></span><div><small>Recommended next step</small><h2>{data.counts.approvals ? 'Review the decisions waiting for you.' : data.counts.failed_runs ? 'Recover your latest failed run.' : 'Describe your next outcome to Copilot.'}</h2></div></div>
+      <button onClick={() => navigate(data.counts.approvals ? '/approvals' : data.counts.failed_runs ? '/observability' : '/copilot')}>Continue <ArrowRight size={14} /></button>
+    </section>
+  </div>
 }

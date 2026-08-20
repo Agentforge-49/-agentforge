@@ -34,6 +34,24 @@ function workflowInput(body, { partial = false } = {}) {
       value.edges = graph.value.edges;
     }
   }
+  if (!partial || Object.hasOwn(body, 'schema_version')) {
+    const schemaVersion = Number(body.schema_version || 1);
+    if (![1, 2].includes(schemaVersion)) errors.push('Workflow schema version must be 1 or 2');
+    else value.schema_version = schemaVersion;
+  }
+  if (Object.hasOwn(body, 'viewport')) {
+    const viewport = body.viewport;
+    if (!viewport || typeof viewport !== 'object' || Array.isArray(viewport)) {
+      errors.push('Workflow viewport must be an object');
+    } else {
+      const x = Number(viewport.x || 0);
+      const y = Number(viewport.y || 0);
+      const zoom = Number(viewport.zoom || 1);
+      if (![x, y, zoom].every(Number.isFinite) || zoom < 0.1 || zoom > 4) {
+        errors.push('Workflow viewport is invalid');
+      } else value.viewport = { x, y, zoom };
+    }
+  }
   return { errors, value };
 }
 
@@ -98,6 +116,8 @@ router.put('/:id', async (req, res, next) => {
       description: req.body.description ?? workflow.description ?? '',
       nodes: req.body.nodes ?? workflow.nodes,
       edges: req.body.edges ?? workflow.edges,
+      schema_version: req.body.schema_version ?? workflow.schema_version ?? 1,
+      viewport: req.body.viewport ?? workflow.viewport ?? { x:0, y:0, zoom:1 },
     };
     const validated = workflowInput(merged);
     if (validated.errors.length) {

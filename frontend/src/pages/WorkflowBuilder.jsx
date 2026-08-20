@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { useNavigate, useParams } from '../lib/router.jsx'
+import WorkflowCanvas from '../components/WorkflowCanvas.jsx'
 
 import {
   activateWorkflow,
@@ -64,6 +65,13 @@ function connectorParameters(action) {
   if (action === 'linear.issue.create') return { team_id:'', title:'AgentForge workflow task', description:'{{input}}' }
   if (action === 'twilio.message.send') return { account_sid:'', to:'', from:'', body:'{{input}}' }
   if (action === 'zendesk.ticket.create') return { subdomain:'', email:'', subject:'AgentForge workflow request', comment:'{{input}}' }
+  if (action === 'gmail.message.send' || action === 'outlook.message.send') return { to:'', subject:'AgentForge update', body:'{{input}}' }
+  if (action === 'teams.message.send') return { team_id:'', channel_id:'', body:'{{input}}' }
+  if (action === 'google_calendar.event.create') return { calendar_id:'primary', summary:'AgentForge event', description:'{{input}}', start:'', end:'' }
+  if (action === 'zoom.meeting.create') return { topic:'AgentForge meeting', start_time:'', duration:30, timezone:'UTC', agenda:'{{input}}' }
+  if (action === 'calendly.events.list') return { user_uri:'', count:20 }
+  if (action === 'asana.task.create') return { project_id:'', name:'AgentForge task', notes:'{{input}}' }
+  if (action === 'trello.card.create') return { list_id:'', name:'AgentForge card', description:'{{input}}' }
   return {}
 }
 
@@ -84,7 +92,9 @@ function makeNode(type) {
 function graphFromNodes(nodes) {
   const positioned = nodes.map((node, index) => ({
     ...node,
-    position: { x:80 + index * 230, y: node.type === 'condition' ? 150 : 90 },
+    position: Number.isFinite(node.position?.x) && Number.isFinite(node.position?.y)
+      && (node.position.x !== 0 || node.position.y !== 0)
+      ? node.position : { x:80 + index * 230, y: node.type === 'condition' ? 150 : 90 },
   }))
   const edges = []
   positioned.forEach((node, index) => {
@@ -96,10 +106,10 @@ function graphFromNodes(nodes) {
         ? node.config.true_target : fallback
       const falseTarget = later.some(item => item.id === node.config.false_target)
         ? node.config.false_target : fallback
-      edges.push({ id:`${node.id}_true`, source:node.id, target:trueTarget, source_handle:'true' })
-      edges.push({ id:`${node.id}_false`, source:node.id, target:falseTarget, source_handle:'false' })
+      edges.push({ id:`${node.id}_true`, source:node.id, target:trueTarget, source_handle:'true', target_handle:'default', mode:'condition_true' })
+      edges.push({ id:`${node.id}_false`, source:node.id, target:falseTarget, source_handle:'false', target_handle:'default', mode:'condition_false' })
     } else {
-      edges.push({ id:`${node.id}_${positioned[index + 1].id}`, source:node.id, target:positioned[index + 1].id, source_handle:'default' })
+      edges.push({ id:`${node.id}_${positioned[index + 1].id}`, source:node.id, target:positioned[index + 1].id, source_handle:'default', target_handle:'default', mode:'always' })
     }
   })
   return { nodes:positioned, edges }
@@ -172,6 +182,7 @@ export default function WorkflowBuilder() {
   const [copilotResult, setCopilotResult] = useState(null)
   const [modelOptions, setModelOptions] = useState([])
   const [autoDraft, setAutoDraft] = useState(() => !editing && requestedCopilotPrompt().length >= 10)
+  const [showLegacyPreview] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -271,6 +282,14 @@ export default function WorkflowBuilder() {
     changeNodes(next)
   }
 
+  const moveCanvasNode = (nodeId, position) => {
+    setNodes(items => items.map(node => node.id === nodeId ? { ...node, position } : node))
+  }
+
+  const autoLayout = () => changeNodes(items => items.map((node, index) => ({
+    ...node, position:{ x:60 + (index % 4) * 230, y:80 + Math.floor(index / 4) * 140 },
+  })))
+
   const moveSelected = direction => {
     if (!selected || ['input', 'output'].includes(selected.type)) return
     const index = nodes.findIndex(node => node.id === selected.id)
@@ -317,7 +336,10 @@ export default function WorkflowBuilder() {
     setBusy(true)
     setError('')
     try {
-      const payload = { name, description, nodes:graph.nodes, edges:graph.edges }
+      const payload = {
+        name, description, nodes:graph.nodes, edges:graph.edges,
+        schema_version:2, viewport:workflow?.viewport || { x:0, y:0, zoom:1 },
+      }
       const saved = editing
         ? await updateWorkflow(id, payload)
         : await createWorkflow(payload)
@@ -437,14 +459,14 @@ export default function WorkflowBuilder() {
       </section>
 
       <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:12 }}>
-        <span style={{ color:'#6B7280', fontSize:12, padding:'8px 0' }}>Add node:</span>
+        <span style={{ color:'#607268', fontSize:12, padding:'8px 0' }}>Add node:</span>
         {['agent', 'connector', 'transform', 'condition', 'approval'].map(type => {
           const MetaIcon = NODE_META[type].icon
           return <button key={type} onClick={() => addNode(type)} style={toolButton}>
             <MetaIcon size={13} /> {NODE_META[type].label}
           </button>
         })}
-        <span style={{ width:1, background:'#2A2D3E', margin:'3px 2px' }} />
+        <span style={{ width:1, background:'#dce7df', margin:'3px 2px' }} />
         <button type="button" onClick={undo} disabled={!history.length} style={{ ...toolButton, opacity:history.length ? 1 : .45 }}>
           <Undo2 size={13} /> Undo
         </button>
@@ -466,7 +488,9 @@ export default function WorkflowBuilder() {
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:selected ? '1fr 300px' : '1fr', gap:14 }}>
-        <div style={canvas}>
+        <WorkflowCanvas nodes={graph.nodes} edges={graph.edges} selectedId={selectedId}
+          onSelect={setSelectedId} onMove={moveCanvasNode} onAutoLayout={autoLayout} />
+        {showLegacyPreview && <div style={canvas}>
           <div style={{ display:'flex', alignItems:'center', gap:16, minWidth:'max-content' }}>
             {nodes.map((node, index) => {
               const meta = NODE_META[node.type]
@@ -488,7 +512,7 @@ export default function WorkflowBuilder() {
                     title={!['input', 'output'].includes(node.type) ? 'Drag to reorder' : undefined}
                     style={{
                       ...nodeCard,
-                      borderColor:selectedId === node.id ? meta.color : '#2A2D3E',
+                      borderColor:selectedId === node.id ? meta.color : '#dce7df',
                       boxShadow:selectedId === node.id ? `0 0 0 2px ${meta.color}33` : 'none',
                       opacity:draggedId === node.id ? .55 : 1,
                     }}
@@ -497,12 +521,12 @@ export default function WorkflowBuilder() {
                       <Icon size={15} />
                     </span>
                     <span style={{ textAlign:'left' }}>
-                      <strong style={{ display:'block', color:'white', fontSize:13 }}>{node.label}</strong>
-                      <span style={{ color:'#6B7280', fontSize:10 }}>{node.type}</span>
+                      <strong style={{ display:'block', color:'#143024', fontSize:13 }}>{node.label}</strong>
+                      <span style={{ color:'#607268', fontSize:10 }}>{node.type}</span>
                     </span>
                   </button>
                   {index < nodes.length - 1 && (
-                    <div style={{ minWidth:64, textAlign:'center', color:'#6B7280', fontSize:10 }}>
+                    <div style={{ minWidth:64, textAlign:'center', color:'#607268', fontSize:10 }}>
                       {node.type === 'condition'
                         ? <><div style={{ color:'#34D399' }}>true →</div><div style={{ color:'#F87171' }}>false →</div></>
                         : <span>────→</span>}
@@ -513,7 +537,7 @@ export default function WorkflowBuilder() {
               )
             })}
           </div>
-        </div>
+        </div>}
 
         {selected && (
           <aside style={inspector}>
@@ -570,7 +594,7 @@ export default function WorkflowBuilder() {
                   ))}
               </select>
               <ConnectorFields node={selected} updateConfig={updateConfig} />
-              <small style={{ color:'#6B7280' }}>Use {'{{input}}'} to insert the previous node&apos;s value.</small>
+              <small style={{ color:'#607268' }}>Use {'{{input}}'} to insert the previous node&apos;s value.</small>
             </>}
 
             {selected.type === 'transform' && <>
@@ -584,7 +608,7 @@ export default function WorkflowBuilder() {
               {selected.config.operation === 'template' && <>
                 <label style={labelStyle}>Template</label>
                 <textarea value={selected.config.template} onChange={event => updateConfig({ template:event.target.value })} style={{ ...inputStyle, minHeight:90 }} />
-                <small style={{ color:'#6B7280' }}>Use {'{{input}}'} where the previous value belongs.</small>
+                <small style={{ color:'#607268' }}>Use {'{{input}}'} where the previous value belongs.</small>
               </>}
             </>}
 
@@ -616,7 +640,7 @@ export default function WorkflowBuilder() {
               <label style={labelStyle}>Timeout (minutes)</label>
               <input type="number" min="5" max="10080" value={selected.config.timeout_minutes}
                 onChange={event => updateConfig({ timeout_minutes:Number(event.target.value) })} style={inputStyle} />
-              <small style={{ color:'#6B7280' }}>The durable run pauses here and resumes only after approval or editing.</small>
+              <small style={{ color:'#607268' }}>The durable run pauses here and resumes only after approval or editing.</small>
             </>}
 
             {!['input', 'output'].includes(selected.type) && (
@@ -752,6 +776,43 @@ function ConnectorFields({ node, updateConfig }) {
     <Field label="Ticket subject" value={parameters.subject || ''} onChange={value => updateParameters({ subject:value })} />
     <Field label="Comment" value={parameters.comment || ''} onChange={value => updateParameters({ comment:value })} multiline />
   </>
+  if (action === 'gmail.message.send' || action === 'outlook.message.send') return <>
+    <Field label="Recipient" value={parameters.to || ''} onChange={value => updateParameters({ to:value })} />
+    <Field label="Subject" value={parameters.subject || ''} onChange={value => updateParameters({ subject:value })} />
+    <Field label="Message" value={parameters.body || ''} onChange={value => updateParameters({ body:value })} multiline />
+  </>
+  if (action === 'teams.message.send') return <>
+    <Field label="Team ID" value={parameters.team_id || ''} onChange={value => updateParameters({ team_id:value })} />
+    <Field label="Channel ID" value={parameters.channel_id || ''} onChange={value => updateParameters({ channel_id:value })} />
+    <Field label="Message" value={parameters.body || ''} onChange={value => updateParameters({ body:value })} multiline />
+  </>
+  if (action === 'google_calendar.event.create') return <>
+    <Field label="Calendar ID" value={parameters.calendar_id || 'primary'} onChange={value => updateParameters({ calendar_id:value })} />
+    <Field label="Event title" value={parameters.summary || ''} onChange={value => updateParameters({ summary:value })} />
+    <Field label="Start (ISO date/time)" value={parameters.start || ''} onChange={value => updateParameters({ start:value })} />
+    <Field label="End (ISO date/time)" value={parameters.end || ''} onChange={value => updateParameters({ end:value })} />
+    <Field label="Description" value={parameters.description || ''} onChange={value => updateParameters({ description:value })} multiline />
+  </>
+  if (action === 'zoom.meeting.create') return <>
+    <Field label="Meeting topic" value={parameters.topic || ''} onChange={value => updateParameters({ topic:value })} />
+    <Field label="Start (ISO date/time)" value={parameters.start_time || ''} onChange={value => updateParameters({ start_time:value })} />
+    <Field label="Duration (minutes)" type="number" value={parameters.duration || 30} onChange={value => updateParameters({ duration:Number(value) })} />
+    <Field label="Timezone" value={parameters.timezone || 'UTC'} onChange={value => updateParameters({ timezone:value })} />
+  </>
+  if (action === 'calendly.events.list') return <>
+    <Field label="Calendly user URI" value={parameters.user_uri || ''} onChange={value => updateParameters({ user_uri:value })} />
+    <Field label="Maximum events" type="number" value={parameters.count || 20} onChange={value => updateParameters({ count:Number(value) })} />
+  </>
+  if (action === 'asana.task.create') return <>
+    <Field label="Project ID" value={parameters.project_id || ''} onChange={value => updateParameters({ project_id:value })} />
+    <Field label="Task name" value={parameters.name || ''} onChange={value => updateParameters({ name:value })} />
+    <Field label="Notes" value={parameters.notes || ''} onChange={value => updateParameters({ notes:value })} multiline />
+  </>
+  if (action === 'trello.card.create') return <>
+    <Field label="List ID" value={parameters.list_id || ''} onChange={value => updateParameters({ list_id:value })} />
+    <Field label="Card name" value={parameters.name || ''} onChange={value => updateParameters({ name:value })} />
+    <Field label="Description" value={parameters.description || ''} onChange={value => updateParameters({ description:value })} multiline />
+  </>
   return <>
     <Field label="Table" value={parameters.table || ''} onChange={value => updateParameters({ table:value })} />
     <Field label="Column name" value={Object.keys(parameters.row || {})[0] || 'value'} onChange={value => {
@@ -783,24 +844,24 @@ function Field({ label, value, onChange, multiline = false, type = 'text' }) {
   </>
 }
 
-const canvas = { background:'#11141C', border:'1px solid #2A2D3E', borderRadius:16, padding:28, overflowX:'auto', minHeight:260, display:'flex', alignItems:'center' }
-const nodeCard = { minWidth:155, display:'flex', alignItems:'center', gap:10, background:'#1A1D27', border:'1px solid #2A2D3E', borderRadius:12, padding:12, cursor:'pointer' }
-const inspector = { background:'#1A1D27', border:'1px solid #2A2D3E', borderRadius:14, padding:18 }
-const inputStyle = { width:'100%', boxSizing:'border-box', background:'#0F1117', border:'1px solid #2A2D3E', color:'white', padding:'9px 11px', borderRadius:8, marginBottom:12, fontSize:12 }
-const titleInput = { width:'100%', background:'transparent', border:'none', color:'white', fontSize:22, fontWeight:600, outline:'none' }
-const descriptionInput = { width:'100%', background:'transparent', border:'none', color:'#9CA3AF', fontSize:13, outline:'none', marginTop:4 }
-const labelStyle = { display:'block', color:'#9CA3AF', fontSize:11, marginBottom:5 }
-const primaryButton = { display:'inline-flex', alignItems:'center', gap:6, background:'#7C3AED', border:'none', color:'white', borderRadius:9, padding:'9px 13px', cursor:'pointer', fontSize:12, fontWeight:600 }
-const secondaryButton = { ...primaryButton, background:'#1F2937', border:'1px solid #374151' }
+const canvas = { backgroundColor:'#f8fbf9', backgroundImage:'radial-gradient(#c8d8ce 1px, transparent 1px)', backgroundSize:'20px 20px', border:'1px solid #dce7df', borderRadius:16, padding:28, overflowX:'auto', minHeight:310, display:'flex', alignItems:'center' }
+const nodeCard = { minWidth:155, display:'flex', alignItems:'center', gap:10, background:'#fff', border:'1px solid #dce7df', borderRadius:12, padding:12, cursor:'pointer', boxShadow:'0 8px 22px rgba(20,48,36,.07)' }
+const inspector = { background:'#fff', border:'1px solid #dce7df', borderRadius:14, padding:18, boxShadow:'0 10px 28px rgba(20,48,36,.06)' }
+const inputStyle = { width:'100%', boxSizing:'border-box', background:'#fff', border:'1px solid #c8d8ce', color:'#143024', padding:'9px 11px', borderRadius:8, marginBottom:12, fontSize:12 }
+const titleInput = { width:'100%', background:'transparent', border:'none', color:'#143024', fontSize:22, fontWeight:700, outline:'none' }
+const descriptionInput = { width:'100%', background:'transparent', border:'none', color:'#607268', fontSize:13, outline:'none', marginTop:4 }
+const labelStyle = { display:'block', color:'#607268', fontSize:11, marginBottom:5 }
+const primaryButton = { display:'inline-flex', alignItems:'center', gap:6, background:'#0b7a53', border:'none', color:'white', borderRadius:9, padding:'9px 13px', cursor:'pointer', fontSize:12, fontWeight:700 }
+const secondaryButton = { ...primaryButton, background:'#fff', color:'#143024', border:'1px solid #c8d8ce' }
 const toolButton = { ...secondaryButton, padding:'7px 11px' }
-const dangerButton = { width:'100%', background:'#3F1518', border:'1px solid #7F1D1D', color:'#FCA5A5', borderRadius:8, padding:8, cursor:'pointer', marginTop:8 }
-const iconButton = { background:'transparent', border:'none', color:'#9CA3AF', cursor:'pointer' }
-const errorBox = { background:'#2D1515', border:'1px solid #EF4444', color:'#FCA5A5', padding:11, borderRadius:9, marginBottom:12, fontSize:12 }
-const statusPill = { color:'#C4B5FD', background:'#4C1D9555', border:'1px solid #6D28D955', padding:'6px 10px', borderRadius:999, fontSize:11, textTransform:'uppercase' }
-const resultBox = { marginTop:12, background:'#0F1117', border:'1px solid #2A2D3E', borderRadius:9, padding:12, color:'#D1D5DB', fontSize:11, overflow:'auto' }
-const copilotPanel = { background:'linear-gradient(135deg,#151C22,#14261F)', border:'1px solid #24533D', borderRadius:16, padding:18, marginBottom:16 }
-const copilotIcon = { width:32, height:32, display:'grid', placeItems:'center', borderRadius:9, color:'#6EE7B7', background:'#064E3B' }
-const aiBadge = { color:'#A7F3D0', background:'#065F4655', border:'1px solid #05966966', borderRadius:999, padding:'4px 7px', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }
-const copilotSummary = { display:'flex', alignItems:'flex-start', gap:8, marginTop:12, paddingTop:12, borderTop:'1px solid #24533D', color:'#B6CFC2', fontSize:11, lineHeight:1.5 }
-const readinessReady = { display:'flex', alignItems:'center', gap:8, color:'#A7F3D0', background:'#052E2455', border:'1px solid #065F46', borderRadius:9, padding:'9px 11px', marginBottom:12, fontSize:11 }
-const readinessWarning = { ...readinessReady, color:'#FDE68A', background:'#42200655', borderColor:'#92400E' }
+const dangerButton = { width:'100%', background:'#fff5f4', border:'1px solid #f1b6b0', color:'#a92c22', borderRadius:8, padding:8, cursor:'pointer', marginTop:8 }
+const iconButton = { background:'transparent', border:'none', color:'#607268', cursor:'pointer' }
+const errorBox = { background:'#fff5f4', border:'1px solid #efb5af', color:'#a92c22', padding:11, borderRadius:9, marginBottom:12, fontSize:12 }
+const statusPill = { color:'#7049d7', background:'#f0ebff', border:'1px solid #d7cdf4', padding:'6px 10px', borderRadius:999, fontSize:11, textTransform:'uppercase' }
+const resultBox = { marginTop:12, background:'#f8fbf9', border:'1px solid #dce7df', borderRadius:9, padding:12, color:'#344b3f', fontSize:11, overflow:'auto' }
+const copilotPanel = { background:'linear-gradient(135deg,#faf8ff,#f2faf6)', border:'1px solid #d7cdf4', borderRadius:16, padding:18, marginBottom:16 }
+const copilotIcon = { width:32, height:32, display:'grid', placeItems:'center', borderRadius:9, color:'#fff', background:'#7049d7' }
+const aiBadge = { color:'#7049d7', background:'#f0ebff', border:'1px solid #d7cdf4', borderRadius:999, padding:'4px 7px', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }
+const copilotSummary = { display:'flex', alignItems:'flex-start', gap:8, marginTop:12, paddingTop:12, borderTop:'1px solid #d7cdf4', color:'#4f6358', fontSize:11, lineHeight:1.5 }
+const readinessReady = { display:'flex', alignItems:'center', gap:8, color:'#086743', background:'#edf9f2', border:'1px solid #b9dbc7', borderRadius:9, padding:'9px 11px', marginBottom:12, fontSize:11 }
+const readinessWarning = { ...readinessReady, color:'#88580a', background:'#fff8e9', borderColor:'#e6c687' }

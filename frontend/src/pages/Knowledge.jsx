@@ -17,17 +17,18 @@ import {
 } from '../lib/api'
 
 const panel = {
-  background:'#13151C',
-  border:'1px solid #232633',
+  background:'#fff',
+  border:'1px solid #dce7df',
   borderRadius:14,
   padding:18,
+  boxShadow:'0 10px 30px rgba(20,48,36,.05)',
 }
 const inputStyle = {
   width:'100%',
-  background:'#0D0F15',
-  border:'1px solid #2B2E3D',
+  background:'#fff',
+  border:'1px solid #c8d8ce',
   borderRadius:8,
-  color:'#F4F4F5',
+  color:'#143024',
   padding:'10px 12px',
   boxSizing:'border-box',
 }
@@ -35,7 +36,7 @@ const button = {
   border:0,
   borderRadius:8,
   padding:'9px 13px',
-  background:'#7C3AED',
+  background:'#0b7a53',
   color:'white',
   cursor:'pointer',
   display:'inline-flex',
@@ -163,12 +164,12 @@ export default function Knowledge() {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'end', marginBottom:22 }}>
         <div>
           <h1 style={{ fontSize:25, margin:'0 0 5px' }}>Knowledge & memory</h1>
-          <p style={{ margin:0, color:'#8B8FA3', fontSize:13 }}>
+          <p style={{ margin:0, color:'#607268', fontSize:13 }}>
             Ground agents in your documents with traceable citations and explicit retention.
           </p>
         </div>
       </div>
-      {error && <div style={{ ...panel, borderColor:'#7F1D1D', color:'#FCA5A5', marginBottom:15 }}>{error}</div>}
+      {error && <div style={{ ...panel, borderColor:'#efb5af', color:'#a92c22', background:'#fff5f4', marginBottom:15 }}>{error}</div>}
 
       <div style={{ display:'grid', gridTemplateColumns:'310px 1fr', gap:18 }}>
         <div>
@@ -179,13 +180,13 @@ export default function Knowledge() {
             <textarea style={{ ...inputStyle, marginTop:9, minHeight:70 }} placeholder="Description"
               value={form.description}
               onChange={event => setForm({ ...form, description:event.target.value })} />
-            <label style={{ display:'block', color:'#A1A1AA', fontSize:12, margin:'10px 0 5px' }}>
+            <label style={{ display:'block', color:'#607268', fontSize:12, margin:'10px 0 5px' }}>
               Retention days (blank = forever)
             </label>
             <input style={inputStyle} type="number" min="1" max="3650"
               value={form.retention_days}
               onChange={event => setForm({ ...form, retention_days:event.target.value })} />
-            <label style={{ display:'flex', gap:8, margin:'11px 0 14px', color:'#C4B5FD', fontSize:13 }}>
+            <label style={{ display:'flex', gap:8, margin:'11px 0 14px', color:'#7049d7', fontSize:13 }}>
               <input type="checkbox" checked={form.memory_enabled}
                 onChange={event => setForm({ ...form, memory_enabled:event.target.checked })} />
               Retain agent memory
@@ -194,24 +195,24 @@ export default function Knowledge() {
           </form>
 
           <div style={panel}>
-            <div style={{ color:'#8B8FA3', fontSize:11, textTransform:'uppercase', marginBottom:9 }}>Bases</div>
+            <div style={{ color:'#607268', fontSize:11, textTransform:'uppercase', marginBottom:9 }}>Bases</div>
             {bases.map(base => (
               <button key={base.id} onClick={() => setSelectedId(base.id)} style={{
                 width:'100%',
                 textAlign:'left',
                 border:'1px solid',
-                borderColor:selectedId === base.id ? '#7C3AED' : '#232633',
-                background:selectedId === base.id ? 'rgba(124,58,237,.12)' : '#0F1117',
-                color:'#F4F4F5',
+                borderColor:selectedId === base.id ? '#7049d7' : '#dce7df',
+                background:selectedId === base.id ? '#f0ebff' : '#fff',
+                color:'#143024',
                 borderRadius:9,
                 padding:11,
                 marginBottom:7,
                 cursor:'pointer',
               }}>
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                  <BookOpen size={14} color="#A78BFA" /> {base.name}
+                  <BookOpen size={14} color="#7049d7" /> {base.name}
                 </div>
-                <div style={{ color:'#71717A', fontSize:11, marginTop:5 }}>
+                <div style={{ color:'#84938b', fontSize:11, marginTop:5 }}>
                   {base.document_count} docs · {base.chunk_count} chunks · {base.memory_count} memories
                 </div>
               </button>
@@ -225,8 +226,8 @@ export default function Knowledge() {
               <div style={{ display:'flex', justifyContent:'space-between', gap:12 }}>
                 <div>
                   <h2 style={{ margin:0, fontSize:18 }}>{selected.name}</h2>
-                  <p style={{ color:'#8B8FA3', fontSize:12 }}>{selected.description || 'No description'}</p>
-                  <div style={{ color:'#A78BFA', fontSize:12 }}>
+                  <p style={{ color:'#607268', fontSize:12 }}>{selected.description || 'No description'}</p>
+                  <div style={{ color:'#7049d7', fontSize:12 }}>
                     Retention: {selected.retention_days ? `${selected.retention_days} days` : 'Forever'} ·
                     Memory {selected.memory_enabled ? 'enabled' : 'disabled'}
                   </div>
@@ -265,7 +266,7 @@ export default function Knowledge() {
                 </button>
                 <div style={{ marginTop:13, display:'grid', gap:8 }}>
                   {citations.map(citation => (
-                    <div key={citation.chunk_id} style={{ background:'#0D0F15', borderRadius:8, padding:10 }}>
+                    <div key={citation.chunk_id} style={{ background:'#f7faf7', border:'1px solid #e1e9e3', borderRadius:8, padding:10 }}>
                       <div style={{ color:'#C4B5FD', fontSize:12 }}>
                         [{citation.citation_number}] {citation.title}
                       </div>
@@ -280,8 +281,8 @@ export default function Knowledge() {
               <div style={panel}>
                 <h3 style={{ margin:'0 0 12px', fontSize:15 }}>Documents</h3>
                 {documents.map(item => (
-                  <div key={item.id} style={{ display:'flex', gap:8, alignItems:'center', padding:'9px 0', borderBottom:'1px solid #232633' }}>
-                    <FileText size={14} color="#A78BFA" />
+                  <div key={item.id} style={{ display:'flex', gap:8, alignItems:'center', padding:'9px 0', borderBottom:'1px solid #e1e9e3' }}>
+                    <FileText size={14} color="#7049d7" />
                     <div style={{ flex:1 }}>
                       <div style={{ fontSize:13 }}>{item.title}</div>
                       <div style={{ fontSize:11, color:'#71717A' }}>{item.chunk_count} chunks · {item.status}</div>
@@ -314,7 +315,7 @@ export default function Knowledge() {
                       onClick={() => run(agent.id, () => unbindKnowledgeAgent(selected.id, agent.id))}>Unbind</button>
                   </div>
                 ))}
-                <div style={{ borderTop:'1px solid #232633', marginTop:14, paddingTop:12, display:'flex', justifyContent:'space-between' }}>
+                <div style={{ borderTop:'1px solid #e1e9e3', marginTop:14, paddingTop:12, display:'flex', justifyContent:'space-between' }}>
                   <span style={{ color:'#A1A1AA', fontSize:12 }}>{memory.length} retained memory entries</span>
                   <button style={{ ...button, padding:'6px 9px', background:'#27272A' }}
                     onClick={() => run('clear', () => clearKnowledgeMemory(selected.id))}>Clear memory</button>

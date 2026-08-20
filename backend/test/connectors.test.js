@@ -46,8 +46,11 @@ test('launch connector catalog exposes typed actions for major business apps', (
     'airtable.record.create', 'hubspot.contact.create', 'salesforce.record.create',
     'stripe.customer.create', 'shopify.product.create', 'jira.issue.create',
     'linear.issue.create', 'twilio.message.send', 'zendesk.ticket.create',
+    'gmail.message.send', 'outlook.message.send', 'teams.message.send',
+    'google_calendar.event.create', 'zoom.meeting.create', 'calendly.events.list',
+    'asana.task.create', 'trello.card.create',
   ]) assert(actions.has(action), `${action} should be available`);
-  assert.equal(CONNECTOR_DEFINITIONS.length, 19);
+  assert.equal(CONNECTOR_DEFINITIONS.length, 27);
 });
 
 test('typed app requests use fixed provider hosts and never put secrets in URLs', () => {
@@ -66,12 +69,20 @@ test('typed app requests use fixed provider hosts and never put secrets in URLs'
     buildAppConnectorRequest('linear.issue.create', { team_id:'01234567-89ab-cdef-0123-456789abcdef', title:'Launch' }, secret),
     buildAppConnectorRequest('twilio.message.send', { account_sid:twilioAccountSid, to:'+15550000001', from:'+15550000002', body:'Launch' }, secret),
     buildAppConnectorRequest('zendesk.ticket.create', { subdomain:'agentforge', email:'ops@example.com', subject:'Launch', comment:'Ready' }, secret),
+    buildAppConnectorRequest('gmail.message.send', { to:'ops@example.com', subject:'Launch', body:'Ready' }, secret),
+    buildAppConnectorRequest('outlook.message.send', { to:'ops@example.com', subject:'Launch', body:'Ready' }, secret),
+    buildAppConnectorRequest('teams.message.send', { team_id:'01234567-89ab-cdef-0123-456789abcdef', channel_id:'19:launch-channel', body:'Ready' }, secret),
+    buildAppConnectorRequest('google_calendar.event.create', { calendar_id:'primary', summary:'Launch', start:'2026-08-20T09:00:00Z', end:'2026-08-20T09:30:00Z' }, secret),
+    buildAppConnectorRequest('zoom.meeting.create', { topic:'Launch', start_time:'2026-08-20T09:00:00Z', duration:30 }, secret),
+    buildAppConnectorRequest('calendly.events.list', { user_uri:'https://api.calendly.com/users/012345', count:20 }, secret),
+    buildAppConnectorRequest('asana.task.create', { project_id:'1234567890', name:'Launch' }, secret),
+    buildAppConnectorRequest('trello.card.create', { list_id:'0123456789abcdef01234567', name:'Launch' }, secret),
   ];
-  assert.equal(requests.length, 12);
+  assert.equal(requests.length, 20);
   for (const request of requests) {
     assert.equal(new URL(request.url).protocol, 'https:');
     assert(!request.url.includes(secret));
-    assert.equal(request.options.method, 'POST');
+    assert(['GET', 'POST'].includes(request.options.method));
     assert(!Object.values(request.options.headers).includes(undefined));
   }
 });

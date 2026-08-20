@@ -25,6 +25,14 @@ export const CONNECTOR_DEFINITIONS = [
   { action:'linear.issue.create', name:'Linear: Create Issue', category:'Engineering', providers:['generic'], app_slugs:['linear'] },
   { action:'twilio.message.send', name:'Twilio: Send SMS', category:'Communication', providers:['generic'], app_slugs:['twilio'] },
   { action:'zendesk.ticket.create', name:'Zendesk: Create Ticket', category:'Support', providers:['generic'], app_slugs:['zendesk'] },
+  { action:'gmail.message.send', name:'Gmail: Send Message', category:'Communication', providers:['google', 'generic'], app_slugs:['gmail'] },
+  { action:'outlook.message.send', name:'Outlook: Send Message', category:'Communication', providers:['generic'], app_slugs:['microsoft_outlook'] },
+  { action:'teams.message.send', name:'Teams: Send Channel Message', category:'Communication', providers:['generic'], app_slugs:['microsoft_teams'] },
+  { action:'google_calendar.event.create', name:'Google Calendar: Create Event', category:'Productivity', providers:['google', 'generic'], app_slugs:['google_calendar'] },
+  { action:'zoom.meeting.create', name:'Zoom: Create Meeting', category:'Communication', providers:['generic'], app_slugs:['zoom'] },
+  { action:'calendly.events.list', name:'Calendly: List Scheduled Events', category:'Productivity', providers:['generic'], app_slugs:['calendly'] },
+  { action:'asana.task.create', name:'Asana: Create Task', category:'Productivity', providers:['generic'], app_slugs:['asana'] },
+  { action:'trello.card.create', name:'Trello: Create Card', category:'Productivity', providers:['generic'], app_slugs:['trello'] },
 ];
 
 const DEFINITION_MAP = new Map(CONNECTOR_DEFINITIONS.map(item => [item.action, item]));
@@ -528,6 +536,51 @@ export function buildAppConnectorRequest(action, parameters = {}, secret = '') {
       }),
       allowedHostSuffix:'.zendesk.com',
     };
+  }
+  if (action === 'gmail.message.send') {
+    const to = required(parameters.to, 'Gmail recipient', 320);
+    const subject = required(parameters.subject, 'Gmail subject', 998);
+    const body = required(parameters.body, 'Gmail message', 20_000);
+    const raw = Buffer.from(`To: ${to}\r\nSubject: ${subject}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${body}`, 'utf8')
+      .toString('base64url');
+    return { url:'https://gmail.googleapis.com/gmail/v1/users/me/messages/send', options:jsonOptions(secret, { raw }) };
+  }
+  if (action === 'outlook.message.send') {
+    const to = required(parameters.to, 'Outlook recipient', 320);
+    return { url:'https://graph.microsoft.com/v1.0/me/sendMail', options:jsonOptions(secret, {
+      message:{ subject:required(parameters.subject, 'Outlook subject', 998), body:{ contentType:'Text', content:required(parameters.body, 'Outlook message', 20_000) }, toRecipients:[{ emailAddress:{ address:to } }] },
+      saveToSentItems:true,
+    }) };
+  }
+  if (action === 'teams.message.send') {
+    const teamId = identifier(parameters.team_id, 'Teams team ID', /^[A-Za-z0-9-]{20,80}$/);
+    const channelId = identifier(parameters.channel_id, 'Teams channel ID', /^[A-Za-z0-9:._-]{5,160}$/);
+    return { url:`https://graph.microsoft.com/v1.0/teams/${encodeURIComponent(teamId)}/channels/${encodeURIComponent(channelId)}/messages`, options:jsonOptions(secret, { body:{ contentType:'text', content:required(parameters.body, 'Teams message', 20_000) } }) };
+  }
+  if (action === 'google_calendar.event.create') {
+    const calendarId = required(parameters.calendar_id || 'primary', 'Calendar ID', 320);
+    const start = required(parameters.start, 'Event start', 80);
+    const end = required(parameters.end, 'Event end', 80);
+    if (Number.isNaN(Date.parse(start)) || Number.isNaN(Date.parse(end))) throw new Error('Calendar start or end is invalid');
+    return { url:`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, options:jsonOptions(secret, { summary:required(parameters.summary, 'Event summary', 1_000), description:text(parameters.description).slice(0, 8_000), start:{ dateTime:start }, end:{ dateTime:end } }) };
+  }
+  if (action === 'zoom.meeting.create') {
+    const start = required(parameters.start_time, 'Zoom start time', 80);
+    if (Number.isNaN(Date.parse(start))) throw new Error('Zoom start time is invalid');
+    return { url:'https://api.zoom.us/v2/users/me/meetings', options:jsonOptions(secret, { topic:required(parameters.topic, 'Zoom topic', 200), type:2, start_time:start, duration:Math.min(1440, Math.max(1, Number(parameters.duration) || 30)), timezone:text(parameters.timezone) || 'UTC', agenda:text(parameters.agenda).slice(0, 2_000) }) };
+  }
+  if (action === 'calendly.events.list') {
+    const url = new URL('https://api.calendly.com/scheduled_events');
+    url.searchParams.set('user', required(parameters.user_uri, 'Calendly user URI', 500));
+    url.searchParams.set('count', String(Math.min(100, Math.max(1, Number(parameters.count) || 20))));
+    return { url:url.toString(), options:{ method:'GET', headers:{ Authorization:`Bearer ${secret}` } } };
+  }
+  if (action === 'asana.task.create') {
+    return { url:'https://app.asana.com/api/1.0/tasks', options:jsonOptions(secret, { data:{ name:required(parameters.name, 'Asana task name', 500), notes:text(parameters.notes).slice(0, 20_000), projects:[identifier(parameters.project_id, 'Asana project ID', /^\d{5,30}$/)] } }) };
+  }
+  if (action === 'trello.card.create') {
+    const form = new URLSearchParams({ idList:identifier(parameters.list_id, 'Trello list ID', /^[A-Za-z0-9]{8,40}$/), name:required(parameters.name, 'Trello card name', 16_384), desc:text(parameters.description).slice(0, 16_384) });
+    return { url:'https://api.trello.com/1/cards', options:{ method:'POST', headers:{ Authorization:`Bearer ${secret}`, 'Content-Type':'application/x-www-form-urlencoded' }, body:form.toString() } };
   }
   throw new Error('Connector action is unsupported');
 }

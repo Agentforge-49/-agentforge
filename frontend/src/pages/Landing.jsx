@@ -22,9 +22,16 @@ const STEPS = [
   [Play, 'Test, then turn it on', 'Run with safe sample data, inspect every step, and publish only when the result is reliable.'],
 ]
 
+const ROLE_DEMOS = {
+  support:{ label:'Support', title:'Triage every request with a visible safety gate.', flow:['New request','Classify risk','Draft reply','Lead approval','Send'], metrics:['24 sample tasks','92% demo pass rate','3 awaiting review'] },
+  sales:{ label:'Sales operations', title:'Turn account context into consistent next steps.', flow:['New lead','Research context','Score fit','Manager approval','Prepare follow-up'], metrics:['18 sample leads','4 review flags','2 connections'] },
+  operations:{ label:'Internal operations', title:'Route work, collect approvals, and prove completion.', flow:['Request','Route owner','Prepare work','Operator approval','Report outcome'], metrics:['31 sample requests','6 active workflows','1 recovery needed'] },
+}
+
 export default function Landing() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [role, setRole] = useState('support')
   const goTo = path => { setMobileOpen(false); navigate(path) }
   const openGuide = () => window.dispatchEvent(new Event('agentforge:open-guide'))
 
@@ -79,6 +86,8 @@ export default function Landing() {
           </div>
         </section>
 
+        <section className="lf-role-demo" aria-labelledby="role-demo-title"><div className="landing-container"><div className="lf-heading"><span>Product evidence</span><h2 id="role-demo-title">See the operation, not a vague AI promise.</h2><p>This interactive preview uses illustrative sample data—not customer or production metrics.</p></div><div className="lf-role-tabs" role="tablist">{Object.entries(ROLE_DEMOS).map(([key,item]) => <button key={key} role="tab" aria-selected={role === key} className={role === key ? 'active' : ''} onClick={() => setRole(key)}>{item.label}</button>)}</div><div className="lf-role-scene"><div className="lf-role-scene__copy"><small>Illustrative workspace preview</small><h3>{ROLE_DEMOS[role].title}</h3><div className="lf-role-metrics">{ROLE_DEMOS[role].metrics.map(metric => <span key={metric}>{metric}</span>)}</div></div><div className="lf-role-flow">{ROLE_DEMOS[role].flow.map((step,index) => <div key={step}><span>{index === 1 ? <Sparkles size={14}/> : index === 3 ? <ShieldCheck size={14}/> : <CheckCircle2 size={14}/>}</span><strong>{step}</strong>{index < ROLE_DEMOS[role].flow.length - 1 && <i/>}</div>)}</div></div></div></section>
+
         <section className="lf-apps" aria-label="Popular app connections">
           <div className="landing-container">
             <p>Works with the tools your team already uses</p>
@@ -96,7 +105,7 @@ export default function Landing() {
 
         <section className="lf-section lf-section--soft">
           <div className="landing-container lf-outcomes">
-            <div className="lf-heading lf-heading--left"><span>Start with a real result</span><h2>Three complete workflows. Pick one and make it yours.</h2><p>Each starter includes the agent instructions, workflow steps, approval gate, connection checklist, and quality tests.</p><button className="button button--primary" type="button" onClick={() => goTo('/templates')}>Explore templates <ArrowRight size={15} /></button></div>
+            <div className="lf-heading lf-heading--left"><span>Start with a real result</span><h2>Twelve complete workflows. Pick one and make it yours.</h2><p>Each starter includes the agent instructions, workflow steps, approval gate, connection checklist, and quality tests. These are three featured examples.</p><button className="button button--primary" type="button" onClick={() => goTo('/templates')}>Explore templates <ArrowRight size={15} /></button></div>
             <div className="lf-outcome-list">{OUTCOMES.map(([title, text], index) => <button type="button" key={title} onClick={() => goTo('/templates')}><span>0{index + 1}</span><div><strong>{title}</strong><p>{text}</p></div><ArrowRight size={17} /></button>)}</div>
           </div>
         </section>

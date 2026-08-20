@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from '../lib/router.jsx'
-import { Activity, BookOpen, Building2, Cable, ChevronDown, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Settings, ShieldCheck, Sparkles, Store, X } from 'lucide-react'
+import { Activity, BookOpen, Building2, Cable, ChevronDown, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Settings, ShieldCheck, Sparkles, Store, WandSparkles, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { isWorkspaceNavActive, WORKSPACE_NAV_GROUPS } from '../lib/workspace-navigation.js'
 import BrandLogo from '../components/BrandLogo'
@@ -10,6 +10,7 @@ const ICONS = {
   apps:Cable, developer:Code2, home:LayoutDashboard, inbox:ShieldCheck,
   knowledge:BookOpen, quality:FlaskConical, runs:Activity, settings:Settings,
   studio:PanelsTopLeft, team:Building2, templates:Store,
+  copilot:WandSparkles,
 }
 
 export default function MainLayout({ children, user }) {
@@ -17,6 +18,19 @@ export default function MainLayout({ children, user }) {
   const [location] = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault(); navigate('/copilot')
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [navigate])
+
+  const currentLabel = useMemo(() => WORKSPACE_NAV_GROUPS.flatMap(group => group.items)
+    .find(item => isWorkspaceNavActive(location, item))?.label || 'Workspace', [location])
 
   const logout = async () => {
     await supabase.auth.signOut()
@@ -87,6 +101,7 @@ export default function MainLayout({ children, user }) {
       </aside>
 
       <main className="workspace-main" id="workspace-content" tabIndex="-1">
+        <nav className="workspace-breadcrumbs" aria-label="Breadcrumb"><Link to="/dashboard">Workspace</Link><span>/</span><strong>{currentLabel}</strong><kbd>Ctrl K</kbd><small>Copilot</small></nav>
         {children}
       </main>
     </div>

@@ -1,8 +1,10 @@
 import { validateConnectorConfig } from './connectors.js';
 
 const NODE_TYPES = new Set([
-  'input', 'agent', 'connector', 'transform', 'condition', 'approval', 'output',
+  'input', 'trigger', 'agent', 'tool', 'connector', 'transform', 'condition',
+  'approval', 'output',
 ]);
+const EDGE_MODES = new Set(['always', 'condition_true', 'condition_false', 'ai_handoff']);
 const TRANSFORMS = new Set(['trim', 'uppercase', 'lowercase', 'template']);
 const CONDITIONS = new Set(['contains', 'not_contains', 'equals']);
 
@@ -35,6 +37,12 @@ export function validateWorkflowGraph(nodes, edges) {
     const config = node?.config && typeof node.config === 'object' ? node.config : {};
     if (type === 'agent' && !text(config.agent_id)) {
       errors.push(`Agent node ${id} must select an agent`);
+    }
+    if (type === 'tool' && !text(config.tool_id)) {
+      errors.push(`Tool node ${id} must select a workspace tool`);
+    }
+    if (type === 'trigger' && !text(config.trigger_type)) {
+      errors.push(`Trigger node ${id} must select a trigger type`);
     }
     if (type === 'transform' && !TRANSFORMS.has(config.operation)) {
       errors.push(`Transform node ${id} has an invalid operation`);
@@ -84,6 +92,10 @@ export function validateWorkflowGraph(nodes, edges) {
     const source = text(edge?.source);
     const target = text(edge?.target);
     const sourceHandle = text(edge?.source_handle) || 'default';
+    const targetHandle = text(edge?.target_handle) || 'default';
+    const inferredMode = sourceHandle === 'true' ? 'condition_true'
+      : sourceHandle === 'false' ? 'condition_false' : 'always';
+    const mode = text(edge?.mode) || inferredMode;
     const id = text(edge?.id) || `edge_${index + 1}`;
     if (edgeIds.has(id)) errors.push(`Duplicate edge id: ${id}`);
     edgeIds.add(id);
@@ -94,15 +106,18 @@ export function validateWorkflowGraph(nodes, edges) {
     if (!['default', 'true', 'false'].includes(sourceHandle)) {
       errors.push(`Edge ${id} has an invalid source handle`);
     }
-    return { id, source, target, source_handle: sourceHandle };
+    if (!EDGE_MODES.has(mode)) errors.push(`Edge ${id} has an invalid mode`);
+    return {
+      id, source, target, source_handle: sourceHandle, target_handle: targetHandle, mode,
+    };
   });
 
   const nodeMap = new Map(normalizedNodes.map(node => [node.id, node]));
   for (const node of normalizedNodes.filter(item => item.type === 'condition')) {
     const handles = normalizedEdges
       .filter(edge => edge.source === node.id)
-      .map(edge => edge.source_handle);
-    if (!handles.includes('true') || !handles.includes('false')) {
+      .map(edge => edge.mode);
+    if (!handles.includes('condition_true') || !handles.includes('condition_false')) {
       errors.push(`Condition node ${node.id} needs true and false outgoing edges`);
     }
   }

@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const queryCache = new Map()
 
 async function getHeaders() {
   const { data: { session } } = await supabase.auth.getSession()
@@ -155,6 +156,65 @@ export const getObservabilityRuns = (filters = {}) => {
   )
   return request('GET', `/api/observability${query.size ? `?${query}` : ''}`)
 }
+
+async function cachedRequest(path, ttlMs = 30000) {
+  const cached = queryCache.get(path)
+  if (cached?.expiresAt > Date.now()) return cached.value
+  const value = await request('GET', path)
+  queryCache.set(path, { value, expiresAt:Date.now() + ttlMs })
+  return value
+}
+
+export function invalidateWorkspaceCache() {
+  queryCache.clear()
+}
+
+export const getWorkspaceBootstrap = ({ fresh = false } = {}) => {
+  if (fresh) queryCache.delete('/api/workspace/bootstrap')
+  return cachedRequest('/api/workspace/bootstrap', 30000)
+}
+
+export const getCopilotThreads = () => request('GET', '/api/copilot/threads')
+export const createCopilotThread = data => request('POST', '/api/copilot/threads', data)
+export const getCopilotThread = id => request('GET', `/api/copilot/threads/${id}`)
+export const updateCopilotThread = (id, data) => request('PATCH', `/api/copilot/threads/${id}`, data)
+export const applyCopilotProposal = id => request('POST', `/api/copilot/proposals/${id}/apply`)
+export const rejectCopilotProposal = id => request('POST', `/api/copilot/proposals/${id}/reject`)
+
+export async function streamCopilotMessage(threadId, message, { signal, onEvent, model } = {}) {
+  const headers = await getHeaders()
+  const response = await fetch(`${API_URL}/api/copilot/threads/${threadId}/messages`, {
+    method:'POST', headers, signal, body:JSON.stringify({ message, model }),
+  })
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(detail.error || `Copilot request failed (${response.status})`)
+  }
+  if (!response.body) throw new Error('Streaming is not supported by this browser')
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { value, done } = await reader.read()
+    buffer += decoder.decode(value || new Uint8Array(), { stream:!done })
+    const events = buffer.split('\n\n')
+    buffer = events.pop() || ''
+    for (const block of events) {
+      const name = block.match(/^event:\s*(.+)$/m)?.[1] || 'message'
+      const data = block.match(/^data:\s*(.+)$/m)?.[1]
+      if (!data) continue
+      onEvent?.(name, JSON.parse(data))
+    }
+    if (done) break
+  }
+}
+
+export const getWorkspaceTools = () => request('GET', '/api/workspace-tools')
+export const createWorkspaceTool = data => request('POST', '/api/workspace-tools', data)
+export const testWorkspaceTool = (id, input, versionId) =>
+  request('POST', `/api/workspace-tools/${id}/test`, { input, version_id:versionId })
+export const activateWorkspaceTool = (id, versionId) =>
+  request('POST', `/api/workspace-tools/${id}/activate`, { version_id:versionId })
 export const getObservabilityMetrics = () => request('GET', '/api/observability/metrics')
 export const getObservedRun = (id) => request('GET', `/api/observability/${id}`)
 export const replayObservedRun = (id) => request('POST', `/api/observability/${id}/replay`)

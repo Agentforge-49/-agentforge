@@ -10,15 +10,15 @@ const IDS = {
   resend:'44444444-4444-4444-8444-444444444444',
 };
 
-test('flagship starter-kit catalog exposes three safe install contracts', () => {
+test('flagship starter-kit catalog exposes twelve safe install contracts', () => {
   const kits = listStarterKits();
-  assert.equal(kits.length, 3);
-  assert.deepEqual(kits.map(item => item.slug), [
+  assert.equal(kits.length, 12);
+  assert.deepEqual(kits.slice(0, 3).map(item => item.slug), [
     'support-triage-slack',
     'lead-qualification-sheets',
     'research-report-delivery',
   ]);
-  assert(kits.every(item => item.sample_input && item.requirements.length));
+  assert(kits.every(item => item.sample_input && Array.isArray(item.requirements)));
   assert(kits.every(item => !Object.hasOwn(item, 'agents')));
   assert(kits.every(item => !Object.hasOwn(item, 'build')));
   assert.equal(kits[0].quality_case_count, 3);
