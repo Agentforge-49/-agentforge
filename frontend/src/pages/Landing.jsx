@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
-  ArrowRight, Bot, Check, CheckCircle2, ChevronRight, CircleDot, Menu,
-  MessageCircleMore, Play, ShieldCheck, Sparkles, Workflow, X, Zap,
+  Activity, ArrowRight, Bot, Check, CheckCircle2, ChevronRight, CircleDot,
+  Command, Gauge, GitBranch, Menu, MessageCircleMore, Play, ShieldCheck,
+  Sparkles, TestTube2, Workflow, X, Zap,
 } from 'lucide-react'
 
 import AppLogo from '../components/AppLogo.jsx'
@@ -17,9 +18,16 @@ const OUTCOMES = [
 ]
 
 const STEPS = [
-  [MessageCircleMore, 'Describe the result', 'Say what comes in, what decision is needed, and where the approved result should go.'],
-  [Workflow, 'Review the workflow', 'AgentForge creates the steps, connection requirements, tests, and approval point for you.'],
-  [Play, 'Test, then turn it on', 'Run with safe sample data, inspect every step, and publish only when the result is reliable.'],
+  [MessageCircleMore, 'Describe the result', 'Say what comes in, what decision is needed, and where the approved result should go.', 'Outcome understood', ['Input: support request', 'Decision: priority + reply', 'Delivery: Slack after approval']],
+  [Workflow, 'Review the system', 'AgentForge creates the steps, connection requirements, tests, and approval point for you.', 'System designed', ['4 connected steps', '1 human approval gate', '2 app connections required']],
+  [Play, 'Prove it, then activate', 'Run with safe sample data, inspect every step, and publish only when the result is reliable.', 'Ready for activation', ['12/12 checks passed', 'No external action during test', 'Complete run trace saved']],
+]
+
+const PLATFORM_CAPABILITIES = [
+  [Sparkles, 'Copilot', 'Describe an outcome in plain language. Get a visible plan, not a hidden action.', 'Draft → preview → approve'],
+  [GitBranch, 'Visual Build', 'See triggers, AI decisions, conditions, tools, approvals, and failure paths together.', 'Graph-based workflow'],
+  [ShieldCheck, 'Human Control', 'Hold sensitive actions for review and preserve an evidence trail for every decision.', 'Approval-first execution'],
+  [Activity, 'Live Operations', 'Follow active work, diagnose failures, compare quality, and improve with real traces.', 'Runs, cost, latency, quality'],
 ]
 
 const ROLE_DEMOS = {
@@ -32,6 +40,7 @@ export default function Landing() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [role, setRole] = useState('support')
+  const [journeyStep, setJourneyStep] = useState(0)
   const goTo = path => { setMobileOpen(false); navigate(path) }
   const openGuide = () => window.dispatchEvent(new Event('agentforge:open-guide'))
 
@@ -41,6 +50,7 @@ export default function Landing() {
         <div className="landing-container landing-nav__inner">
           <button className="brand-button" type="button" onClick={() => goTo('/')} aria-label="AgentForge home"><BrandLogo size={38} /></button>
           <nav className="desktop-nav" aria-label="Primary navigation">
+            <a href="#platform">Product</a>
             <a href="#how-it-works">How it works</a>
             <button type="button" onClick={() => goTo('/integrations')}>Apps</button>
             <button type="button" onClick={() => goTo('/templates')}>Templates</button>
@@ -52,16 +62,16 @@ export default function Landing() {
             <button className="mobile-menu-button" type="button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} onClick={() => setMobileOpen(value => !value)}>{mobileOpen ? <X size={22} /> : <Menu size={22} />}</button>
           </div>
         </div>
-        {mobileOpen && <nav className="mobile-nav" aria-label="Mobile navigation"><a href="#how-it-works" onClick={() => setMobileOpen(false)}>How it works</a><button type="button" onClick={() => goTo('/integrations')}>Apps</button><button type="button" onClick={() => goTo('/templates')}>Templates</button><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/login')}>Sign in</button><button className="button button--primary" type="button" onClick={() => goTo('/signup')}>Build free</button></nav>}
+        {mobileOpen && <nav className="mobile-nav" aria-label="Mobile navigation"><a href="#platform" onClick={() => setMobileOpen(false)}>Product</a><a href="#how-it-works" onClick={() => setMobileOpen(false)}>How it works</a><button type="button" onClick={() => goTo('/integrations')}>Apps</button><button type="button" onClick={() => goTo('/templates')}>Templates</button><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/login')}>Sign in</button><button className="button button--primary" type="button" onClick={() => goTo('/signup')}>Build free</button></nav>}
       </header>
 
       <main>
         <section className="lf-hero">
           <div className="landing-container lf-hero__grid">
             <div className="lf-hero__copy">
-              <div className="lf-eyebrow"><span><Sparkles size={13} /></span> AI automation you can understand and control</div>
-              <h1>Describe the work.<br /><em>AgentForge builds the workflow.</em></h1>
-              <p>Connect your apps, add an AI decision, and keep a human in control—without learning a complicated automation platform first.</p>
+              <div className="lf-eyebrow"><span><Sparkles size={13} /></span> The operations platform for dependable AI work</div>
+              <h1>Turn an outcome into a <em>working AI operation.</em></h1>
+              <p>Describe what your team needs. AgentForge designs the workflow, connects the right tools, proves it with tests, and keeps you in control before anything acts.</p>
               <div className="lf-hero__actions">
                 <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>Build your first workflow <ArrowRight size={17} /></button>
                 <button className="lf-ask-button" type="button" onClick={openGuide}><MessageCircleMore size={17} /> Ask the guide</button>
@@ -69,7 +79,19 @@ export default function Landing() {
               <div className="lf-hero__proof"><span><Check size={14} /> Free to start</span><span><Check size={14} /> No credit card</span><span><Check size={14} /> Approval before action</span></div>
             </div>
 
-            <div className="lf-workbench" aria-label="Example AgentForge workflow">
+            <div
+              className="lf-workbench"
+              aria-label="Interactive example AgentForge workflow"
+              onPointerMove={event => {
+                if (event.pointerType !== 'mouse') return
+                const bounds = event.currentTarget.getBoundingClientRect()
+                event.currentTarget.style.setProperty('--tilt-x', `${((event.clientY - bounds.top) / bounds.height - .5) * -3}deg`)
+                event.currentTarget.style.setProperty('--tilt-y', `${((event.clientX - bounds.left) / bounds.width - .5) * 4}deg`)
+              }}
+              onPointerLeave={event => { event.currentTarget.style.setProperty('--tilt-x', '1deg'); event.currentTarget.style.setProperty('--tilt-y', '-2deg') }}
+            >
+              <div className="lf-orbit lf-orbit--quality"><TestTube2 size={13} /><span><strong>12/12</strong> tests passed</span></div>
+              <div className="lf-orbit lf-orbit--live"><i /> Live trace ready</div>
               <div className="lf-workbench__bar"><span><i /><i /><i /></span><b>Customer support triage</b><small>Draft</small></div>
               <div className="lf-prompt"><div><Sparkles size={16} /></div><p>“When a customer asks for help, classify the issue, draft a reply, and send it to Slack after I approve it.”</p></div>
               <div className="lf-flow">
@@ -84,9 +106,17 @@ export default function Landing() {
               <div className="lf-workbench__footer"><span><ShieldCheck size={14} /> External action is approval-gated</span><button type="button" onClick={() => goTo('/signup')}>Use this template <ChevronRight size={14} /></button></div>
             </div>
           </div>
+          <div className="landing-container lf-hero__signal" aria-label="AgentForge product strengths"><span><Command size={14} /> One workspace</span><i /><span><Gauge size={14} /> Fast local guidance</span><i /><span><ShieldCheck size={14} /> Approval before action</span><i /><span><Activity size={14} /> Every run is visible</span></div>
         </section>
 
         <section className="lf-role-demo" aria-labelledby="role-demo-title"><div className="landing-container"><div className="lf-heading"><span>Product evidence</span><h2 id="role-demo-title">See the operation, not a vague AI promise.</h2><p>This interactive preview uses illustrative sample data—not customer or production metrics.</p></div><div className="lf-role-tabs" role="tablist">{Object.entries(ROLE_DEMOS).map(([key,item]) => <button key={key} role="tab" aria-selected={role === key} className={role === key ? 'active' : ''} onClick={() => setRole(key)}>{item.label}</button>)}</div><div className="lf-role-scene"><div className="lf-role-scene__copy"><small>Illustrative workspace preview</small><h3>{ROLE_DEMOS[role].title}</h3><div className="lf-role-metrics">{ROLE_DEMOS[role].metrics.map(metric => <span key={metric}>{metric}</span>)}</div></div><div className="lf-role-flow">{ROLE_DEMOS[role].flow.map((step,index) => <div key={step}><span>{index === 1 ? <Sparkles size={14}/> : index === 3 ? <ShieldCheck size={14}/> : <CheckCircle2 size={14}/>}</span><strong>{step}</strong>{index < ROLE_DEMOS[role].flow.length - 1 && <i/>}</div>)}</div></div></div></section>
+
+        <section className="lf-platform" id="platform">
+          <div className="landing-container">
+            <div className="lf-heading"><span>One connected operating system</span><h2>Everything between the idea and the result.</h2><p>AgentForge gives operators one understandable place to design, control, run, and improve AI work.</p></div>
+            <div className="lf-platform__grid">{PLATFORM_CAPABILITIES.map(([Icon, title, text, detail], index) => <article key={title} className={index === 0 ? 'featured' : ''}><div><span><Icon size={19} /></span><small>0{index + 1}</small></div><h3>{title}</h3><p>{text}</p><footer><CheckCircle2 size={13} /> {detail}</footer></article>)}</div>
+          </div>
+        </section>
 
         <section className="lf-apps" aria-label="Popular app connections">
           <div className="landing-container">
@@ -98,8 +128,11 @@ export default function Landing() {
 
         <section className="lf-section" id="how-it-works">
           <div className="landing-container">
-            <div className="lf-heading"><span>Simple by design</span><h2>From idea to a safe workflow in three steps.</h2><p>You never need to understand agents, chains, triggers, or model routing before you start.</p></div>
-            <div className="lf-steps">{STEPS.map(([Icon, title, text], index) => <article key={title}><b>0{index + 1}</b><span><Icon size={20} /></span><h3>{title}</h3><p>{text}</p></article>)}</div>
+            <div className="lf-heading"><span>Simple by design</span><h2>From idea to a safe workflow in three clear decisions.</h2><p>You never need to understand agents, chains, triggers, or model routing before you start.</p></div>
+            <div className="lf-journey">
+              <div className="lf-journey__steps" role="tablist" aria-label="How AgentForge works">{STEPS.map(([Icon, title, text], index) => <button type="button" role="tab" aria-selected={journeyStep === index} className={journeyStep === index ? 'active' : ''} onClick={() => setJourneyStep(index)} key={title}><b>0{index + 1}</b><span><Icon size={18} /></span><div><h3>{title}</h3><p>{text}</p></div><ChevronRight size={17} /></button>)}</div>
+              <div className="lf-journey__preview" role="tabpanel"><header><span><CheckCircle2 size={13} /> {STEPS[journeyStep][3]}</span><small>Interactive product preview</small></header><div className="lf-journey__window"><div><Sparkles size={17} /><span><small>AGENTFORGE COPILOT</small><strong>{STEPS[journeyStep][1]}</strong></span></div>{STEPS[journeyStep][4].map((line, index) => <p key={line}><span>{index + 1}</span>{line}<Check size={14} /></p>)}</div><footer><ShieldCheck size={14} /> Nothing is published or executed without your approval.</footer></div>
+            </div>
           </div>
         </section>
 

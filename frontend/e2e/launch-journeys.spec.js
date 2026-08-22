@@ -54,6 +54,18 @@ test('workspace recovers cleanly from a temporary API failure', async ({ page })
   await expect(page.getByRole('heading', { name:/See what is moving/ })).toBeVisible()
 })
 
+test('quick actions turn a beginner goal into the right workspace destination', async ({ page }) => {
+  await authenticate(page)
+  await mockBackend(page)
+  await page.goto('/dashboard')
+  await page.getByRole('button', { name:/Quick actions/ }).click()
+  await expect(page.getByRole('dialog', { name:'Quick actions' })).toBeVisible()
+  await page.getByLabel('Search quick actions').fill('human review')
+  await expect(page.getByRole('option', { name:/Review approvals/ })).toBeVisible()
+  await page.getByRole('option', { name:/Review approvals/ }).click()
+  await expect(page).toHaveURL(/\/approvals$/)
+})
+
 test('visual builder saves, activates, runs, and stops at human approval', async ({ page }) => {
   await authenticate(page)
   let workflow
