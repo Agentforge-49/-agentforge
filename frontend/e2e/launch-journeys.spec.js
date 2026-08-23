@@ -102,6 +102,21 @@ test('visual builder saves, activates, runs, and stops at human approval', async
   await expect(page.getByText(/Job status: waiting_approval/)).toBeVisible()
 })
 
+test('Connection Center recommends a small app plan and shows real readiness', async ({ page }) => {
+  await authenticate(page)
+  await mockBackend(page, ({ url }) => {
+    if (url.pathname === '/api/credentials') return { body:[{ id:'credential-google', provider:'google', app_slug:'google_sheets', last_test_status:'passed' }] }
+    if (url.pathname === '/api/oauth/connections') return { body:[{ id:'oauth-slack', provider:'slack', status:'active' }] }
+  })
+  await page.goto('/apps')
+  await expect(page.getByRole('heading', { name:'Connect an outcome—not a wall of app logos.' })).toBeVisible()
+  await expect(page.getByText('2/3 ready')).toBeVisible()
+  await page.getByRole('tab', { name:'Sales operations' }).click()
+  await expect(page.getByRole('heading', { name:'Sales operations', exact:true })).toBeVisible()
+  await expect(page.getByRole('list', { name:'Connection setup steps' }).getByText('Choose')).toBeVisible()
+  await expect(page.getByRole('button', { name:/Manage/ }).first()).toBeVisible()
+})
+
 test('universal app setup encrypts and tests a real credential path', async ({ page }) => {
   await authenticate(page)
   let credential = null

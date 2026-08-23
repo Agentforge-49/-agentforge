@@ -7,6 +7,7 @@ import {
 
 import AppLogo from '../components/AppLogo.jsx'
 import BrandLogo from '../components/BrandLogo'
+import SpatialOperationsScene from '../components/SpatialOperationsScene.jsx'
 import { LANDING_FEATURED_APPS } from '../lib/landing-apps.js'
 import { useNavigate } from '../lib/router.jsx'
 import './Landing.css'
@@ -107,6 +108,25 @@ export default function Landing() {
             </div>
           </div>
           <div className="landing-container lf-hero__signal" aria-label="AgentForge product strengths"><span><Command size={14} /> One workspace</span><i /><span><Gauge size={14} /> Fast local guidance</span><i /><span><ShieldCheck size={14} /> Approval before action</span><i /><span><Activity size={14} /> Every run is visible</span></div>
+        </section>
+
+        <section className="lf-spatial" id="spatial" aria-labelledby="spatial-title">
+          <div className="landing-container lf-spatial__grid">
+            <div className="lf-spatial__copy">
+              <span><Sparkles size={13} /> Spatial operations map</span>
+              <h2 id="spatial-title">See the whole AI operation—not another flat list of bots.</h2>
+              <p>The live 3D system represents agents, tools, approvals, and app actions as one connected operation. Move your pointer across the scene to inspect its depth.</p>
+              <ul><li><CheckCircle2 size={15} /><span><strong>Green signals</strong> show reasoning and tool handoffs.</span></li><li><ShieldCheck size={15} /><span><strong>Violet gates</strong> show human control points.</span></li><li><Activity size={15} /><span><strong>Every connection</strong> maps back to a visible run trace.</span></li></ul>
+              <button type="button" onClick={() => goTo('/signup')}>Build an operation <ArrowRight size={15} /></button>
+            </div>
+            <div className="lf-spatial__stage">
+              <SpatialOperationsScene />
+              <div className="lf-spatial__status"><i /> Live system model <span>Illustrative</span></div>
+              <article className="lf-spatial__card lf-spatial__card--agent"><Sparkles size={15} /><div><small>REASON</small><strong>Support specialist</strong></div><span>AI</span></article>
+              <article className="lf-spatial__card lf-spatial__card--approval"><ShieldCheck size={15} /><div><small>CONTROL</small><strong>Operator approval</strong></div><span>Gate</span></article>
+              <article className="lf-spatial__card lf-spatial__card--trace"><Activity size={15} /><div><small>OBSERVE</small><strong>Trace complete</strong></div><span>1.2s</span></article>
+            </div>
+          </div>
         </section>
 
         <section className="lf-role-demo" aria-labelledby="role-demo-title"><div className="landing-container"><div className="lf-heading"><span>Product evidence</span><h2 id="role-demo-title">See the operation, not a vague AI promise.</h2><p>This interactive preview uses illustrative sample data—not customer or production metrics.</p></div><div className="lf-role-tabs" role="tablist">{Object.entries(ROLE_DEMOS).map(([key,item]) => <button key={key} role="tab" aria-selected={role === key} className={role === key ? 'active' : ''} onClick={() => setRole(key)}>{item.label}</button>)}</div><div className="lf-role-scene"><div className="lf-role-scene__copy"><small>Illustrative workspace preview</small><h3>{ROLE_DEMOS[role].title}</h3><div className="lf-role-metrics">{ROLE_DEMOS[role].metrics.map(metric => <span key={metric}>{metric}</span>)}</div></div><div className="lf-role-flow">{ROLE_DEMOS[role].flow.map((step,index) => <div key={step}><span>{index === 1 ? <Sparkles size={14}/> : index === 3 ? <ShieldCheck size={14}/> : <CheckCircle2 size={14}/>}</span><strong>{step}</strong>{index < ROLE_DEMOS[role].flow.length - 1 && <i/>}</div>)}</div></div></div></section>

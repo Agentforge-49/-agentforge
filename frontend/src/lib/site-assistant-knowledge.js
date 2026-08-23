@@ -197,6 +197,6 @@ export function contextSuggestions(path, signedIn) {
   if (path.startsWith('/workflows')) return ['Agent vs workflow?', 'How do I test before publishing?', 'How do approvals work?'];
   if (path.startsWith('/launch')) return ['What should I check before launch?', 'How do I test a workflow?', 'How is AgentForge safe?'];
   return signedIn
-    ? ['Explain AgentForge simply', 'Design my first workflow', 'Help me fix a failed run']
+    ? ['Explain this page simply', 'Design my first workflow', 'Help me fix a failed run']
     : ['What does AgentForge do?', 'Which workflow fits me?', 'Can I start free?'];
 }

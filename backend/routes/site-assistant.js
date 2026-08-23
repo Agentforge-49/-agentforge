@@ -2,10 +2,10 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 
 import { executeAgent } from '../lib/engine.js';
+import { fastestCopilotModel, loadCopilotContext } from '../lib/copilot.js';
 import { MODEL_CATALOG } from '../lib/model-catalog.js';
 import { estimateCostUsd } from '../lib/observability.js';
 import { plainAssistantText, siteAssistantPrompt, suggestedAssistantPath } from '../lib/site-assistant.js';
-import { supabase } from '../lib/supabase.js';
 import { assertUsageAllowance, getUsageSummary, recordUsage } from '../lib/usage.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -13,34 +13,17 @@ const router = Router();
 router.use(requireAuth);
 
 async function accountSummary(userId) {
-  const [agents, activeAgents, workflows, activeWorkflows, triggers, credentials, oauth, approvals, usage] = await Promise.all([
-    supabase.from('agents').select('id', { count:'exact', head:true }).eq('user_id', userId),
-    supabase.from('agents').select('id', { count:'exact', head:true }).eq('user_id', userId).eq('status', 'active'),
-    supabase.from('workflows').select('id', { count:'exact', head:true }).eq('user_id', userId),
-    supabase.from('workflows').select('id', { count:'exact', head:true }).eq('user_id', userId).eq('status', 'active'),
-    supabase.from('workflow_triggers').select('id, status, trigger_type').eq('user_id', userId),
-    supabase.from('vault_credentials').select('provider, last_test_status').eq('user_id', userId),
-    supabase.from('oauth_connections').select('provider, status').eq('user_id', userId),
-    supabase.from('approval_requests').select('id', { count:'exact', head:true }).eq('user_id', userId).eq('status', 'pending'),
+  const [context, usage] = await Promise.all([
+    loadCopilotContext(userId),
     getUsageSummary(userId),
   ]);
-  const databaseErrors = [agents, activeAgents, workflows, activeWorkflows, triggers, credentials, oauth, approvals]
-    .map(result => result.error).filter(Boolean);
-  if (databaseErrors.length) throw databaseErrors[0];
-  const providerNames = [...new Set([
-    ...(credentials.data || []).map(item => item.provider),
-    ...(oauth.data || []).filter(item => item.status === 'active').map(item => item.provider),
-  ])].sort();
   return {
-    agents:{ total:agents.count || 0, active:activeAgents.count || 0 },
-    workflows:{ total:workflows.count || 0, active:activeWorkflows.count || 0 },
-    triggers:{
-      total:(triggers.data || []).length,
-      active:(triggers.data || []).filter(item => item.status === 'active').length,
-      types:[...new Set((triggers.data || []).map(item => item.trigger_type))],
-    },
-    connections:{ count:(credentials.data || []).length + (oauth.data || []).filter(item => item.status === 'active').length, providers:providerNames },
-    pending_approvals:approvals.count || 0,
+    agents:{ total:context.agents.length, active:context.agents.filter(item => item.status === 'active').length },
+    workflows:{ total:context.workflows.length, active:context.workflows.filter(item => item.status === 'active').length },
+    triggers:{ active:context.active_triggers },
+    connections:{ count:context.connected_providers.length, providers:context.connected_providers },
+    pending_approvals:context.pending_approvals,
+    recent_runs:context.recent_runs,
     plan:usage.plan?.plan_key || usage.entitlement?.plan_key || 'unknown',
     usage:{ model_calls:usage.period.model_calls, model_call_limit:usage.limits.model_calls || 0 },
   };
@@ -52,8 +35,9 @@ router.post('/chat', async (req, res, next) => {
     if (message.length < 2 || message.length > 1200) {
       return res.status(400).json({ error:'Ask a question between 2 and 1,200 characters' });
     }
-    const model = String(req.body?.model || 'claude-sonnet-4-6');
-    if (!MODEL_CATALOG[model]) return res.status(400).json({ error:'Assistant model is not supported' });
+    const requestedModel = String(req.body?.model || '');
+    if (requestedModel && !MODEL_CATALOG[requestedModel]) return res.status(400).json({ error:'Assistant model is not supported' });
+    const model = await fastestCopilotModel(requestedModel);
     const history = Array.isArray(req.body?.history) ? req.body.history.slice(-6) : [];
     const safeHistory = history.map(item => ({
       role:item?.role === 'assistant' ? 'assistant' : 'user',

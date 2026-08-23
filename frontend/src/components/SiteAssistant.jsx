@@ -13,7 +13,7 @@ const INITIAL_MESSAGE = {
   role:'assistant',
   answer:{
     title:'Hi, I am the AgentForge Guide.',
-    text:'Describe work in your own words. I can design a first workflow, explain any feature simply, troubleshoot a problem, or take you to the exact page you need.',
+    text:'Ask anything about AgentForge, your workspace, automation strategy, or business operations. I can explain, troubleshoot, design a safe workflow, or take you to the exact page you need.',
     bullets:[],
     actions:[],
     followUps:[],
@@ -27,6 +27,7 @@ export default function SiteAssistant({ user }) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([INITIAL_MESSAGE])
   const [thinking, setThinking] = useState(false)
+  const [retryQuestion, setRetryQuestion] = useState('')
   const inputRef = useRef(null)
   const endRef = useRef(null)
   const replyTimer = useRef(null)
@@ -64,6 +65,7 @@ export default function SiteAssistant({ user }) {
     setMessages(current => [...current, { role:'user', text:clean }])
     setInput('')
     setThinking(true)
+    setRetryQuestion('')
     const localAnswer = answerSiteQuestion(clean, { path:location, signedIn })
     const wantsWorkflow = signedIn && /(build|create|make|automate|automation|workflow)/i.test(clean)
     const draftAction = wantsWorkflow
@@ -92,12 +94,13 @@ export default function SiteAssistant({ user }) {
         answer:{
           title:'Account-aware recommendation',
           text:result.answer,
-          bullets:[`Workspace context: ${contextBits.join(', ')}.`],
+          bullets:[`Workspace context: ${contextBits.join(', ')}.`, `Answered with ${result.generation?.model || 'the fastest available model'}.`],
           actions:[...draftAction, { label:'Open recommended page', path:result.suggested_path }, ...localAnswer.actions].filter((item, index, all) => all.findIndex(candidate => candidate.path === item.path) === index),
           followUps:localAnswer.followUps,
         },
       }])
     } catch {
+      setRetryQuestion(clean)
       setMessages(current => [...current, { role:'assistant', answer:{ ...localAnswer, title:`${localAnswer.title} (safe fallback)`, actions:[...draftAction, ...(localAnswer.actions || [])] } }])
     } finally {
       setThinking(false)
@@ -118,6 +121,7 @@ export default function SiteAssistant({ user }) {
     setThinking(false)
     setMessages([INITIAL_MESSAGE])
     setInput('')
+    setRetryQuestion('')
     window.requestAnimationFrame(() => inputRef.current?.focus())
   }
 
@@ -179,11 +183,13 @@ export default function SiteAssistant({ user }) {
             </div>
           )}
 
+          {retryQuestion && <div className="site-assistant-retry" role="status"><span>The AI provider did not answer, so Copilot used verified product guidance.</span><button type="button" onClick={() => ask(retryQuestion)}>Retry full answer</button></div>}
+
           <form className="site-assistant-composer" onSubmit={event => { event.preventDefault(); ask(input) }}>
             <label htmlFor="site-assistant-input">What are you trying to accomplish?</label>
             <div>
-              <input id="site-assistant-input" ref={inputRef} value={input} maxLength={500}
-                onChange={event => setInput(event.target.value)} placeholder="Example: automate customer support from start to finish" />
+              <input id="site-assistant-input" ref={inputRef} value={input} maxLength={1200}
+                onChange={event => setInput(event.target.value)} placeholder="Ask about AgentForge, your workspace, or any business question" />
               <button type="submit" disabled={!input.trim() || thinking} aria-label="Send question"><Send size={16} /></button>
             </div>
           </form>

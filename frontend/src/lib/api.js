@@ -71,8 +71,8 @@ export const installStarterKit = (slug, data) =>
 export const getIntegrationBridgeStatus = () => request('GET', '/api/integration-bridge/status')
 export const createIntegrationConnectLink = app =>
   request('POST', '/api/integration-bridge/connect-link', { app })
-export const askWorkspaceGuide = (message, history = [], model = 'claude-sonnet-4-6') =>
-  request('POST', '/api/site-assistant/chat', { message, history, model })
+export const askWorkspaceGuide = (message, history = [], model = '') =>
+  request('POST', '/api/site-assistant/chat', { message, history, ...(model ? { model } : {}) })
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 export const getDashboardStats = () => request('GET', '/api/dashboard/stats')

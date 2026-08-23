@@ -9,14 +9,14 @@ import {
   INTEGRATION_CATEGORIES,
   INTEGRATION_COUNTS,
 } from '../lib/integration-catalog.js'
-import { appConnectionPath } from '../lib/app-connections.js'
+import { appConnectionPath, isAppConnected } from '../lib/app-connections.js'
 import { useNavigate } from '../lib/router.jsx'
 import AppLogo from './AppLogo.jsx'
 import './AppDirectory.css'
 
 const PAGE_SIZE = 30
 
-export default function AppDirectory({ workspace = false }) {
+export default function AppDirectory({ workspace = false, connectedProviders = new Set() }) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
@@ -77,13 +77,15 @@ export default function AppDirectory({ workspace = false }) {
       </div>
 
       <div className="app-directory-grid">
-        {filtered.slice(0, visible).map(app => (
-          <article className="app-directory-card" key={app.slug}>
+        {filtered.slice(0, visible).map(app => {
+          const connected = isAppConnected(app, connectedProviders)
+          return (
+          <article className={`app-directory-card${connected ? ' is-connected' : ''}`} key={app.slug}>
             <div className="app-directory-card-top">
               <AppLogo slug={app.slug} name={app.name} />
-              <span className={`app-directory-status app-directory-status--${app.mode}`}>
-                {app.mode === 'native' ? <CheckCircle2 size={11} /> : <KeyRound size={11} />}
-                {modeLabel(app)}
+              <span className={`app-directory-status app-directory-status--${connected ? 'connected' : app.mode}`}>
+                {connected ? <CheckCircle2 size={11} /> : app.mode === 'native' ? <CheckCircle2 size={11} /> : <KeyRound size={11} />}
+                {connected ? 'Connected' : modeLabel(app)}
               </span>
             </div>
             <small>{app.category}</small>
@@ -93,11 +95,11 @@ export default function AppDirectory({ workspace = false }) {
               : 'Use this app through AgentForge’s authenticated HTTP action or start workflows from its signed webhooks.'}</p>
             <div className="app-directory-card-actions">
               <button type="button" onClick={() => connect(app)}>
-                {!workspace ? 'See connection options' : app.mode === 'native' ? 'Set up connector' : 'Connect with API'} <ArrowRight size={13} />
+                {!workspace ? 'See connection options' : connected ? 'Manage connection' : app.mode === 'native' ? 'Set up connector' : 'Connect with API'} <ArrowRight size={13} />
               </button>
             </div>
           </article>
-        ))}
+        )})}
       </div>
 
       {!filtered.length && <div className="app-directory-empty"><Unplug size={24} /><h3>No exact match</h3><p>Use the universal HTTP action or a signed webhook to connect an app that is not cataloged yet.</p></div>}
