@@ -4,6 +4,7 @@ import { Router } from 'express';
 import {
   copilotSystemPrompt,
   fastestCopilotModel,
+  instantCopilotAnswer,
   loadCopilotContext,
   localCopilotAnswer,
   responseChunks,
@@ -140,19 +141,24 @@ router.post('/threads/:id/messages', async (req, res, next) => {
       chatAgentConfig(thread, req.userId),
     ]);
     if (historyResult.error) throw historyResult.error;
-    await assertUsageAllowance(req.userId, 1);
-    const effectiveModel = selectedAgent?.model || model;
-    res.write(sseEvent('meta', { state:'answering', model:effectiveModel, mode:thread.mode }));
+    const instantAnswer = thread.mode === 'copilot' ? instantCopilotAnswer(message, context) : null;
+    if (!instantAnswer) await assertUsageAllowance(req.userId, 1);
+    const effectiveModel = instantAnswer ? 'agentforge-instant' : (selectedAgent?.model || model);
+    res.write(sseEvent('meta', { state:'answering', model:effectiveModel, mode:thread.mode, route:instantAnswer ? 'workspace' : 'model' }));
     const history = (historyResult.data || []).reverse().map(item => `${item.role.toUpperCase()}: ${item.content}`).join('\n');
     let result;
-    try {
-      result = await executeAgent(selectedAgent || {
-        id:'agentforge-copilot', name:'AgentForge Copilot',
-        system_prompt:copilotSystemPrompt(context), personality:'friendly', model,
-        temperature:0.2, max_tokens:750, enabled_tool_slugs:[],
-      }, history, { timeoutSeconds:45 });
-    } catch (providerError) {
-      result = { status:'failed', error_message:providerError.message, error_code:'COPILOT_PROVIDER_ERROR' };
+    if (instantAnswer) {
+      result = { status:'completed', final_answer:instantAnswer, provider:'agentforge', tokens_used:0 };
+    } else {
+      try {
+        result = await executeAgent(selectedAgent || {
+          id:'agentforge-copilot', name:'AgentForge Copilot',
+          system_prompt:copilotSystemPrompt(context), personality:'direct and expert', model,
+          temperature:0.2, max_tokens:1200, enabled_tool_slugs:[],
+        }, history, { timeoutSeconds:45 });
+      } catch (providerError) {
+        result = { status:'failed', error_message:providerError.message, error_code:'COPILOT_PROVIDER_ERROR' };
+      }
     }
     const usedFallback = result.status !== 'completed' || !result.final_answer;
     const answer = plainAssistantText(usedFallback
@@ -162,15 +168,17 @@ router.post('/threads/:id/messages', async (req, res, next) => {
       generation:{ model:effectiveModel, provider:result.provider || MODEL_CATALOG[effectiveModel]?.provider, tokens_used:result.tokens_used || 0, fallback:usedFallback },
     }).select().single();
     if (assistantError) throw assistantError;
-    await recordUsage({
-      userId:req.userId, resourceType:'adjustment', modelCalls:usedFallback ? 0 : 1,
-      tokens:result.tokens_used || 0, estimatedCostUsd:estimateCostUsd(result.tokens_used, effectiveModel),
-      idempotencyKey:`copilot:${userMessage.id}`, metadata:{ operation:thread.mode, model:effectiveModel, agent_id:selectedAgent?.id || null },
-    });
+    if (!instantAnswer) {
+      await recordUsage({
+        userId:req.userId, resourceType:'adjustment', modelCalls:usedFallback ? 0 : 1,
+        tokens:result.tokens_used || 0, estimatedCostUsd:estimateCostUsd(result.tokens_used, effectiveModel),
+        idempotencyKey:`copilot:${userMessage.id}`, metadata:{ operation:thread.mode, model:effectiveModel, agent_id:selectedAgent?.id || null },
+      });
+    }
     for (const chunk of responseChunks(answer)) res.write(sseEvent('delta', { text:chunk }));
 
     let proposal = null;
-    const proposed = thread.mode === 'copilot' ? workflowProposalFor(message) : null;
+    const proposed = thread.mode === 'copilot' ? workflowProposalFor(message, context) : null;
     if (proposed) {
       const inserted = await supabase.from('copilot_action_proposals').insert({
         ...proposed, thread_id:thread.id, message_id:assistantMessage.id, user_id:req.userId,

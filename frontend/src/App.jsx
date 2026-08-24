@@ -151,7 +151,7 @@ export default function App() {
         <Route path="/settings"          element={protect(Settings)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
-      {assistantReady && <Suspense fallback={null}><SiteAssistant user={user} /></Suspense>}
+      {assistantReady && window.location.pathname !== '/copilot' && <Suspense fallback={null}><SiteAssistant user={user} /></Suspense>}
     </BrowserRouter>
   )
 }

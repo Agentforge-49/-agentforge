@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Activity, ArrowRight, Bot, Check, CheckCircle2, ChevronRight, CircleDot,
-  Command, Gauge, GitBranch, Menu, MessageCircleMore, Play, ShieldCheck,
+  Command, Gauge, GitBranch, Menu, MessageCircleMore, Play, PlugZap, ShieldCheck,
   Sparkles, TestTube2, Workflow, X, Zap,
 } from 'lucide-react'
 
@@ -70,12 +70,12 @@ export default function Landing() {
         <section className="lf-hero">
           <div className="landing-container lf-hero__grid">
             <div className="lf-hero__copy">
-              <div className="lf-eyebrow"><span><Sparkles size={13} /></span> The operations platform for dependable AI work</div>
-              <h1>Turn an outcome into a <em>working AI operation.</em></h1>
-              <p>Describe what your team needs. AgentForge designs the workflow, connects the right tools, proves it with tests, and keeps you in control before anything acts.</p>
+              <div className="lf-eyebrow"><span><Sparkles size={13} /></span> The control plane for agentic operations</div>
+              <h1>Build an AI workforce you can <em>see, test, and trust.</em></h1>
+              <p>Tell Copilot the outcome. AgentForge designs the agents and workflow, connects the right systems, proves the behavior, and keeps every consequential action under human control.</p>
               <div className="lf-hero__actions">
-                <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>Build your first workflow <ArrowRight size={17} /></button>
-                <button className="lf-ask-button" type="button" onClick={openGuide}><MessageCircleMore size={17} /> Ask the guide</button>
+                <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>Design your first operation <ArrowRight size={17} /></button>
+                <button className="lf-ask-button" type="button" onClick={openGuide}><MessageCircleMore size={17} /> Ask Copilot anything</button>
               </div>
               <div className="lf-hero__proof"><span><Check size={14} /> Free to start</span><span><Check size={14} /> No credit card</span><span><Check size={14} /> Approval before action</span></div>
             </div>
@@ -107,7 +107,7 @@ export default function Landing() {
               <div className="lf-workbench__footer"><span><ShieldCheck size={14} /> External action is approval-gated</span><button type="button" onClick={() => goTo('/signup')}>Use this template <ChevronRight size={14} /></button></div>
             </div>
           </div>
-          <div className="landing-container lf-hero__signal" aria-label="AgentForge product strengths"><span><Command size={14} /> One workspace</span><i /><span><Gauge size={14} /> Fast local guidance</span><i /><span><ShieldCheck size={14} /> Approval before action</span><i /><span><Activity size={14} /> Every run is visible</span></div>
+          <div className="landing-container lf-hero__signal" aria-label="AgentForge operating loop"><span><Command size={14} /> Describe</span><i /><span><PlugZap size={14} /> Connect</span><i /><span><Gauge size={14} /> Prove</span><i /><span><ShieldCheck size={14} /> Approve</span><i /><span><Activity size={14} /> Operate</span></div>
         </section>
 
         <section className="lf-spatial" id="spatial" aria-labelledby="spatial-title">

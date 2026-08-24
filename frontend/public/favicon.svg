@@ -1,8 +1,14 @@
-<svg width="56" height="48" viewBox="0 0 56 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="rail" x1="8" y1="42" x2="45" y2="6" gradientUnits="userSpaceOnUse"><stop stop-color="#092A1D"/><stop offset=".58" stop-color="#087A4E"/><stop offset="1" stop-color="#20CD7B"/></linearGradient></defs>
-  <path d="M10 42V13.5C10 9.9 12.9 7 16.5 7H44" stroke="url(#rail)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M12 25H35.5" stroke="url(#rail)" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="44" cy="7" r="5" fill="#1FD07C" stroke="white" stroke-width="2.2"/>
-  <circle cx="35.5" cy="25" r="5" fill="#0A7D50" stroke="white" stroke-width="2.2"/>
-  <path d="m47.5 16.2 1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z" fill="#7655D9"/>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="e" x1="13" y1="51" x2="52" y2="12" gradientUnits="userSpaceOnUse"><stop stop-color="#08724A"/><stop offset="1" stop-color="#24D787"/></linearGradient>
+    <linearGradient id="i" x1="17" y1="8" x2="47" y2="57" gradientUnits="userSpaceOnUse"><stop stop-color="#071C14"/><stop offset="1" stop-color="#173D2D"/></linearGradient>
+  </defs>
+  <path d="M32 3 57 17.5 45 24.5 32 17 19 24.5 7 17.5 32 3Z" fill="url(#i)"/>
+  <path d="m57 17.5-.2 29L44.6 39.4 44.7 24.6 57 17.5Z" fill="url(#e)"/>
+  <path d="m56.8 46.5-24.9 14.3V46.7l12.7-7.3 12.2 7.1Z" fill="#0B6B48"/>
+  <path d="M31.9 60.8 7 46.5l12.2-7.1 12.7 7.3v14.1Z" fill="url(#i)"/>
+  <path d="m7 46.5.2-29 12.1 7.1-.1 14.8L7 46.5Z" fill="#0E8B5A"/>
+  <path d="m19.3 24.6 12.7-7.4 12.7 7.4-.1 14.8-12.7 7.3-12.7-7.3.1-14.8Z" fill="#F7FBF9"/>
+  <path d="m32 24.2 7 4v8l-7 4-7-4v-8l7-4Z" fill="url(#e)"/>
+  <path d="M32 27.7v9" stroke="#F7FBF9" stroke-width="2.2"/>
 </svg>

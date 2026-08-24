@@ -31,7 +31,7 @@ test('Copilot streams an answer and applies an explicit proposal', async ({ page
     if (url.pathname === '/api/copilot/proposals/proposal-1/apply') return { body:{ resource_type:'workflow', resource_id:'workflow-1' } }
   })
   await page.goto('/copilot')
-  await page.getByPlaceholder(/Describe an outcome/).fill('Build safe support triage')
+  await page.getByPlaceholder(/Ask anything/).fill('Build safe support triage')
   await page.getByRole('button', { name:'Send message' }).click()
   await expect(page.getByText('I prepared a safe workflow.')).toBeVisible()
   await expect(page.getByRole('heading', { name:'Support triage' })).toBeVisible()
