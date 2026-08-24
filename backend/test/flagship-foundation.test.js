@@ -22,8 +22,9 @@ test('copilot answers safe workspace questions without a model round trip', () =
     agents:[{}], workflows:[{}, {}], connected_providers:['slack'],
     pending_approvals:1, recent_runs:{ failed:0 },
   });
-  assert.match(answer, /1 agents/);
+  assert.match(answer, /1 agent/);
   assert.match(answer, /2 workflows/);
+  assert.match(answer, /1 connected app/);
   assert.match(answer, /approval queue/);
   assert.equal(instantCopilotAnswer('Explain quantum mechanics'), null);
 });

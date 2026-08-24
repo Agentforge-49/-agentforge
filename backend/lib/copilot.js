@@ -165,7 +165,15 @@ export function instantCopilotAnswer(question, context = {}) {
     return 'AgentForge turns an outcome into a controlled AI operation. Copilot designs the workflow, Build makes every step visible, Apps connects the required systems, Quality tests the behavior, and Activity shows every run. Unlike a normal chatbot, it can prepare an approval-gated workflow proposal that you inspect before anything is saved or executed.';
   }
   if (/(workspace|account).*(status|summary|overview)|what.*(in|inside).*workspace/.test(value)) {
-    return `Your workspace currently has ${context.agents?.length || 0} agents, ${context.workflows?.length || 0} workflows, ${context.connected_providers?.length || 0} connected apps, ${context.pending_approvals || 0} pending approvals, and ${context.recent_runs?.failed || 0} recent failed runs. ${context.pending_approvals ? 'Review the approval queue in Activity first.' : context.recent_runs?.failed ? 'Open Activity to recover the failed work first.' : 'The workspace has no urgent control item, so you can continue in Build.'}`;
+    const counts = {
+      agents:context.agents?.length || 0,
+      workflows:context.workflows?.length || 0,
+      apps:context.connected_providers?.length || 0,
+      approvals:context.pending_approvals || 0,
+      failures:context.recent_runs?.failed || 0,
+    };
+    const label = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+    return `Your workspace currently has ${label(counts.agents, 'agent')}, ${label(counts.workflows, 'workflow')}, ${label(counts.apps, 'connected app')}, ${label(counts.approvals, 'pending approval')}, and ${label(counts.failures, 'recent failed run')}. ${counts.approvals ? 'Review the approval queue in Activity first.' : counts.failures ? 'Open Activity to recover the failed work first.' : 'The workspace has no urgent control item, so you can continue in Build.'}`;
   }
   if (/(which|what).*(app|integration|connection)|connected app/.test(value)) {
     const providers = context.connected_providers || [];
