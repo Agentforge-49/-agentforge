@@ -1,6 +1,6 @@
 export const WORKSPACE_COMMANDS = [
   { id:'create', label:'Create an automation', description:'Start in Build with a guided path', to:'/studio', group:'Create', icon:'wand', keywords:'new workflow agent chain build automation' },
-  { id:'ask', label:'Ask AgentForge Copilot', description:'Describe an outcome or diagnose a failed run', to:'/copilot', group:'Create', icon:'sparkles', keywords:'chat help invent assistant troubleshoot' },
+  { id:'ask', label:'Open Forge', description:'Ask anything, analyze work, design an outcome, or diagnose a failed run', to:'/copilot', group:'Create', icon:'sparkles', keywords:'chat history new chat help invent assistant troubleshoot forge copilot' },
   { id:'connect', label:'Connect an app', description:'Choose from 100 honest connection paths', to:'/apps', group:'Set up', icon:'plug', keywords:'integration oauth credential webhook api' },
   { id:'template', label:'Use a proven template', description:'Install a complete, approval-first starter', to:'/marketplace', group:'Create', icon:'layout', keywords:'starter recipe marketplace example' },
   { id:'activity', label:'Inspect run activity', description:'Follow traces, failures, retries, cost, and latency', to:'/observability', group:'Operate', icon:'activity', keywords:'runs logs monitor failures trace history' },

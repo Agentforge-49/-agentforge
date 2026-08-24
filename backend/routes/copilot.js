@@ -152,7 +152,7 @@ router.post('/threads/:id/messages', async (req, res, next) => {
     } else {
       try {
         result = await executeAgent(selectedAgent || {
-          id:'agentforge-copilot', name:'AgentForge Copilot',
+          id:'agentforge-forge', name:'Forge',
           system_prompt:copilotSystemPrompt(context), personality:'direct and expert', model,
           temperature:0.2, max_tokens:1200, enabled_tool_slugs:[],
         }, history, { timeoutSeconds:45 });
@@ -192,7 +192,7 @@ router.post('/threads/:id/messages', async (req, res, next) => {
     res.end();
   } catch (error) {
     if (res.headersSent) {
-      res.write(sseEvent('error', { error:error.message || 'Copilot is temporarily unavailable', code:error.code || 'COPILOT_ERROR' }));
+      res.write(sseEvent('error', { error:error.message || 'Forge is temporarily unavailable', code:error.code || 'COPILOT_ERROR' }));
       res.end();
       return;
     }

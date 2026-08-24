@@ -78,7 +78,7 @@ export async function loadCopilotContext(userId, { fresh = false } = {}) {
 }
 
 export function copilotSystemPrompt(context) {
-  return `You are AgentForge Copilot, an operations co-builder inside AgentForge.
+  return `You are Forge, AgentForge's AI operating partner.
 
 Give expert, useful answers to any reasonable question. You are especially strong at operations design, automation, AI agents, business processes, troubleshooting, and AgentForge. When a question is unrelated to AgentForge, answer it directly first and only connect it back to automation when that connection is genuinely useful.
 
@@ -89,7 +89,7 @@ AgentForge supports focused agents, visual workflows, conditions, transforms, ap
 Safe workspace summary:
 ${JSON.stringify(context)}
 
-Answer in clear, professional plain text using at most 500 words unless the user asks for more. Lead with the direct answer. Give concrete steps, examples, formulas, or a recommended workflow when useful. Use exact labels: Home, Build, Copilot, Activity, Apps, Templates, Quality, Knowledge, Team, Developer, and Settings. If the request needs an unavailable connection or model provider, say so clearly. Consequential external actions always require approval.`;
+Answer in clear, professional plain text using at most 500 words unless the user asks for more. Lead with the direct answer. Give concrete steps, examples, formulas, or a recommended workflow when useful. Use exact labels: Home, Build, Forge, Activity, Apps, Templates, Quality, Knowledge, Team, Developer, and Settings. If the request needs an unavailable connection or model provider, say so clearly. Consequential external actions always require approval.`;
 }
 
 function requestedAppRequirements(request, context) {
@@ -114,7 +114,7 @@ export function workflowProposalFor(message, context = {}) {
   const request = String(message || '').trim();
   if (!/(automate|automation|workflow|build|create|make)/i.test(request)) return null;
   const nameSeed = request.replace(/^(please\s+)?(build|create|make|automate)\s+/i, '').trim();
-  const name = (nameSeed || 'Copilot automation').replace(/[.!?]+$/, '').slice(0, 96);
+  const name = (nameSeed || 'Forge automation').replace(/[.!?]+$/, '').slice(0, 96);
   const publishedAgent = context.agents?.find(agent => agent.published);
   const intent = /support|ticket|customer/i.test(request) ? {
     input:'New customer request', work:'Classify and draft response', approval:'Review customer response', output:'Approved support response',
@@ -162,7 +162,7 @@ export function workflowProposalFor(message, context = {}) {
 export function instantCopilotAnswer(question, context = {}) {
   const value = String(question || '').toLowerCase();
   if (/(what is agentforge|what can (you|agentforge)|how does agentforge|explain agentforge)/.test(value)) {
-    return 'AgentForge turns an outcome into a controlled AI operation. Copilot designs the workflow, Build makes every step visible, Apps connects the required systems, Quality tests the behavior, and Activity shows every run. Unlike a normal chatbot, it can prepare an approval-gated workflow proposal that you inspect before anything is saved or executed.';
+    return 'AgentForge turns an outcome into a controlled AI operation. Forge designs the workflow, Build makes every step visible, Apps connects the required systems, Quality tests the behavior, and Activity shows every run. Unlike a normal chatbot, Forge can prepare an approval-gated workflow proposal that you inspect before anything is saved or executed.';
   }
   if (/(workspace|account).*(status|summary|overview)|what.*(in|inside).*workspace/.test(value)) {
     const counts = {
@@ -202,7 +202,7 @@ export function localCopilotAnswer(question, context = {}) {
   if (/(workflow|build|automation)/.test(value)) {
     return 'Open Build to describe the outcome, review the generated graph, connect required apps, run a safe test, and activate only after every dependency is ready. I can prepare a draft proposal, but you decide whether to save it.';
   }
-  return 'I could not reach the configured AI provider, but your work is safe. You can continue in Build, inspect runs in Activity, connect services in Apps, or retry this answer. Configure a supported model provider in Settings for open-ended Copilot questions.';
+  return 'I could not reach the configured AI provider, but your work is safe. You can continue in Build, inspect runs in Activity, connect services in Apps, or retry this answer. Configure a supported model provider in Settings for open-ended Forge questions.';
 }
 
 export function sseEvent(name, payload) {

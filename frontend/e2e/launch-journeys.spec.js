@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { Buffer } from 'node:buffer'
 import { authenticate, bootstrap, expectNoSeriousA11yViolations, mockBackend, session, supabaseBase } from './helpers.js'
 
 test('signup creates a session and reaches the command center', async ({ page }) => {
@@ -15,24 +16,37 @@ test('signup creates a session and reaches the command center', async ({ page })
   await expect(page.getByRole('heading', { name:/See what is moving/ })).toBeVisible()
 })
 
-test('Copilot streams an answer and applies an explicit proposal', async ({ page }) => {
+test('Forge streams an answer and applies an explicit proposal', async ({ page }) => {
   await authenticate(page)
   const thread = { id:'thread-1', title:'Support automation', messages:[], proposals:[] }
+  let sentMessage = ''
   await mockBackend(page, ({ request, url }) => {
     if (url.pathname === '/api/copilot/threads' && request.method() === 'GET') return { body:[thread] }
     if (url.pathname === '/api/copilot/threads/thread-1') return { body:thread }
-    if (url.pathname.endsWith('/messages')) return { sse:[
+    if (url.pathname.endsWith('/messages')) {
+      sentMessage = request.postDataJSON().message
+      return { sse:[
       'event: meta\ndata: {"state":"answering"}',
       'event: delta\ndata: {"text":"I prepared a safe workflow."}',
       'event: proposal\ndata: {"id":"proposal-1","message_id":"message-1","status":"pending","title":"Support triage","summary":"Triage then approve.","preview":{"nodes":[{"id":"a","label":"Triage"},{"id":"b","label":"Approve"}]}}',
       'event: done\ndata: {"message":{"id":"message-1","role":"assistant","content":"I prepared a safe workflow."}}',
       '',
-    ].join('\n\n') }
+      ].join('\n\n') }
+    }
     if (url.pathname === '/api/copilot/proposals/proposal-1/apply') return { body:{ resource_type:'workflow', resource_id:'workflow-1' } }
   })
   await page.goto('/copilot')
+  await expect(page.getByRole('button', { name:'History' })).toBeVisible()
+  await expect(page.getByRole('button', { name:'New chat' })).toBeVisible()
+  await page.getByRole('button', { name:'History' }).click()
+  await expect(page.getByRole('dialog', { name:'Chat history' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name:'Chat history' }).getByText('Support automation')).toBeVisible()
+  await page.getByRole('button', { name:'Close chat history' }).click()
+  await page.locator('input[type="file"]').setInputFiles({ name:'support-notes.txt', mimeType:'text/plain', buffer:Buffer.from('VIP tickets require manager approval.') })
+  await expect(page.getByText('support-notes.txt')).toBeVisible()
   await page.getByPlaceholder(/Ask anything/).fill('Build safe support triage')
   await page.getByRole('button', { name:'Send message' }).click()
+  await expect.poll(() => sentMessage).toContain('VIP tickets require manager approval.')
   await expect(page.getByText('I prepared a safe workflow.')).toBeVisible()
   await expect(page.getByRole('heading', { name:'Support triage' })).toBeVisible()
   await page.getByRole('button', { name:/Approve & open draft/ }).click()
@@ -66,13 +80,13 @@ test('quick actions turn a beginner goal into the right workspace destination', 
   await expect(page).toHaveURL(/\/approvals$/)
 })
 
-test('outcome launcher carries a beginner request into Copilot Build mode', async ({ page }) => {
+test('outcome launcher carries a beginner request into Forge Build mode', async ({ page }) => {
   await authenticate(page)
   await mockBackend(page)
   await page.goto('/dashboard')
   const request = 'Classify new customer emails and ask me before replying'
   await page.getByPlaceholder(/Example: When a customer emails us/).fill(request)
-  await page.getByRole('button', { name:'Design with Copilot' }).click()
+  await page.getByRole('button', { name:'Design with Forge' }).click()
   await expect(page).toHaveURL(/\/copilot\?mode=build/)
   await expect(page.getByRole('textbox', { name:'Design an approval-ready operation' })).toHaveValue(request)
 })
@@ -186,7 +200,7 @@ test('@mobile mobile navigation exposes the complete primary workspace', async (
   await mockBackend(page)
   await page.goto('/dashboard')
   await page.getByRole('button', { name:'Open navigation' }).click()
-  await expect(page.getByRole('link', { name:'Copilot' })).toBeVisible()
+  await expect(page.getByRole('link', { name:'Forge' })).toBeVisible()
   await page.getByRole('link', { name:'Build' }).click()
   await expect(page).toHaveURL(/\/studio$/)
   await expect(page.getByRole('heading', { name:/Design every AI operation/ })).toBeVisible()

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from '../lib/router.jsx'
-import { Activity, BookOpen, Building2, Cable, ChevronDown, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Search, Settings, ShieldCheck, Sparkles, Store, WandSparkles, X } from 'lucide-react'
+import { Activity, BookOpen, Building2, Cable, ChevronDown, Code2, FlaskConical, LayoutDashboard, LogOut, Menu, PanelsTopLeft, Search, Settings, ShieldCheck, Sparkles, Store, X, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { isWorkspaceNavActive, WORKSPACE_NAV_GROUPS } from '../lib/workspace-navigation.js'
 import BrandLogo from '../components/BrandLogo'
@@ -11,7 +11,7 @@ const ICONS = {
   apps:Cable, developer:Code2, home:LayoutDashboard, inbox:ShieldCheck,
   knowledge:BookOpen, quality:FlaskConical, runs:Activity, settings:Settings,
   studio:PanelsTopLeft, team:Building2, templates:Store,
-  copilot:WandSparkles,
+  copilot:Zap,
 }
 
 export default function MainLayout({ children, user }) {

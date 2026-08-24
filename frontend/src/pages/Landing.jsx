@@ -25,7 +25,7 @@ const STEPS = [
 ]
 
 const PLATFORM_CAPABILITIES = [
-  [Sparkles, 'Copilot', 'Describe an outcome in plain language. Get a visible plan, not a hidden action.', 'Draft → preview → approve'],
+  [Sparkles, 'Forge', 'Ask anything or describe an outcome in plain language. Get a useful answer or a visible plan, never a hidden action.', 'Ask → draft → preview → approve'],
   [GitBranch, 'Visual Build', 'See triggers, AI decisions, conditions, tools, approvals, and failure paths together.', 'Graph-based workflow'],
   [ShieldCheck, 'Human Control', 'Hold sensitive actions for review and preserve an evidence trail for every decision.', 'Approval-first execution'],
   [Activity, 'Live Operations', 'Follow active work, diagnose failures, compare quality, and improve with real traces.', 'Runs, cost, latency, quality'],
@@ -43,7 +43,6 @@ export default function Landing() {
   const [role, setRole] = useState('support')
   const [journeyStep, setJourneyStep] = useState(0)
   const goTo = path => { setMobileOpen(false); navigate(path) }
-  const openGuide = () => window.dispatchEvent(new Event('agentforge:open-guide'))
 
   return (
     <div className="landing landing-v2">
@@ -72,10 +71,10 @@ export default function Landing() {
             <div className="lf-hero__copy">
               <div className="lf-eyebrow"><span><Sparkles size={13} /></span> The control plane for agentic operations</div>
               <h1>Build an AI workforce you can <em>see, test, and trust.</em></h1>
-              <p>Tell Copilot the outcome. AgentForge designs the agents and workflow, connects the right systems, proves the behavior, and keeps every consequential action under human control.</p>
+              <p>Tell Forge the outcome. AgentForge designs the agents and workflow, connects the right systems, proves the behavior, and keeps every consequential action under human control.</p>
               <div className="lf-hero__actions">
                 <button className="button button--primary button--large" type="button" onClick={() => goTo('/signup')}>Design your first operation <ArrowRight size={17} /></button>
-                <button className="lf-ask-button" type="button" onClick={openGuide}><MessageCircleMore size={17} /> Ask Copilot anything</button>
+                <button className="lf-ask-button" type="button" onClick={() => goTo('/signup')}><MessageCircleMore size={17} /> Meet Forge</button>
               </div>
               <div className="lf-hero__proof"><span><Check size={14} /> Free to start</span><span><Check size={14} /> No credit card</span><span><Check size={14} /> Approval before action</span></div>
             </div>
@@ -151,7 +150,7 @@ export default function Landing() {
             <div className="lf-heading"><span>Simple by design</span><h2>From idea to a safe workflow in three clear decisions.</h2><p>You never need to understand agents, chains, triggers, or model routing before you start.</p></div>
             <div className="lf-journey">
               <div className="lf-journey__steps" role="tablist" aria-label="How AgentForge works">{STEPS.map(([Icon, title, text], index) => <button type="button" role="tab" aria-selected={journeyStep === index} className={journeyStep === index ? 'active' : ''} onClick={() => setJourneyStep(index)} key={title}><b>0{index + 1}</b><span><Icon size={18} /></span><div><h3>{title}</h3><p>{text}</p></div><ChevronRight size={17} /></button>)}</div>
-              <div className="lf-journey__preview" role="tabpanel"><header><span><CheckCircle2 size={13} /> {STEPS[journeyStep][3]}</span><small>Interactive product preview</small></header><div className="lf-journey__window"><div><Sparkles size={17} /><span><small>AGENTFORGE COPILOT</small><strong>{STEPS[journeyStep][1]}</strong></span></div>{STEPS[journeyStep][4].map((line, index) => <p key={line}><span>{index + 1}</span>{line}<Check size={14} /></p>)}</div><footer><ShieldCheck size={14} /> Nothing is published or executed without your approval.</footer></div>
+              <div className="lf-journey__preview" role="tabpanel"><header><span><CheckCircle2 size={13} /> {STEPS[journeyStep][3]}</span><small>Interactive product preview</small></header><div className="lf-journey__window"><div><Sparkles size={17} /><span><small>FORGE</small><strong>{STEPS[journeyStep][1]}</strong></span></div>{STEPS[journeyStep][4].map((line, index) => <p key={line}><span>{index + 1}</span>{line}<Check size={14} /></p>)}</div><footer><ShieldCheck size={14} /> Nothing is published or executed without your approval.</footer></div>
             </div>
           </div>
         </section>
@@ -170,7 +169,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="lf-final"><div className="landing-container"><div><span>Start small. Prove it. Scale it.</span><h2>What should AgentForge automate for you?</h2><p>Build free, test with sample data, and publish when you are ready.</p></div><div><button className="button button--light button--large" type="button" onClick={() => goTo('/signup')}>Build my first workflow <ArrowRight size={17} /></button><button type="button" onClick={openGuide}>Ask a question</button></div></div></section>
+        <section className="lf-final"><div className="landing-container"><div><span>Start small. Prove it. Scale it.</span><h2>What should AgentForge automate for you?</h2><p>Build free, test with sample data, and publish when you are ready.</p></div><div><button className="button button--light button--large" type="button" onClick={() => goTo('/signup')}>Build my first workflow <ArrowRight size={17} /></button><button type="button" onClick={() => goTo('/signup')}>Ask Forge</button></div></div></section>
       </main>
 
       <footer className="landing-footer"><div className="landing-container landing-footer__top"><div><BrandLogo size={38} /><p>Understandable AI automation for real work.</p></div><div className="landing-footer__links"><div><strong>Product</strong><a href="#how-it-works">How it works</a><button type="button" onClick={() => goTo('/integrations')}>Apps</button><button type="button" onClick={() => goTo('/templates')}>Templates</button></div><div><strong>Start</strong><button type="button" onClick={() => goTo('/pricing')}>Pricing</button><button type="button" onClick={() => goTo('/signup')}>Create account</button><button type="button" onClick={() => goTo('/login')}>Sign in</button></div></div></div><div className="landing-container landing-footer__bottom"><span>© 2026 AgentForge</span><span>Built for dependable automation.</span></div></footer>

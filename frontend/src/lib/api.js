@@ -193,7 +193,7 @@ export async function streamCopilotMessage(threadId, message, { signal, onEvent,
   })
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}))
-    throw new Error(detail.error || `Copilot request failed (${response.status})`)
+    throw new Error(detail.error || `Forge request failed (${response.status})`)
   }
   if (!response.body) throw new Error('Streaming is not supported by this browser')
   const reader = response.body.getReader()

@@ -2,7 +2,7 @@ export const WORKSPACE_NAV_GROUPS = [
   { label:'Start here', items:[
     { to:'/dashboard', icon:'home', label:'Home', activePaths:['/dashboard'] },
     { to:'/studio', icon:'studio', label:'Build', activePaths:['/studio', '/build', '/support-operations', '/agents', '/workflows', '/chains', '/multi-agents'] },
-    { to:'/copilot', icon:'copilot', label:'Copilot', activePaths:['/copilot'] },
+    { to:'/copilot', icon:'copilot', label:'Forge', activePaths:['/copilot'] },
     { to:'/observability', icon:'runs', label:'Activity', activePaths:['/observability', '/approvals'] },
     { to:'/apps', icon:'apps', label:'Apps', activePaths:['/apps', '/credentials', '/triggers'] },
     { to:'/marketplace', icon:'templates', label:'Templates', activePaths:['/marketplace'] },

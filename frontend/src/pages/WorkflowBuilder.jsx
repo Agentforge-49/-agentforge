@@ -406,18 +406,18 @@ export default function WorkflowBuilder() {
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={copilotIcon}><Sparkles size={16} /></span>
-              <h2 style={{ fontSize:15 }}>Workflow Copilot</h2>
+              <h2 style={{ fontSize:15 }}>Forge workflow designer</h2>
               <span style={aiBadge}>AI draft</span>
             </div>
             <p style={{ color:'#8B8FA3', fontSize:12, marginTop:6 }}>
-              Describe the outcome. Copilot assembles a safe draft from your published agents and configured connections.
+              Describe the outcome. Forge assembles a safe draft from your published agents and configured connections.
             </p>
           </div>
           <select
             value={copilotModel}
             onChange={event => setCopilotModel(event.target.value)}
             style={{ ...inputStyle, width:220, margin:0 }}
-            aria-label="Copilot model"
+            aria-label="Forge model"
           >
             {modelOptions.length
               ? modelOptions.map(model => <option key={model.id} value={model.id}>{model.label}</option>)

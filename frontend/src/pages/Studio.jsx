@@ -9,7 +9,7 @@ import { useNavigate } from '../lib/router.jsx'
 import '../styles/Studio.css'
 
 const START_PATHS = [
-  { key:'copilot', eyebrow:'Recommended', title:'Describe the outcome', description:'Use ordinary language. Copilot prepares the steps, app checklist, and approval point.', action:'Design with Copilot', path:'/copilot?mode=build', icon:Sparkles },
+  { key:'copilot', eyebrow:'Recommended', title:'Describe the outcome', description:'Use ordinary language. Forge prepares the steps, app checklist, and approval point.', action:'Design with Forge', path:'/copilot?mode=build', icon:Sparkles },
   { key:'template', eyebrow:'Fastest', title:'Start from a complete template', description:'Install a tested operation with agents, workflow steps, connection guidance, and evaluations.', action:'Browse templates', path:'/marketplace', icon:Boxes },
   { key:'workflow', eyebrow:'Manual', title:'Build on the visual canvas', description:'Place triggers, AI decisions, conditions, tools, approvals, and outputs yourself.', action:'Open blank canvas', path:'/workflows/new', icon:Workflow },
 ]

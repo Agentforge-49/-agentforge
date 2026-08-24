@@ -77,8 +77,8 @@ export default function Dashboard() {
       <div className="command-launchpad-main">
         <span><MessageCircleMore size={13} /> Start here</span>
         <h2 id="outcome-launcher-title">What result should your AI operation deliver?</h2>
-        <p>Use ordinary language. Copilot will turn it into steps, required apps, tests, and an approval point.</p>
-        <div className="command-outcome-input"><textarea value={outcome} onChange={event => setOutcome(event.target.value)} placeholder="Example: When a customer emails us, classify the request, draft a reply, and ask me before sending it." rows="2" maxLength="1000" /><button disabled={!outcome.trim()} onClick={() => openOutcome()}>Design with Copilot <ArrowRight size={14} /></button></div>
+        <p>Use ordinary language. Forge will turn it into steps, required apps, tests, and an approval point.</p>
+        <div className="command-outcome-input"><textarea value={outcome} onChange={event => setOutcome(event.target.value)} placeholder="Example: When a customer emails us, classify the request, draft a reply, and ask me before sending it." rows="2" maxLength="1000" /><button disabled={!outcome.trim()} onClick={() => openOutcome()}>Design with Forge <ArrowRight size={14} /></button></div>
         <div className="command-outcome-examples">{QUICK_OUTCOMES.map(item => <button key={item} onClick={() => openOutcome(item)}>{item}</button>)}</div>
       </div>
       <ol className="command-launchpad-steps"><li><span>1</span><div><strong>Describe the result</strong><small>No agent terminology required.</small></div></li><li><span>2</span><div><strong>Review the system</strong><small>See every step and connection.</small></div></li><li><span>3</span><div><strong>Test, approve, activate</strong><small>Nothing acts silently.</small></div></li></ol>
@@ -112,7 +112,7 @@ export default function Dashboard() {
     </section>
 
     <section className="command-next">
-      <div><span><Wrench size={16} /></span><div><small>Recommended next step</small><h2>{data.counts.approvals ? 'Review the decisions waiting for you.' : data.counts.failed_runs ? 'Recover your latest failed run.' : 'Describe your next outcome to Copilot.'}</h2></div></div>
+      <div><span><Wrench size={16} /></span><div><small>Recommended next step</small><h2>{data.counts.approvals ? 'Review the decisions waiting for you.' : data.counts.failed_runs ? 'Recover your latest failed run.' : 'Describe your next outcome to Forge.'}</h2></div></div>
       <button onClick={() => navigate(data.counts.approvals ? '/approvals' : data.counts.failed_runs ? '/observability' : '/copilot')}>Continue <ArrowRight size={14} /></button>
     </section>
   </div>

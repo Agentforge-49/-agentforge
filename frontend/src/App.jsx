@@ -7,7 +7,6 @@ import Integrations from './pages/Integrations'
 import TemplatesShowcase from './pages/TemplatesShowcase'
 
 const MainLayout = lazy(() => import('./layouts/MainLayout'))
-const SiteAssistant = lazy(() => import('./components/SiteAssistant'))
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 
@@ -52,7 +51,6 @@ function ProtectedRoute({ children, user }) {
 export default function App() {
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const [assistantReady, setAssistantReady] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -80,11 +78,6 @@ export default function App() {
       window.clearTimeout(timer)
       subscription?.unsubscribe()
     }
-  }, [])
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setAssistantReady(true), 2200)
-    return () => window.clearTimeout(timer)
   }, [])
 
   if (loading && !PUBLIC_ROUTES.has(window.location.pathname)) return (
@@ -151,7 +144,6 @@ export default function App() {
         <Route path="/settings"          element={protect(Settings)} />
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
-      {assistantReady && window.location.pathname !== '/copilot' && <Suspense fallback={null}><SiteAssistant user={user} /></Suspense>}
     </BrowserRouter>
   )
 }
