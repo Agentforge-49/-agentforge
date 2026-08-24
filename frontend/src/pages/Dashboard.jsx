@@ -27,6 +27,10 @@ function relativeTime(value) {
   return `${Math.floor(seconds / 86400)}d ago`
 }
 
+function countLabel(count, singular) {
+  return `${count} ${count === 1 ? singular : `${singular}s`}`
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
@@ -55,7 +59,7 @@ export default function Dashboard() {
   if (error) return <div className="dashboard-error"><div className="dashboard-error-card"><strong>Command Center is unavailable</strong><p>{error}</p><button onClick={() => load(true)}>Try again</button></div></div>
 
   const metrics = [
-    { label:'Active work', value:(data.counts.active_agents + data.counts.active_workflows), detail:`${data.counts.active_agents} agents · ${data.counts.active_workflows} workflows`, icon:Activity, tone:'green' },
+    { label:'Active work', value:(data.counts.active_agents + data.counts.active_workflows), detail:`${countLabel(data.counts.active_agents, 'agent')} · ${countLabel(data.counts.active_workflows, 'workflow')}`, icon:Activity, tone:'green' },
     { label:'Needs approval', value:data.counts.approvals, detail:'Human decisions waiting', icon:ShieldCheck, tone:'violet' },
     { label:'Failed runs', value:data.counts.failed_runs, detail:'Open Activity to recover', icon:AlertTriangle, tone:data.counts.failed_runs ? 'red' : 'green' },
     { label:'Usage', value:`${data.usage.used}/${data.usage.limit}`, detail:`${data.user.plan} workspace`, icon:Coins, tone:'amber' },
