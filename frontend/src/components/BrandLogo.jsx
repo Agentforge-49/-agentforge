@@ -1,62 +1,30 @@
-import { useId } from 'react'
-
-/**
- * The Forge Gate: six independent facets converge around one protected outcome.
- * It is intentionally angular, compact, and recognizable without the wordmark.
- */
+/** The original Claude-built AgentForge identity, restored in green. */
 export default function BrandLogo({
   size = 38,
   showWordmark = true,
-  wordmarkColor = '#0b1f17',
+  wordmarkColor = '#10231b',
   className = '',
 }) {
-  const uid = useId().replace(/:/g, '')
-  const emeraldId = `forge-emerald-${uid}`
-  const inkId = `forge-ink-${uid}`
-
   return (
     <span
       className={`agentforge-brand ${className}`.trim()}
-      style={{ display:'inline-flex', alignItems:'center', gap:Math.max(10, Math.round(size * .24)), color:wordmarkColor }}
+      style={{ display:'inline-flex', alignItems:'center', gap:Math.max(9, Math.round(size * .28)), color:wordmarkColor }}
     >
       <svg
         className="agentforge-brand__mark"
         width={size}
         height={size}
-        viewBox="0 0 64 64"
-        fill="none"
+        viewBox="0 0 40 40"
         xmlns="http://www.w3.org/2000/svg"
         role={showWordmark ? 'presentation' : 'img'}
         aria-label={showWordmark ? undefined : 'AgentForge'}
         style={{ flex:'0 0 auto' }}
       >
-        <defs>
-          <linearGradient id={emeraldId} x1="13" y1="51" x2="52" y2="12" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#08724A" />
-            <stop offset="1" stopColor="#24D787" />
-          </linearGradient>
-          <linearGradient id={inkId} x1="17" y1="8" x2="47" y2="57" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#071C14" />
-            <stop offset="1" stopColor="#173D2D" />
-          </linearGradient>
-        </defs>
-
-        <path d="M32 3 57 17.5 45 24.5 32 17 19 24.5 7 17.5 32 3Z" fill={`url(#${inkId})`} />
-        <path d="m57 17.5-.2 29L44.6 39.4 44.7 24.6 57 17.5Z" fill={`url(#${emeraldId})`} />
-        <path d="m56.8 46.5-24.9 14.3V46.7l12.7-7.3 12.2 7.1Z" fill="#0B6B48" />
-        <path d="M31.9 60.8 7 46.5l12.2-7.1 12.7 7.3v14.1Z" fill={`url(#${inkId})`} />
-        <path d="m7 46.5.2-29 12.1 7.1-.1 14.8L7 46.5Z" fill="#0E8B5A" />
-        <path d="m19.3 24.6 12.7-7.4 12.7 7.4-.1 14.8-12.7 7.3-12.7-7.3.1-14.8Z" fill="#F7FBF9" />
-        <path d="m32 24.2 7 4v8l-7 4-7-4v-8l7-4Z" fill={`url(#${emeraldId})`} />
-        <path d="M32 27.7v9" stroke="#F7FBF9" strokeWidth="2.2" strokeLinecap="square" />
+        <rect width="40" height="40" rx="10" fill="#087A4B" />
+        <rect x="1" y="1" width="38" height="38" rx="9" fill="none" stroke="#32D58B" strokeOpacity=".5" />
+        <text x="20" y="25.2" fill="white" fontFamily="Arial, Helvetica, sans-serif" fontSize="12.5" fontWeight="800" textAnchor="middle" letterSpacing="-.7">AF</text>
       </svg>
-
-      {showWordmark && (
-        <span className="agentforge-brand__wordmark" style={{ display:'inline-flex', alignItems:'baseline', color:wordmarkColor, lineHeight:1, whiteSpace:'nowrap' }}>
-          <span style={{ fontSize:Math.max(16, Math.round(size * .46)), fontWeight:670, letterSpacing:'-.045em' }}>Agent</span>
-          <span style={{ fontSize:Math.max(16, Math.round(size * .46)), fontWeight:900, letterSpacing:'-.055em' }}>Forge</span>
-        </span>
-      )}
+      {showWordmark && <span className="agentforge-brand__wordmark" style={{ color:wordmarkColor, fontSize:Math.max(16, Math.round(size * .47)), fontWeight:700, letterSpacing:'-.045em', lineHeight:1, whiteSpace:'nowrap' }}>AgentForge</span>}
     </span>
   )
 }

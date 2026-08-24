@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Activity, ArrowRight, BrainCircuit, Check, CheckCircle2, Clipboard,
   CornerDownLeft, Database, GitBranch, MessageSquarePlus, Pencil, PlugZap,
-  RotateCcw, Search, Send, ShieldCheck, Sparkles, Square,
+  RotateCcw, Send, ShieldCheck, Sparkles, Square,
   Wrench, X, Zap,
 } from 'lucide-react'
 
@@ -29,6 +29,22 @@ const STARTERS = [
   { mode:'ask', eyebrow:'UNDERSTAND', text:'Explain what AgentForge can do for my business' },
 ]
 
+function requestedPrompt() {
+  const value = new URLSearchParams(window.location.search).get('prompt') || ''
+  return value.slice(0, 4000)
+}
+
+function suggestedDestinations(content) {
+  const value = String(content || '').toLowerCase()
+  const choices = []
+  if (/(fail|error|trace|retry|run)/.test(value)) choices.push(['Inspect Activity', '/observability'])
+  if (/(connect|credential|oauth|integration|\bapp\b)/.test(value)) choices.push(['Open Apps', '/apps'])
+  if (/(workflow|automation|canvas|\bbuild\b)/.test(value)) choices.push(['Open Build', '/studio'])
+  if (/(knowledge|document|citation)/.test(value)) choices.push(['Open Knowledge', '/knowledge'])
+  if (/(approval|approve|review queue)/.test(value)) choices.push(['Review approvals', '/approvals'])
+  return choices.slice(0, 2)
+}
+
 export default function Copilot() {
   const navigate = useNavigate()
   const abortRef = useRef(null)
@@ -39,9 +55,8 @@ export default function Copilot() {
   const [messages, setMessages] = useState([])
   const [proposals, setProposals] = useState([])
   const [workspace, setWorkspace] = useState(null)
-  const [input, setInput] = useState('')
-  const [query, setQuery] = useState('')
-  const [mode, setMode] = useState('ask')
+  const [input, setInput] = useState(requestedPrompt)
+  const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'build' ? 'build' : 'ask')
   const [streaming, setStreaming] = useState(false)
   const [streamText, setStreamText] = useState('')
   const [status, setStatus] = useState('')
@@ -159,28 +174,19 @@ export default function Copilot() {
     const previous = messages.slice(0, index).reverse().find(item => item.role === 'user')
     if (previous) send(previous.content)
   }
-  const filtered = useMemo(() => threads.filter(item => String(item.title || '').toLowerCase().includes(query.toLowerCase())), [threads, query])
   const proposalFor = messageId => proposals.filter(item => item.message_id === messageId)
   const counts = workspace?.counts || {}
   const currentMode = MODES.find(item => item[0] === mode) || MODES[0]
 
-  return <div className="copilot-shell">
-    <aside className="copilot-history" aria-label="Conversation history">
-      <div className="copilot-history-brand"><BrandLogo size={26} showWordmark={false} /><div><strong>Copilot</strong><span>Operations intelligence</span></div></div>
-      <button className="copilot-new" onClick={newThread}><MessageSquarePlus size={15} /> New conversation</button>
-      <div className="copilot-agent-start"><select value={agentId} onChange={event => setAgentId(event.target.value)} aria-label="Choose agent for agent chat"><option value="">Talk to an agent…</option>{agents.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select><button disabled={!agentId} onClick={newAgentChat}>Start</button></div>
-      <label className="copilot-search"><Search size={14} /><span className="sr-only">Search conversations</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search conversations" /></label>
-      <div className="copilot-thread-list">
-        {filtered.map(item => <button key={item.id} className={thread?.id === item.id ? 'active' : ''} onClick={() => openThread(item.id)}><span>{item.title}</span><small>{item.mode === 'agent_chat' ? 'Agent chat' : 'Operations Copilot'}</small></button>)}
-        {!filtered.length && <div className="copilot-thread-empty"><MessageSquarePlus size={18} /><p>No conversations yet.</p></div>}
-      </div>
-      <div className="copilot-history-trust"><ShieldCheck size={14} /><span><strong>Approval-first</strong><small>No silent actions</small></span></div>
-    </aside>
-
+  return <div className="copilot-shell copilot-shell-simple">
     <main className="copilot-conversation">
       <header className="copilot-header">
         <div><span><Sparkles size={13} /> AgentForge intelligence</span><h1>{thread?.title || 'Design, diagnose, and improve anything'}</h1></div>
-        <div className="copilot-header-status"><i /><span><strong>Workspace connected</strong><small>{workspace?.features?.copilot?.model || 'Fast local guidance ready'}</small></span></div>
+        <div className="copilot-header-actions">
+          <label><span className="sr-only">Open conversation</span><select aria-label="Open conversation" value={thread?.id || ''} onChange={event => event.target.value && openThread(event.target.value)}><option value="">Recent conversations</option>{threads.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+          <button onClick={newThread}><MessageSquarePlus size={14} /> New</button>
+          <div className="copilot-header-status"><i /><span><strong>Connected</strong><small>{workspace?.features?.copilot?.model || 'Local guidance ready'}</small></span></div>
+        </div>
       </header>
       {error && <div className="copilot-error" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error"><X size={15} /></button></div>}
 
@@ -200,6 +206,7 @@ export default function Copilot() {
             <div className="copilot-message-actions">
               {message.role === 'assistant' ? <><button onClick={() => navigator.clipboard.writeText(message.content)}><Clipboard size={12} /> Copy</button><button onClick={() => retryMessage(index)}><RotateCcw size={12} /> Retry</button></> : <button onClick={() => editMessage(message.content)}><Pencil size={12} /> Edit and resend</button>}
             </div>
+            {message.role === 'assistant' && !!suggestedDestinations(message.content).length && <div className="copilot-message-shortcuts">{suggestedDestinations(message.content).map(([label, path]) => <button key={path} onClick={() => navigate(path)}>{label} <ArrowRight size={11} /></button>)}</div>}
             {proposalFor(message.id).map(proposal => <div className="copilot-proposal" key={proposal.id}>
               <div className="copilot-proposal-head"><span><GitBranch size={13} /> Executable proposal</span><small>Nothing saved yet</small></div>
               <h3>{proposal.title}</h3><p>{proposal.summary}</p>
@@ -227,6 +234,7 @@ export default function Copilot() {
       <div className="copilot-intel-grid"><article><strong>{counts.active_agents ?? '—'}</strong><span>Active agents</span></article><article><strong>{counts.active_workflows ?? '—'}</strong><span>Live workflows</span></article><article><strong>{counts.connected_apps ?? '—'}</strong><span>Connected apps</span></article><article className={counts.failed_runs ? 'attention' : ''}><strong>{counts.failed_runs ?? '—'}</strong><span>Failed runs</span></article></div>
       <section className="copilot-intel-section"><span>Copilot can inspect</span>{[[Activity,'Run traces','/observability'],[ShieldCheck,'Approval queue','/approvals'],[PlugZap,'App readiness','/apps'],[Database,'Knowledge sources','/knowledge']].map(([Icon,label,path]) => <button key={label} onClick={() => navigate(path)}><Icon size={14} /><strong>{label}</strong><ArrowRight size={13} /></button>)}</section>
       <section className="copilot-intel-section"><span>Operating contract</span><div className="copilot-contract"><CheckCircle2 size={14} /><p><strong>Read before reasoning</strong><small>Uses current safe workspace context.</small></p></div><div className="copilot-contract"><Wrench size={14} /><p><strong>Draft before mutation</strong><small>Changes appear as proposals.</small></p></div><div className="copilot-contract"><ShieldCheck size={14} /><p><strong>Approval before action</strong><small>External execution stays gated.</small></p></div></section>
+      {!!agents.length && <section className="copilot-agent-direct"><span>Talk to a published agent</span><select value={agentId} onChange={event => setAgentId(event.target.value)} aria-label="Choose agent for agent chat"><option value="">Choose an agent…</option>{agents.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select><button disabled={!agentId} onClick={newAgentChat}>Start agent chat <ArrowRight size={13} /></button></section>}
       <button className="copilot-open-build" onClick={() => navigate('/studio')}>Open visual Build <ArrowRight size={14} /></button>
     </aside>
   </div>

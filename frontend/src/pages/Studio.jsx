@@ -8,8 +8,13 @@ import { getAgents, getChains, getMultiAgentSystems, getWorkflows } from '../lib
 import { useNavigate } from '../lib/router.jsx'
 import '../styles/Studio.css'
 
-const BUILD_MODES = [
-  { key:'workflow', eyebrow:'Recommended', title:'Automation', description:'Combine AI decisions, rules, approvals, triggers, and app actions on one canvas.', action:'Create automation', path:'/workflows/new', icon:Workflow },
+const START_PATHS = [
+  { key:'copilot', eyebrow:'Recommended', title:'Describe the outcome', description:'Use ordinary language. Copilot prepares the steps, app checklist, and approval point.', action:'Design with Copilot', path:'/copilot?mode=build', icon:Sparkles },
+  { key:'template', eyebrow:'Fastest', title:'Start from a complete template', description:'Install a tested operation with agents, workflow steps, connection guidance, and evaluations.', action:'Browse templates', path:'/marketplace', icon:Boxes },
+  { key:'workflow', eyebrow:'Manual', title:'Build on the visual canvas', description:'Place triggers, AI decisions, conditions, tools, approvals, and outputs yourself.', action:'Open blank canvas', path:'/workflows/new', icon:Workflow },
+]
+
+const ADVANCED_BUILDERS = [
   { key:'agent', eyebrow:'Conversational', title:'AI assistant', description:'Create a focused agent with instructions, knowledge, tools, versions, and a safe publish flow.', action:'Create assistant', path:'/agents/new', icon:Bot },
   { key:'chain', eyebrow:'Sequential', title:'Agent process', description:'Pass work through a fixed sequence of specialists with traceable handoffs and run history.', action:'Create process', path:'/chains/new', icon:GitBranch },
   { key:'team', eyebrow:'Advanced', title:'Agent team', description:'Coordinate published agents with routing, supervision, limits, and aggregation.', action:'Configure team', path:'/multi-agents', icon:Network },
@@ -118,11 +123,11 @@ export default function Studio() {
 
       <section className="studio-section">
         <div className="studio-section-heading">
-          <div><span>Start something new</span><h2>Choose the shape of the work</h2></div>
-          <p>Automation is the best default. Advanced modes remain available when the process needs them.</p>
+          <div><span>Start something new</span><h2>Choose how you want to begin</h2></div>
+          <p>You do not need to choose an agent architecture. Start with the result and AgentForge will guide the system design.</p>
         </div>
-        <div className="studio-mode-grid">
-          {BUILD_MODES.map(({ key, eyebrow, title, description, action, path, icon:Icon }) => (
+        <div className="studio-start-grid">
+          {START_PATHS.map(({ key, eyebrow, title, description, action, path, icon:Icon }) => (
             <article className={`studio-mode-card studio-mode-${key}`} key={key}>
               <div className="studio-mode-top"><span className="studio-mode-icon"><Icon size={19} /></span><small>{eyebrow}</small></div>
               <h3>{title}</h3><p>{description}</p>
@@ -130,6 +135,7 @@ export default function Studio() {
             </article>
           ))}
         </div>
+        <div className="studio-advanced-builders"><span>Specialist builders</span>{ADVANCED_BUILDERS.map(({ key, title, path, icon:Icon }) => <button key={key} onClick={() => navigate(path)}><Icon size={14} /> {title} <ArrowRight size={12} /></button>)}</div>
       </section>
 
       <section className="studio-section">

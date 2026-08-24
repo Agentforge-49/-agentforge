@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Activity, AlertTriangle, ArrowRight, Bot, CheckCircle2, Clock3, Coins,
-  GitBranch, PlugZap, RefreshCw, ShieldCheck, Sparkles, Wrench,
+  GitBranch, MessageCircleMore, PlugZap, RefreshCw, ShieldCheck, Sparkles, Wrench,
 } from 'lucide-react'
 
 import { getWorkspaceBootstrap } from '../lib/api'
@@ -12,6 +12,12 @@ const ROLE_VIEWS = {
   support:{ label:'Support', outcome:'Triage customer issues and keep escalation decisions visible.' },
   sales:{ label:'Sales operations', outcome:'Prepare account work and route follow-ups without losing control.' },
 }
+
+const QUICK_OUTCOMES = [
+  'Handle support requests safely',
+  'Qualify and route new leads',
+  'Review documents and collect approval',
+]
 
 function relativeTime(value) {
   const seconds = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 1000))
@@ -27,6 +33,7 @@ export default function Dashboard() {
   const [role, setRole] = useState('operations')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [outcome, setOutcome] = useState('')
 
   const load = useCallback(async (fresh = false) => {
     setLoading(true)
@@ -40,6 +47,10 @@ export default function Dashboard() {
   }, [load])
 
   const readiness = useMemo(() => data ? Object.values(data.readiness).filter(Boolean).length : 0, [data])
+  const openOutcome = value => {
+    const prompt = String(value || outcome).trim()
+    if (prompt) navigate(`/copilot?mode=build&prompt=${encodeURIComponent(prompt)}`)
+  }
   if (loading || (!data && !error)) return <div className="workspace-loading"><div className="workspace-loading-card"><span className="workspace-spinner" /> Preparing your command center…</div></div>
   if (error) return <div className="dashboard-error"><div className="dashboard-error-card"><strong>Command Center is unavailable</strong><p>{error}</p><button onClick={() => load(true)}>Try again</button></div></div>
 
@@ -56,6 +67,17 @@ export default function Dashboard() {
       <div className="command-role-switch" aria-label="Command center role view">
         {Object.entries(ROLE_VIEWS).map(([key, view]) => <button key={key} className={role === key ? 'active' : ''} onClick={() => setRole(key)}>{view.label}</button>)}
       </div>
+    </section>
+
+    <section className="command-launchpad" aria-labelledby="outcome-launcher-title">
+      <div className="command-launchpad-main">
+        <span><MessageCircleMore size={13} /> Start here</span>
+        <h2 id="outcome-launcher-title">What result should your AI operation deliver?</h2>
+        <p>Use ordinary language. Copilot will turn it into steps, required apps, tests, and an approval point.</p>
+        <div className="command-outcome-input"><textarea value={outcome} onChange={event => setOutcome(event.target.value)} placeholder="Example: When a customer emails us, classify the request, draft a reply, and ask me before sending it." rows="2" maxLength="1000" /><button disabled={!outcome.trim()} onClick={() => openOutcome()}>Design with Copilot <ArrowRight size={14} /></button></div>
+        <div className="command-outcome-examples">{QUICK_OUTCOMES.map(item => <button key={item} onClick={() => openOutcome(item)}>{item}</button>)}</div>
+      </div>
+      <ol className="command-launchpad-steps"><li><span>1</span><div><strong>Describe the result</strong><small>No agent terminology required.</small></div></li><li><span>2</span><div><strong>Review the system</strong><small>See every step and connection.</small></div></li><li><span>3</span><div><strong>Test, approve, activate</strong><small>Nothing acts silently.</small></div></li></ol>
     </section>
 
     <section className="command-metrics" aria-label="Operational metrics">

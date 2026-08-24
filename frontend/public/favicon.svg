@@ -1,14 +1,5 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="e" x1="13" y1="51" x2="52" y2="12" gradientUnits="userSpaceOnUse"><stop stop-color="#08724A"/><stop offset="1" stop-color="#24D787"/></linearGradient>
-    <linearGradient id="i" x1="17" y1="8" x2="47" y2="57" gradientUnits="userSpaceOnUse"><stop stop-color="#071C14"/><stop offset="1" stop-color="#173D2D"/></linearGradient>
-  </defs>
-  <path d="M32 3 57 17.5 45 24.5 32 17 19 24.5 7 17.5 32 3Z" fill="url(#i)"/>
-  <path d="m57 17.5-.2 29L44.6 39.4 44.7 24.6 57 17.5Z" fill="url(#e)"/>
-  <path d="m56.8 46.5-24.9 14.3V46.7l12.7-7.3 12.2 7.1Z" fill="#0B6B48"/>
-  <path d="M31.9 60.8 7 46.5l12.2-7.1 12.7 7.3v14.1Z" fill="url(#i)"/>
-  <path d="m7 46.5.2-29 12.1 7.1-.1 14.8L7 46.5Z" fill="#0E8B5A"/>
-  <path d="m19.3 24.6 12.7-7.4 12.7 7.4-.1 14.8-12.7 7.3-12.7-7.3.1-14.8Z" fill="#F7FBF9"/>
-  <path d="m32 24.2 7 4v8l-7 4-7-4v-8l7-4Z" fill="url(#e)"/>
-  <path d="M32 27.7v9" stroke="#F7FBF9" stroke-width="2.2"/>
+<svg width="64" height="64" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="10" fill="#087A4B"/>
+  <rect x="1" y="1" width="38" height="38" rx="9" fill="none" stroke="#32D58B" stroke-opacity=".5"/>
+  <text x="20" y="25.2" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="12.5" font-weight="800" text-anchor="middle" letter-spacing="-.7">AF</text>
 </svg>

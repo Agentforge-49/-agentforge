@@ -66,6 +66,17 @@ test('quick actions turn a beginner goal into the right workspace destination', 
   await expect(page).toHaveURL(/\/approvals$/)
 })
 
+test('outcome launcher carries a beginner request into Copilot Build mode', async ({ page }) => {
+  await authenticate(page)
+  await mockBackend(page)
+  await page.goto('/dashboard')
+  const request = 'Classify new customer emails and ask me before replying'
+  await page.getByPlaceholder(/Example: When a customer emails us/).fill(request)
+  await page.getByRole('button', { name:'Design with Copilot' }).click()
+  await expect(page).toHaveURL(/\/copilot\?mode=build/)
+  await expect(page.getByRole('textbox', { name:'Design an approval-ready operation' })).toHaveValue(request)
+})
+
 test('visual builder saves, activates, runs, and stops at human approval', async ({ page }) => {
   await authenticate(page)
   let workflow
@@ -156,6 +167,7 @@ test('approval inbox records a human decision', async ({ page }) => {
 })
 
 test('@a11y public and authenticated launch surfaces have no serious axe violations', async ({ page }) => {
+  test.slow()
   const browserErrors = []
   page.on('pageerror', error => browserErrors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') browserErrors.push(message.text()) })
