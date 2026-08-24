@@ -1,5 +1,5 @@
 <svg width="64" height="64" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="bolt" x1="9" y1="5" x2="29" y2="35" gradientUnits="userSpaceOnUse"><stop stop-color="#6EF0AE"/><stop offset="1" stop-color="#12B76A"/></linearGradient></defs>
-  <path d="M24.2 2.7 7.1 24.1h11.2L15.6 38l17.3-21.8H21.6l2.6-13.5Z" fill="url(#bolt)"/>
+  <defs><linearGradient id="bolt" x1="9" y1="5" x2="29" y2="35" gradientUnits="userSpaceOnUse"><stop stop-color="#087A4B"/><stop offset="1" stop-color="#32D98B"/></linearGradient></defs>
+  <path d="M24.2 2.7 7.1 24.1h11.2L15.6 38l17.3-21.8H21.6l2.6-13.5Z" fill="url(#bolt)" stroke="#087A4B" stroke-width=".65" stroke-linejoin="round"/>
   <path d="m22 8.6-9.4 11.8h9.8l-1.4 7.1 6.4-8.1h-9.7L22 8.6Z" fill="#DFFFF0" fill-opacity=".7"/>
 </svg>
