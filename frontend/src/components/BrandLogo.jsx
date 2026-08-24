@@ -27,7 +27,6 @@ export default function BrandLogo({
           </linearGradient>
         </defs>
         <path d="M24.2 2.7 7.1 24.1h11.2L15.6 38l17.3-21.8H21.6l2.6-13.5Z" fill="url(#agentforge-bolt)" stroke="#087A4B" strokeWidth=".65" strokeLinejoin="round" />
-        <path d="m22 8.6-9.4 11.8h9.8l-1.4 7.1 6.4-8.1h-9.7L22 8.6Z" fill="#DFFFF0" fillOpacity=".7" />
       </svg>
       {showWordmark && <span className="agentforge-brand__wordmark" style={{ color:wordmarkColor, fontSize:Math.max(16, Math.round(size * .47)), fontWeight:700, letterSpacing:'-.045em', lineHeight:1, whiteSpace:'nowrap' }}>AgentForge</span>}
     </span>
