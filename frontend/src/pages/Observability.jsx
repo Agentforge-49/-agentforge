@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Activity, Clock3, Coins, Download, Play, RefreshCw, Search } from 'lucide-react'
+import { useNavigate } from '../lib/router.jsx'
 
 import {
   downloadObservabilityCsv,
@@ -8,6 +9,7 @@ import {
   getObservedRun,
   replayObservedRun,
 } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import OperationsHeader from '../components/OperationsHeader'
 
 const STATUS_COLOR = {
@@ -26,6 +28,7 @@ const formatCost = value => `$${Number(value || 0).toFixed(6)}`
 const formatType = value => String(value || '').replaceAll('_', ' ')
 
 export default function Observability() {
+  const navigate = useNavigate()
   const [runs, setRuns] = useState([])
   const [metrics, setMetrics] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -34,6 +37,7 @@ export default function Observability() {
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState('')
+  const hasActiveFilters = Boolean(status || type || query.trim())
 
   const load = useCallback(async () => {
     try {
@@ -50,11 +54,36 @@ export default function Observability() {
   }, [query, status, type])
 
   useEffect(() => {
+    let disposed = false
+    let fallbackTimer
+    let fallbackDelay = 12000
+    const scheduleFallback = () => {
+      clearTimeout(fallbackTimer)
+      fallbackTimer = setTimeout(async () => {
+        if (disposed) return
+        await load()
+        fallbackDelay = Math.min(fallbackDelay * 2, 60000)
+        scheduleFallback()
+      }, fallbackDelay)
+    }
     const initial = setTimeout(load, 0)
-    const timer = setInterval(load, 4000)
+    const channel = supabase
+      .channel('agentforge-live-runs')
+      .on('postgres_changes', { event:'*', schema:'public', table:'run_observability' }, () => {
+        fallbackDelay = 30000
+        load()
+        scheduleFallback()
+      })
+      .subscribe(channelStatus => {
+        fallbackDelay = channelStatus === 'SUBSCRIBED' ? 30000 : 12000
+        scheduleFallback()
+      })
+    scheduleFallback()
     return () => {
+      disposed = true
       clearTimeout(initial)
-      clearInterval(timer)
+      clearTimeout(fallbackTimer)
+      supabase.removeChannel(channel)
     }
   }, [load])
 
@@ -148,7 +177,25 @@ export default function Observability() {
           <div style={tableHeader}>
             <span>Run</span><span>Status</span><span>Usage</span><span>Latency</span><span>Started</span>
           </div>
-          {!runs.length ? <div style={emptyState}>No runs match these filters.</div> : runs.map(run =>
+          {!runs.length ? <div style={emptyState}>
+            <Activity size={22} aria-hidden="true" />
+            <strong style={{ color:'#18362A', fontSize:14 }}>
+              {hasActiveFilters ? 'No runs match these filters.' : 'Your first run will appear here.'}
+            </strong>
+            <span>
+              {hasActiveFilters
+                ? 'Clear the filters or change your search to see more execution history.'
+                : 'Build from a template or create an automation, test it, and return here for its trace, latency, cost, and errors.'}
+            </span>
+            <div style={{ display:'flex', justifyContent:'center', flexWrap:'wrap', gap:8 }}>
+              {hasActiveFilters && <button type="button" onClick={() => { setQuery(''); setType(''); setStatus('') }} style={secondaryButton}>
+                Clear filters
+              </button>}
+              <button type="button" onClick={() => navigate('/studio')} style={{ ...primaryButton, width:'auto' }}>
+                <Play size={13} /> Build an automation
+              </button>
+            </div>
+          </div> : runs.map(run =>
             <button key={run.execution_job_id} onClick={() => inspect(run.execution_job_id)} style={tableRow}>
               <span style={{ minWidth:0 }}>
                 <strong style={{ display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{run.resource_name}</strong>
@@ -229,6 +276,6 @@ const iconButton = { background:'transparent', color:'#9CA3AF', border:'none', c
 const errorBox = { background:'#2D1515', border:'1px solid #7F1D1D', borderRadius:9, padding:10, color:'#FCA5A5', fontSize:11, marginBottom:12 }
 const tableHeader = { display:'grid', gridTemplateColumns:'2fr 1fr 1fr .8fr 1.4fr', gap:12, padding:'10px 14px', color:'#6B7280', fontSize:9, textTransform:'uppercase', borderBottom:'1px solid #292D3D' }
 const tableRow = { display:'grid', gridTemplateColumns:'2fr 1fr 1fr .8fr 1.4fr', gap:12, alignItems:'center', width:'100%', textAlign:'left', background:'transparent', color:'#D1D5DB', border:'none', borderBottom:'1px solid #242735', padding:'12px 14px', cursor:'pointer', fontSize:10 }
-const emptyState = { padding:48, textAlign:'center', color:'#6B7280', fontSize:12 }
+const emptyState = { display:'grid', justifyItems:'center', gap:10, maxWidth:520, margin:'0 auto', padding:'54px 24px', textAlign:'center', color:'#607268', fontSize:12, lineHeight:1.6 }
 const sectionTitle = { color:'#9CA3AF', fontSize:10, textTransform:'uppercase', margin:'16px 0 8px' }
 const eventRow = { display:'flex', gap:9, padding:'8px 3px', borderBottom:'1px solid #242735' }

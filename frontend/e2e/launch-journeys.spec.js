@@ -42,7 +42,14 @@ test('Forge streams an answer and applies an explicit proposal', async ({ page }
   await expect(page.getByRole('navigation', { name:'Chat history' }).getByText('Support automation')).toBeVisible()
   await page.locator('input[type="file"]').setInputFiles({ name:'support-notes.txt', mimeType:'text/plain', buffer:Buffer.from('VIP tickets require manager approval.') })
   await expect(page.getByText('support-notes.txt')).toBeVisible()
-  await page.getByPlaceholder(/Ask anything/).fill('Build safe support triage')
+  const composer = page.getByPlaceholder(/Ask anything/)
+  await expect(composer).toHaveAttribute('rows', '1')
+  const initialComposerHeight = await composer.evaluate(element => element.getBoundingClientRect().height)
+  await composer.fill('Build safe support triage\nKeep a person in control\nExplain every decision')
+  const expandedComposerHeight = await composer.evaluate(element => element.getBoundingClientRect().height)
+  expect(expandedComposerHeight).toBeGreaterThan(initialComposerHeight)
+  const composerSurface = await page.locator('.copilot-input').evaluate(element => getComputedStyle(element).borderRadius)
+  expect(Number.parseFloat(composerSurface)).toBeGreaterThanOrEqual(24)
   await page.getByRole('button', { name:'Send message' }).click()
   await expect.poll(() => sentMessage).toContain('VIP tickets require manager approval.')
   await expect(page.getByText('I prepared a safe workflow.')).toBeVisible()
@@ -86,6 +93,21 @@ test('Home keeps Forge isolated in its dedicated workspace', async ({ page }) =>
   await page.getByRole('link', { name:'Forge' }).click()
   await expect(page).toHaveURL(/\/copilot$/)
   await expect(page.getByRole('navigation', { name:'Chat history' })).toBeVisible()
+})
+
+test('empty Activity guides a new operator to a working next step', async ({ page }) => {
+  await authenticate(page)
+  await mockBackend(page, ({ url }) => {
+    if (url.pathname === '/api/observability') return { body:{ runs:[] } }
+    if (url.pathname === '/api/observability/metrics') return { body:{
+      runs:0, success_rate:0, tokens:0, estimated_cost_usd:0,
+      average_duration_ms:null, p95_duration_ms:null, daily:[],
+    } }
+  })
+  await page.goto('/observability')
+  await expect(page.getByText('Your first run will appear here.')).toBeVisible()
+  await page.getByRole('button', { name:'Build an automation' }).click()
+  await expect(page).toHaveURL(/\/studio$/)
 })
 
 test('visual builder saves, activates, runs, and stops at human approval', async ({ page }) => {

@@ -152,6 +152,7 @@ export default function Copilot() {
       const optimistic = { id:`local-${crypto.randomUUID()}`, role:'user', content:message }
       setMessages(current => [...current, optimistic])
       setInput(''); setAttachment(null); setError(''); setStreamText(''); setStreaming(true); setRoute(''); setStatus('Reading the safe workspace summary…')
+      if (composerRef.current) composerRef.current.style.height = 'auto'
       const controller = new AbortController()
       abortRef.current = controller
       await streamCopilotMessage(activeThread.id, message, {
@@ -195,7 +196,16 @@ export default function Copilot() {
 
   const editMessage = content => {
     setInput(content)
-    composerRef.current?.focus()
+    requestAnimationFrame(() => {
+      if (!composerRef.current) return
+      composerRef.current.style.height = 'auto'
+      composerRef.current.style.height = `${Math.min(composerRef.current.scrollHeight, 180)}px`
+      composerRef.current.focus()
+    })
+  }
+  const resizeComposer = event => {
+    event.currentTarget.style.height = 'auto'
+    event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 180)}px`
   }
   const retryMessage = index => {
     const previous = messages.slice(0, index).reverse().find(item => item.role === 'user')
@@ -275,7 +285,7 @@ export default function Copilot() {
         <div className="copilot-modes" role="tablist" aria-label="Forge mode">{MODES.map(([key, Icon, label]) => <button key={key} role="tab" aria-selected={mode === key} className={mode === key ? 'active' : ''} onClick={() => setMode(key)}><Icon size={13} /> {label}</button>)}</div>
         {status && !streaming && <div className="copilot-status">{status}</div>}
         {attachment && <div className="forge-attachment"><FileText size={14} /><span><strong>{attachment.name}</strong><small>Ready for Forge to analyze</small></span><button onClick={() => setAttachment(null)} aria-label={`Remove ${attachment.name}`}><X size={14} /></button></div>}
-        <div className="copilot-input"><button className="forge-attach-button" onClick={() => fileInputRef.current?.click()} aria-label="Attach a text file"><Paperclip size={16} /></button><input ref={fileInputRef} className="sr-only" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" onChange={attachFile} /><div><span>{currentMode[2]} mode</span><textarea ref={composerRef} value={input} onChange={event => setInput(event.target.value)} placeholder={currentMode[3]} rows="2" maxLength="4000" aria-label={currentMode[3]} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send() } }} /></div>{streaming ? <button className="copilot-stop" onClick={() => abortRef.current?.abort()} aria-label="Stop response"><Square size={15} /></button> : <button onClick={() => send()} disabled={!input.trim() && !attachment} aria-label="Send message"><Send size={16} /></button>}</div>
+        <div className="copilot-input"><button className="forge-attach-button" onClick={() => fileInputRef.current?.click()} aria-label="Attach a text file"><Paperclip size={16} /></button><input ref={fileInputRef} className="sr-only" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" onChange={attachFile} /><div><textarea ref={composerRef} value={input} onChange={event => setInput(event.target.value)} onInput={resizeComposer} placeholder={currentMode[3]} rows="1" maxLength="4000" aria-label={currentMode[3]} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send() } }} /></div>{streaming ? <button className="copilot-stop" onClick={() => abortRef.current?.abort()} aria-label="Stop response"><Square size={15} /></button> : <button onClick={() => send()} disabled={!input.trim() && !attachment} aria-label="Send message"><Send size={16} /></button>}</div>
         <p><ShieldCheck size={11} /> Forge prepares. You preview, test, and approve before activation.</p>
       </footer>
     </main>
