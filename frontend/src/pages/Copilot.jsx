@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Activity, ArrowRight, BrainCircuit, Check, CheckCircle2, Clipboard,
-  CornerDownLeft, Database, FileText, GitBranch, History, MessageSquarePlus,
+  CornerDownLeft, FileText, GitBranch, History, MessageSquarePlus,
   Paperclip, Pencil, PlugZap, RotateCcw, Search, Send, ShieldCheck, Square,
-  Wrench, X, Zap,
+  X, Zap,
 } from 'lucide-react'
 
 import BrandLogo from '../components/BrandLogo'
@@ -206,13 +206,29 @@ export default function Copilot() {
   const currentMode = MODES.find(item => item[0] === mode) || MODES[0]
   const visibleThreads = threads.filter(item => !historyQuery.trim() || String(item.title || '').toLowerCase().includes(historyQuery.trim().toLowerCase()))
 
-  return <div className="copilot-shell copilot-shell-simple">
+  return <div className="copilot-shell forge-chat-shell">
+    <aside className="forge-chat-sidebar" aria-label="Forge conversations">
+      <header><BrandLogo size={31} showWordmark={false} /><span><strong>Forge</strong><small>AI operating partner</small></span></header>
+      <button className="forge-sidebar-new" onClick={newThread}><MessageSquarePlus size={16} /> New chat</button>
+      <label className="forge-sidebar-search"><Search size={14} /><span className="sr-only">Search chat history</span><input aria-label="Search chat history" value={historyQuery} onChange={event => setHistoryQuery(event.target.value)} placeholder="Search chats" /></label>
+      <nav className="forge-sidebar-threads" aria-label="Chat history">
+        <span>Recent</span>
+        {visibleThreads.map(item => <button key={item.id} className={item.id === thread?.id ? 'active' : ''} onClick={() => openThread(item.id)}><MessageSquarePlus size={14} /><span><strong>{item.title || 'Untitled conversation'}</strong><small>{item.mode === 'agent_chat' ? 'Agent chat' : 'Forge chat'}</small></span></button>)}
+        {!visibleThreads.length && <p>{historyQuery ? 'No matching chats.' : 'Your conversations will appear here.'}</p>}
+      </nav>
+      <section className="forge-sidebar-context" aria-label="Workspace context">
+        <span>Workspace context</span>
+        <div><button onClick={() => navigate('/studio')}><strong>{counts.active_workflows ?? '—'}</strong><small>Workflows</small></button><button onClick={() => navigate('/apps')}><strong>{counts.connected_apps ?? '—'}</strong><small>Apps</small></button><button onClick={() => navigate('/observability')} className={counts.failed_runs ? 'attention' : ''}><strong>{counts.failed_runs ?? '—'}</strong><small>Failures</small></button></div>
+      </section>
+      {!!agents.length && <section className="forge-sidebar-agent"><span>Chat with an agent</span><select value={agentId} onChange={event => setAgentId(event.target.value)} aria-label="Choose agent for agent chat"><option value="">Choose an agent…</option>{agents.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select><button disabled={!agentId} onClick={newAgentChat}>Start agent chat <ArrowRight size={13} /></button></section>}
+      <footer><i /><span><strong>Ready</strong><small>{workspace?.features?.copilot?.model || 'Local guidance ready'}</small></span></footer>
+    </aside>
     <main className="copilot-conversation">
       <header className="copilot-header">
         <div><span><Zap size={13} /> Forge · AgentForge intelligence</span><h1>{thread?.title || 'Ask, design, diagnose, and improve'}</h1></div>
         <div className="copilot-header-actions">
-          <button onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen} aria-controls="forge-history"><History size={14} /> History</button>
-          <button onClick={newThread}><MessageSquarePlus size={14} /> New chat</button>
+          <button className="forge-mobile-history" onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen} aria-controls="forge-history"><History size={14} /> History</button>
+          <button className="forge-header-new" onClick={newThread}><MessageSquarePlus size={14} /> New chat</button>
           <div className="copilot-header-status"><i /><span><strong>Connected</strong><small>{workspace?.features?.copilot?.model || 'Local guidance ready'}</small></span></div>
         </div>
         {historyOpen && <section className="forge-history-panel" id="forge-history" role="dialog" aria-label="Chat history">
@@ -264,13 +280,5 @@ export default function Copilot() {
       </footer>
     </main>
 
-    <aside className="copilot-intelligence" aria-label="Workspace intelligence">
-      <header><span>Live context</span><h2>Workspace intelligence</h2><p>Safe metadata Forge can use right now.</p></header>
-      <div className="copilot-intel-grid"><article><strong>{counts.active_agents ?? '—'}</strong><span>Active agents</span></article><article><strong>{counts.active_workflows ?? '—'}</strong><span>Live workflows</span></article><article><strong>{counts.connected_apps ?? '—'}</strong><span>Connected apps</span></article><article className={counts.failed_runs ? 'attention' : ''}><strong>{counts.failed_runs ?? '—'}</strong><span>Failed runs</span></article></div>
-      <section className="copilot-intel-section"><span>Forge can inspect</span>{[[Activity,'Run traces','/observability'],[ShieldCheck,'Approval queue','/approvals'],[PlugZap,'App readiness','/apps'],[Database,'Knowledge sources','/knowledge']].map(([Icon,label,path]) => <button key={label} onClick={() => navigate(path)}><Icon size={14} /><strong>{label}</strong><ArrowRight size={13} /></button>)}</section>
-      <section className="copilot-intel-section"><span>Operating contract</span><div className="copilot-contract"><CheckCircle2 size={14} /><p><strong>Read before reasoning</strong><small>Uses current safe workspace context.</small></p></div><div className="copilot-contract"><Wrench size={14} /><p><strong>Draft before mutation</strong><small>Changes appear as proposals.</small></p></div><div className="copilot-contract"><ShieldCheck size={14} /><p><strong>Approval before action</strong><small>External execution stays gated.</small></p></div></section>
-      {!!agents.length && <section className="copilot-agent-direct"><span>Talk to a published agent</span><select value={agentId} onChange={event => setAgentId(event.target.value)} aria-label="Choose agent for agent chat"><option value="">Choose an agent…</option>{agents.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select><button disabled={!agentId} onClick={newAgentChat}>Start agent chat <ArrowRight size={13} /></button></section>}
-      <button className="copilot-open-build" onClick={() => navigate('/studio')}>Open visual Build <ArrowRight size={14} /></button>
-    </aside>
   </div>
 }

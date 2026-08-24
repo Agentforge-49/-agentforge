@@ -36,12 +36,10 @@ test('Forge streams an answer and applies an explicit proposal', async ({ page }
     if (url.pathname === '/api/copilot/proposals/proposal-1/apply') return { body:{ resource_type:'workflow', resource_id:'workflow-1' } }
   })
   await page.goto('/copilot')
-  await expect(page.getByRole('button', { name:'History' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name:'Chat history' })).toBeVisible()
+  await expect(page.getByLabel('Search chat history')).toBeVisible()
   await expect(page.getByRole('button', { name:'New chat' })).toBeVisible()
-  await page.getByRole('button', { name:'History' }).click()
-  await expect(page.getByRole('dialog', { name:'Chat history' })).toBeVisible()
-  await expect(page.getByRole('dialog', { name:'Chat history' }).getByText('Support automation')).toBeVisible()
-  await page.getByRole('button', { name:'Close chat history' }).click()
+  await expect(page.getByRole('navigation', { name:'Chat history' }).getByText('Support automation')).toBeVisible()
   await page.locator('input[type="file"]').setInputFiles({ name:'support-notes.txt', mimeType:'text/plain', buffer:Buffer.from('VIP tickets require manager approval.') })
   await expect(page.getByText('support-notes.txt')).toBeVisible()
   await page.getByPlaceholder(/Ask anything/).fill('Build safe support triage')
@@ -80,15 +78,14 @@ test('quick actions turn a beginner goal into the right workspace destination', 
   await expect(page).toHaveURL(/\/approvals$/)
 })
 
-test('outcome launcher carries a beginner request into Forge Build mode', async ({ page }) => {
+test('Home keeps Forge isolated in its dedicated workspace', async ({ page }) => {
   await authenticate(page)
   await mockBackend(page)
   await page.goto('/dashboard')
-  const request = 'Classify new customer emails and ask me before replying'
-  await page.getByPlaceholder(/Example: When a customer emails us/).fill(request)
-  await page.getByRole('button', { name:'Design with Forge' }).click()
-  await expect(page).toHaveURL(/\/copilot\?mode=build/)
-  await expect(page.getByRole('textbox', { name:'Design an approval-ready operation' })).toHaveValue(request)
+  await expect(page.getByText(/What result should your AI operation deliver/)).toHaveCount(0)
+  await page.getByRole('link', { name:'Forge' }).click()
+  await expect(page).toHaveURL(/\/copilot$/)
+  await expect(page.getByRole('navigation', { name:'Chat history' })).toBeVisible()
 })
 
 test('visual builder saves, activates, runs, and stops at human approval', async ({ page }) => {

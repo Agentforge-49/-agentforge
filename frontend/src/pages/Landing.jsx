@@ -79,17 +79,18 @@ export default function Landing() {
               <div className="lf-hero__proof"><span><Check size={14} /> Free to start</span><span><Check size={14} /> No credit card</span><span><Check size={14} /> Approval before action</span></div>
             </div>
 
-            <div
-              className="lf-workbench"
-              aria-label="Interactive example AgentForge workflow"
-              onPointerMove={event => {
-                if (event.pointerType !== 'mouse') return
-                const bounds = event.currentTarget.getBoundingClientRect()
-                event.currentTarget.style.setProperty('--tilt-x', `${((event.clientY - bounds.top) / bounds.height - .5) * -3}deg`)
-                event.currentTarget.style.setProperty('--tilt-y', `${((event.clientX - bounds.left) / bounds.width - .5) * 4}deg`)
-              }}
-              onPointerLeave={event => { event.currentTarget.style.setProperty('--tilt-x', '1deg'); event.currentTarget.style.setProperty('--tilt-y', '-2deg') }}
-            >
+            <div className="lf-workbench-stage">
+              <div
+                className="lf-workbench"
+                aria-label="Interactive example AgentForge workflow"
+                onPointerMove={event => {
+                  if (event.pointerType !== 'mouse') return
+                  const bounds = event.currentTarget.getBoundingClientRect()
+                  event.currentTarget.style.setProperty('--tilt-x', `${((event.clientY - bounds.top) / bounds.height - .5) * -3}deg`)
+                  event.currentTarget.style.setProperty('--tilt-y', `${((event.clientX - bounds.left) / bounds.width - .5) * 4}deg`)
+                }}
+                onPointerLeave={event => { event.currentTarget.style.setProperty('--tilt-x', '1deg'); event.currentTarget.style.setProperty('--tilt-y', '-2deg') }}
+              >
               <div className="lf-orbit lf-orbit--quality"><TestTube2 size={13} /><span><strong>12/12</strong> tests passed</span></div>
               <div className="lf-orbit lf-orbit--live"><i /> Live trace ready</div>
               <div className="lf-workbench__bar"><span><i /><i /><i /></span><b>Customer support triage</b><small>Draft</small></div>
@@ -103,7 +104,8 @@ export default function Landing() {
                 <div className="lf-flow__line" />
                 <div className="lf-flow__step"><AppLogo slug="slack" name="Slack" size={34} /><div><small>THEN</small><strong>Send to Slack</strong></div><CheckCircle2 size={16} /></div>
               </div>
-              <div className="lf-workbench__footer"><span><ShieldCheck size={14} /> External action is approval-gated</span><button type="button" onClick={() => goTo('/signup')}>Use this template <ChevronRight size={14} /></button></div>
+                <div className="lf-workbench__footer"><span><ShieldCheck size={14} /> External action is approval-gated</span><button type="button" onClick={() => goTo('/signup')}>Use this template <ChevronRight size={14} /></button></div>
+              </div>
             </div>
           </div>
           <div className="landing-container lf-hero__signal" aria-label="AgentForge operating loop"><span><Command size={14} /> Describe</span><i /><span><PlugZap size={14} /> Connect</span><i /><span><Gauge size={14} /> Prove</span><i /><span><ShieldCheck size={14} /> Approve</span><i /><span><Activity size={14} /> Operate</span></div>
