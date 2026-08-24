@@ -37,11 +37,39 @@ const ROLE_DEMOS = {
   operations:{ label:'Internal operations', title:'Route work, collect approvals, and prove completion.', flow:['Request','Route owner','Prepare work','Operator approval','Report outcome'], metrics:['31 sample requests','6 active workflows','1 recovery needed'] },
 }
 
+const HERO_SCENARIOS = {
+  support:{
+    label:'Support', title:'Customer support triage', tests:'12/12',
+    prompt:'When a customer asks for help, classify the issue, draft a reply, and send it to Slack after I approve it.',
+    trigger:'New support request', decision:'Priority, category, reply', review:'You approve the reply', app:'slack', appName:'Slack', action:'Send to Slack',
+  },
+  sales:{
+    label:'Sales', title:'Lead qualification', tests:'8/8',
+    prompt:'When a new lead arrives, research the supplied account details, score fit, and add the approved result to Google Sheets.',
+    trigger:'New qualified lead', decision:'Fit, evidence, next step', review:'Manager approves the score', app:'google_sheets', appName:'Google Sheets', action:'Add approved lead',
+  },
+  operations:{
+    label:'Operations', title:'Internal request routing', tests:'10/10',
+    prompt:'When an internal request arrives, identify the owner, prepare the handoff, and update Notion only after an operator approves it.',
+    trigger:'New internal request', decision:'Owner, risk, handoff', review:'Operator approves routing', app:'notion', appName:'Notion', action:'Update request record',
+  },
+}
+
+const FAQS = [
+  ['Do I need to understand agents or workflow architecture?', 'No. Start by describing the result in ordinary language. Forge prepares a visible draft with steps, apps, tests, and approval points that you can edit before anything is activated.'],
+  ['Can Forge take actions without asking me?', 'Not silently. Forge can answer questions and prepare proposals, but publishing, activation, and consequential external actions stay behind explicit preview and approval controls.'],
+  ['Are all 100 app connections native?', 'Twenty-five launch apps have guided typed connectors. The remaining seventy-five use authenticated HTTP actions or signed webhooks, with the same encrypted credential vault and run history. Every catalog entry labels its connection path honestly.'],
+  ['How do I know an automation works before launch?', 'Run it with safe sample input, inspect every node and output, review the saved trace, and add evaluation cases. Publish a version only after the behavior meets your release gate.'],
+  ['Can I start without paying?', 'Yes. The free workspace is designed for building and proving an operation, and no credit card is required. Higher-capacity plans are launch-access requests rather than an automatic paid checkout.'],
+]
+
 export default function Landing() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [role, setRole] = useState('support')
   const [journeyStep, setJourneyStep] = useState(0)
+  const [heroScenario, setHeroScenario] = useState('support')
+  const heroDemo = HERO_SCENARIOS[heroScenario]
   const goTo = path => { setMobileOpen(false); navigate(path) }
 
   return (
@@ -80,6 +108,10 @@ export default function Landing() {
             </div>
 
             <div className="lf-workbench-stage">
+              <div className="lf-workbench-switcher" role="tablist" aria-label="Example operation">
+                <span>Illustrative</span>
+                {Object.entries(HERO_SCENARIOS).map(([key, scenario]) => <button key={key} type="button" role="tab" aria-selected={heroScenario === key} className={heroScenario === key ? 'active' : ''} onClick={() => setHeroScenario(key)}>{scenario.label}</button>)}
+              </div>
               <div
                 className="lf-workbench"
                 aria-label="Interactive example AgentForge workflow"
@@ -91,18 +123,20 @@ export default function Landing() {
                 }}
                 onPointerLeave={event => { event.currentTarget.style.setProperty('--tilt-x', '1deg'); event.currentTarget.style.setProperty('--tilt-y', '-2deg') }}
               >
-              <div className="lf-orbit lf-orbit--quality"><TestTube2 size={13} /><span><strong>12/12</strong> tests passed</span></div>
+              <div className="lf-orbit lf-orbit--quality"><TestTube2 size={13} /><span><strong>{heroDemo.tests}</strong> tests passed</span></div>
               <div className="lf-orbit lf-orbit--live"><i /> Live trace ready</div>
-              <div className="lf-workbench__bar"><span><i /><i /><i /></span><b>Customer support triage</b><small>Draft</small></div>
-              <div className="lf-prompt"><div><Sparkles size={16} /></div><p>“When a customer asks for help, classify the issue, draft a reply, and send it to Slack after I approve it.”</p></div>
+              <div className="lf-workbench__bar"><span><i /><i /><i /></span><b>{heroDemo.title}</b><small>Draft</small></div>
+              <div className="lf-demo-content" key={heroScenario}>
+              <div className="lf-prompt"><div><Sparkles size={16} /></div><p>“{heroDemo.prompt}”</p></div>
               <div className="lf-flow">
-                <div className="lf-flow__step"><span><Zap size={16} /></span><div><small>WHEN</small><strong>New support request</strong></div><CheckCircle2 size={16} /></div>
+                <div className="lf-flow__step"><span><Zap size={16} /></span><div><small>WHEN</small><strong>{heroDemo.trigger}</strong></div><CheckCircle2 size={16} /></div>
                 <div className="lf-flow__line" />
-                <div className="lf-flow__step lf-flow__step--ai"><span><Bot size={16} /></span><div><small>AI DECIDES</small><strong>Priority, category, reply</strong></div><b>AI</b></div>
+                <div className="lf-flow__step lf-flow__step--ai"><span><Bot size={16} /></span><div><small>AI DECIDES</small><strong>{heroDemo.decision}</strong></div><b>AI</b></div>
                 <div className="lf-flow__line" />
-                <div className="lf-flow__step"><span><ShieldCheck size={16} /></span><div><small>REVIEW</small><strong>You approve the result</strong></div><CircleDot size={15} /></div>
+                <div className="lf-flow__step"><span><ShieldCheck size={16} /></span><div><small>REVIEW</small><strong>{heroDemo.review}</strong></div><CircleDot size={15} /></div>
                 <div className="lf-flow__line" />
-                <div className="lf-flow__step"><AppLogo slug="slack" name="Slack" size={34} /><div><small>THEN</small><strong>Send to Slack</strong></div><CheckCircle2 size={16} /></div>
+                <div className="lf-flow__step"><AppLogo slug={heroDemo.app} name={heroDemo.appName} size={34} /><div><small>THEN</small><strong>{heroDemo.action}</strong></div><CheckCircle2 size={16} /></div>
+              </div>
               </div>
                 <div className="lf-workbench__footer"><span><ShieldCheck size={14} /> External action is approval-gated</span><button type="button" onClick={() => goTo('/signup')}>Use this template <ChevronRight size={14} /></button></div>
               </div>
@@ -168,6 +202,13 @@ export default function Landing() {
           <div className="landing-container lf-trust__panel">
             <div><span><ShieldCheck size={18} /></span><small>Control is built in</small><h2>AI can think. You decide when it acts.</h2><p>Test privately, inspect every run, require approval, and keep credentials encrypted outside prompts.</p></div>
             <ul><li><CheckCircle2 size={17} /> Human approval gates</li><li><CheckCircle2 size={17} /> Visible run history</li><li><CheckCircle2 size={17} /> Encrypted connections</li><li><CheckCircle2 size={17} /> Versioned production changes</li></ul>
+          </div>
+        </section>
+
+        <section className="lf-faq" aria-labelledby="faq-title">
+          <div className="landing-container lf-faq__grid">
+            <div className="lf-faq__intro"><span>Clear before you build</span><h2 id="faq-title">Questions a serious operator should ask.</h2><p>Understand how AgentForge connects, tests, and controls work before you create an account.</p><button type="button" onClick={() => goTo('/signup')}>Start with Forge <ArrowRight size={15} /></button></div>
+            <div className="lf-faq__list">{FAQS.map(([question, answer], index) => <details key={question} open={index === 0}><summary><span>{question}</span><i><ChevronRight size={17} /></i></summary><p>{answer}</p></details>)}</div>
           </div>
         </section>
 

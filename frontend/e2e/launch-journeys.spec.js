@@ -199,6 +199,17 @@ test('approval inbox records a human decision', async ({ page }) => {
   await expect(page.getByText(/No pending decisions/)).toBeVisible()
 })
 
+test('public website demonstrates multiple operations and answers launch questions', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('tab', { name:'Sales', exact:true }).click()
+  const example = page.getByLabel('Interactive example AgentForge workflow')
+  await expect(example.getByText('Lead qualification', { exact:true })).toBeVisible()
+  await expect(example.getByText('Add approved lead', { exact:true })).toBeVisible()
+  await expect(example.getByText('8/8', { exact:true })).toBeVisible()
+  await page.getByText('Are all 100 app connections native?', { exact:true }).click()
+  await expect(page.getByText(/Twenty-five launch apps have guided typed connectors/)).toBeVisible()
+})
+
 test('@a11y public and authenticated launch surfaces have no serious axe violations', async ({ page }) => {
   test.slow()
   const browserErrors = []
@@ -223,4 +234,16 @@ test('@mobile mobile navigation exposes the complete primary workspace', async (
   await page.getByRole('link', { name:'Build' }).click()
   await expect(page).toHaveURL(/\/studio$/)
   await expect(page.getByRole('heading', { name:/Design every AI operation/ })).toBeVisible()
+})
+
+test('@mobile public website keeps its story and interactions usable on a phone', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name:/Build an AI workforce/ })).toBeVisible()
+  await page.getByRole('button', { name:'Open menu' }).click()
+  await expect(page.getByRole('navigation', { name:'Mobile navigation' })).toBeVisible()
+  await page.getByRole('button', { name:'Close menu' }).click()
+  await page.getByRole('tab', { name:'Operations', exact:true }).click()
+  await expect(page.getByLabel('Interactive example AgentForge workflow').getByText('Update request record', { exact:true })).toBeVisible()
+  await page.getByText('Can I start without paying?', { exact:true }).click()
+  await expect(page.getByText(/free workspace is designed for building and proving/)).toBeVisible()
 })
